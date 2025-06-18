@@ -1,11 +1,11 @@
 services:
   - type: web
-    name: fyproject-web
+    name: localshop
     env: python
     buildCommand: "./build.sh"
-    startCommand: "gunicorn localshop.wsgi:application"
+    startCommand: "gunicorn localshop.wsgi"
     envVars:
       - key: DJANGO_SECRET_KEY
         sync: false
       - key: DEBUG
-        value: false
+        value: False
