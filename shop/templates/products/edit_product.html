@@ -1,0 +1,14 @@
+<!-- shop/templates/products/edit_product.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Edit Product: {{ product.name }}</h2>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Update Product</button>
+    <a href="{% url 'shop_dashboard' %}" class="btn btn-secondary">Cancel</a>
+  </form>
+</div>
+{% endblock %}

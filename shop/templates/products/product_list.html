@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">Available Products</h2>
+
+  {% if products %}
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+      {% for product in products %}
+      <div class="col">
+        <div class="card h-100 shadow-sm">
+          {% if product.image %}
+            <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover;">
+          {% else %}
+            <img src="https://via.placeholder.com/300x200.png?text=No+Image" class="card-img-top" alt="No Image">
+          {% endif %}
+          <div class="card-body">
+            <h5 class="card-title">{{ product.name }}</h5>
+            <p class="card-text">₹{{ product.price }}</p>
+            <a href="{% url 'add_to_cart' product.id %}" class="btn btn-success btn-sm">Add to Cart</a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>No products available.</p>
+  {% endif %}
+</div>
+{% endblock %}

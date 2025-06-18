@@ -1,0 +1,13 @@
+{% extends 'shop/base.html' %}
+
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Welcome, {{ request.user.username }}</h2>
+
+  <div class="mt-4 d-grid gap-3">
+    <a href="{% url 'product_list' %}" class="btn btn-success btn-lg">Browse Products</a>
+    <a href="{% url 'cart' %}" class="btn btn-primary btn-lg">View Cart</a>
+  </div>
+</div>
+{% endblock %}

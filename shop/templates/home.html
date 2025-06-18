@@ -1,0 +1,93 @@
+{% extends 'shop/base.html' %}
+
+{% block content %}
+<style>
+  :root {
+    --primary: #A8D5BA;
+    --secondary: #6CA775;
+    --background: #F0F8F4;
+    --accent: #4A8C52;
+    --text: #2E4E1B;
+  }
+
+  body {
+    background-color: var(--background);
+  }
+
+  header {
+    background-color: var(--primary);
+    color: var(--text);
+  }
+
+  .card {
+    border: 1px solid #cce5d3;
+    border-radius: 0.5rem;
+  }
+
+  .card-title {
+    color: var(--text);
+  }
+
+  .card-text {
+    color: #4a5c3f;
+  }
+
+  .btn-success {
+    background-color: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+
+  .btn-success:hover {
+    background-color: #3e6e43;
+    border-color: #3e6e43;
+  }
+
+  footer {
+    background-color: var(--secondary);
+    color: white;
+  }
+</style>
+
+<!-- Welcome Banner -->
+<header class="text-center py-5 mb-4 shadow rounded">
+  <div class="container">
+    <h1 class="fw-bold text-3xl mb-2">Welcome to Local Shop</h1>
+    <p class="lead text-lg">Find the best local products delivered to your doorstep</p>
+  </div>
+</header>
+
+<!-- Product Showcase -->
+<div class="container">
+  <h2 class="mb-4 text-center">Featured Products</h2>
+  <div class="row">
+    {% if products %}
+      {% for product in products %}
+        <div class="col-md-4 mb-4">
+          <div class="card h-100 shadow-sm">
+            {% if product.image %}
+              <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
+            {% else %}
+              <img src="https://via.placeholder.com/300x200?text=No+Image" class="card-img-top" alt="No image">
+            {% endif %}
+            <div class="card-body d-flex flex-column">
+              <h5 class="card-title">{{ product.name }}</h5>
+              <p class="card-text text-truncate">{{ product.description }}</p>
+              <h6 class="text-primary">₹{{ product.price }}</h6>
+              {% if user.is_authenticated and user.role == 'customer' %}
+                <a href="{% url 'add_to_cart' product.id %}" class="btn btn-success mt-auto">Add to Cart</a>
+              {% else %}
+                <a href="{% url 'login' %}" class="btn btn-success mt-auto">Login to Buy</a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="col-12 text-center">
+        <p class="text-muted">No products available at the moment.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
