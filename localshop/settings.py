@@ -2,20 +2,19 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()  # Load environment variables from .env file
+load_dotenv()
 
-# BASE_DIR points to the root project folder
+# Base directory
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Security
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
-
-DEBUG = True
-
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
+ALLOWED_HOSTS = ['fyproject-ta67.onrender.com']
 
 LOGIN_URL = '/login/'
 
-# Application definition
+# Installed apps
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -23,11 +22,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'shop',  # Your custom app
+    'shop',
 ]
 
+# Middleware
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # 🟢 Added for Render static support
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -38,10 +39,11 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'localshop.urls'
 
+# Templates
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],  # global templates directory
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -55,19 +57,19 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'localshop.wsgi.application'
 
-# PostgreSQL Database
+# Database (Configure .env if using Render PostgreSQL)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'localshopdb',
-        'USER': 'postgres',
+        'NAME': os.getenv('DB_NAME', 'localshopdb'),
+        'USER': os.getenv('DB_USER', 'postgres'),
         'PASSWORD': os.getenv('DB_PASSWORD'),
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'HOST': os.getenv('DB_HOST', 'localhost'),
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
 
-# Custom user model
+# Custom User model
 AUTH_USER_MODEL = 'shop.CustomUser'
 
 # Password validation
@@ -84,27 +86,25 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-# Static and media files
+# Static & Media Files
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+STATIC_ROOT = BASE_DIR / 'staticfiles'  # 🟢 Needed for Render
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default auto field
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Email configuration for OTP
+# Email settings (for OTP)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-
 EMAIL_HOST_USER = 'shaikhsohel.edu@gmail.com'
-EMAIL_HOST_PASSWORD = 'plra mnxz sovn tjrk'  # Yeh 16-digit App Password
+EMAIL_HOST_PASSWORD = 'plra mnxz sovn tjrk'  # App password
 
-
-
-# Logging configuration (for production)
+# Logging
 if not DEBUG:
     LOGGING = {
         'version': 1,
@@ -125,8 +125,8 @@ if not DEBUG:
         },
     }
 
-# email phone number auth
+# Custom auth backend
 AUTHENTICATION_BACKENDS = [
     'shop.auth_backends.EmailOrPhoneBackend',
-    'django.contrib.auth.backends.ModelBackend',  # fallback
+    'django.contrib.auth.backends.ModelBackend',
 ]
