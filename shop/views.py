@@ -1,16 +1,20 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.contrib import messages
+from django.conf import settings
 import random
 
 from .forms import RegistrationForm, ProductForm
-from .models import CustomUser, Product, CartItem
+from .models import Product, CartItem
+from users.models import CustomUser
+
 
 # Home View
 def home(request):
     return render(request, 'home.html')
+
 
 # OTP Utilities
 def generate_otp():
@@ -20,10 +24,11 @@ def send_otp_email(email, otp):
     send_mail(
         'Your OTP Code',
         f'Your OTP code is {otp}',
-        'shaikhsohel.edu@gmail.com',
+        settings.EMAIL_HOST_USER,
         [email],
         fail_silently=False,
     )
+
 
 # 1. Registration View
 def register(request):
@@ -39,9 +44,8 @@ def register(request):
         form = RegistrationForm()
     return render(request, 'shop/register.html', {'form': form})
 
-# 2. OTP Verification View
-from .models import CustomUser
 
+# 2. OTP Verification View
 def verify_otp(request):
     error = None
     if request.method == 'POST':
@@ -53,7 +57,7 @@ def verify_otp(request):
                 form = RegistrationForm(data)
                 if form.is_valid():
                     user = form.save()
-                    login(request, user, backend='django.contrib.auth.backends.ModelBackend')  # 🛠️ Add backend here
+                    login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                     del request.session['registration_data']
                     del request.session['otp']
                     if user.role == 'shop_owner':
@@ -61,7 +65,6 @@ def verify_otp(request):
                     else:
                         return redirect('customer_dashboard')
         else:
-            #  If OTP is wrong, try to delete the user by email
             data = request.session.get('registration_data')
             if data:
                 try:
@@ -72,6 +75,7 @@ def verify_otp(request):
             error = 'Invalid OTP. Please try again.'
     return render(request, 'shop/verify_otp.html', {'error': error})
 
+
 # 3. Shop Owner Views
 @login_required
 def shop_dashboard(request):
@@ -79,6 +83,7 @@ def shop_dashboard(request):
         return redirect('home')
     products = Product.objects.filter(shop_owner=request.user)
     return render(request, 'shop/shop_dashboard.html', {'products': products})
+
 
 @login_required
 def create_product(request):
@@ -95,22 +100,25 @@ def create_product(request):
         form = ProductForm()
     return render(request, 'products/create_product.html', {'form': form})
 
+
 @login_required
 def edit_product(request, product_id):
-    product = Product.objects.get(id=product_id, shop_owner=request.user)
+    product = get_object_or_404(Product, id=product_id, shop_owner=request.user)
     form = ProductForm(request.POST or None, request.FILES or None, instance=product)
     if request.method == 'POST' and form.is_valid():
         form.save()
         return redirect('shop_dashboard')
     return render(request, 'products/edit_product.html', {'form': form, 'product': product})
 
+
 @login_required
 def delete_product(request, product_id):
-    product = Product.objects.get(id=product_id, shop_owner=request.user)
+    product = get_object_or_404(Product, id=product_id, shop_owner=request.user)
     if request.method == 'POST':
         product.delete()
         return redirect('shop_dashboard')
     return render(request, 'products/delete_product.html', {'product': product})
+
 
 # 4. Customer Views
 @login_required
@@ -120,15 +128,50 @@ def product_list(request):
     products = Product.objects.all()
     return render(request, 'products/product_list.html', {'products': products})
 
+
 @login_required
 def cart_view(request):
+    if request.user.role != 'customer':
+        return redirect('home')
     cart_items = CartItem.objects.filter(user=request.user).select_related('product')
     for item in cart_items:
         item.total_price = item.product.price * item.quantity
     total = sum(item.total_price for item in cart_items)
     return render(request, 'shop/cart.html', {'cart_items': cart_items, 'total': total})
 
-# Login View
+
+@login_required
+def add_to_cart(request, product_id):
+    if request.user.role != 'customer':
+        return redirect('home')
+    product = get_object_or_404(Product, id=product_id)
+    cart_item, created = CartItem.objects.get_or_create(user=request.user, product=product)
+    if not created:
+        cart_item.quantity += 1
+        cart_item.save()
+    return redirect('cart_view')
+
+
+@login_required
+def remove_from_cart(request, item_id):
+    if request.user.role != 'customer':
+        return redirect('home')
+    cart_item = get_object_or_404(CartItem, id=item_id, user=request.user)
+    cart_item.delete()
+    return redirect('cart_view')
+
+
+@login_required
+def checkout(request):
+    if request.user.role != 'customer':
+        return redirect('home')
+    if request.method == 'POST':
+        # TODO: handle payment/order logic here
+        return redirect('order_success')
+    return render(request, 'checkout.html')
+
+
+# 5. Login / Logout / Dashboard Views
 def login_view(request):
     if request.method == 'POST':
         email = request.POST.get('email')
@@ -144,58 +187,14 @@ def login_view(request):
             messages.error(request, 'Invalid email or password.')
     return render(request, 'shop/login.html')
 
-# ✅ Logout View
+
 def logout_view(request):
     logout(request)
     return redirect('home')
 
-# 5. Customer Dashboard View
+
 @login_required
 def customer_dashboard(request):
     if request.user.role != 'customer':
         return redirect('home')
     return render(request, 'shop/customer_dashboard.html')
-
-
-# Add to Cart View
-# Add to Cart View
-@login_required
-def add_to_cart(request, product_id):
-    if request.user.role != 'customer':
-        return redirect('home')
-
-    product = Product.objects.get(id=product_id)
-    cart_item, created = CartItem.objects.get_or_create(user=request.user, product=product)
-
-    if not created:
-        cart_item.quantity += 1
-        cart_item.save()
-
-    return redirect('cart_view')
-
-from django.shortcuts import get_object_or_404
-
-@login_required
-def remove_from_cart(request, item_id):
-    if request.user.role != 'customer':
-        return redirect('home')
-
-    cart_item = get_object_or_404(CartItem, id=item_id, user=request.user)
-    cart_item.delete()
-    return redirect('cart_view')
-
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect
-
-@login_required
-def checkout(request):
-    # Example placeholder logic; customize as needed
-    if request.method == 'POST':
-        # process payment and order creation logic here
-        return redirect('order_success')
-    # Show checkout page with cart details
-    return render(request, 'checkout.html')
-
-
-
-

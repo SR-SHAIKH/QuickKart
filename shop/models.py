@@ -3,21 +3,21 @@ from django.db import models
 from django.conf import settings
 
 # Custom user model
-class CustomUser(AbstractUser):
-    phone = models.CharField(max_length=15, unique=True, null=True, blank=True)
-    address = models.TextField(null=True, blank=True)
-    pin_code = models.CharField(max_length=10, null=True, blank=True)
+# class CustomUser(AbstractUser):
+#     phone = models.CharField(max_length=15, unique=True, null=True, blank=True)
+#     address = models.TextField(null=True, blank=True)
+#     pin_code = models.CharField(max_length=10, null=True, blank=True)
 
-    ROLE_CHOICES = (
-        ('customer', 'Customer'),
-        ('shop_owner', 'Shop Owner'),
-    )
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='customer')
+#     ROLE_CHOICES = (
+#         ('customer', 'Customer'),
+#         ('shop_owner', 'Shop Owner'),
+#     )
+#     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='customer')
 
-    USERNAME_FIELD = 'username'
+#     USERNAME_FIELD = 'username'
 
-    def __str__(self):
-        return self.username
+#     def __str__(self):
+#         return self.username
 
 # Product model (updated)
 class Product(models.Model):

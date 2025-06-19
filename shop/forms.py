@@ -1,7 +1,8 @@
 # shop/forms.py
 
 from django import forms
-from .models import CustomUser, Product
+from users.models import CustomUser
+from .models import Product
 
 # ---------------------- #
 # 1. Registration Form
