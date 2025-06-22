@@ -13,7 +13,7 @@ class RegistrationForm(forms.ModelForm):
 
     class Meta:
         model = CustomUser
-        fields = ['username', 'email', 'phone', 'address', 'pin_code', 'role']
+        fields = ['email', 'phone', 'address', 'pin_code', 'role']
 
     # ✅ Email Validation: Prevent duplicate email registration
     def clean_email(self):

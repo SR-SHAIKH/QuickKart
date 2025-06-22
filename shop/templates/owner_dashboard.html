@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">👋 Welcome, {{ request.user.username }} (Shop Owner)</h2>
+
+  <div class="mb-4 d-flex gap-2 flex-wrap">
+    <a href="{% url 'create_product' %}" class="btn btn-success">➕ Add New Product</a>
+    <a href="{% url 'shop_owner_products' %}" class="btn btn-primary">📦 My Products</a>
+    <a href="{% url 'shop_owner_orders' %}" class="btn btn-warning">🧾 Orders</a>
+  </div>
+
+  <h4>Your Products</h4>
+  {% if products %}
+    <div class="row">
+      {% for product in products %}
+        <div class="col-md-4 mb-4">
+          <div class="card h-100 shadow-sm">
+            {% if product.image %}
+              <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
+            {% endif %}
+            <div class="card-body">
+              <h5 class="card-title">{{ product.name }}</h5>
+              <p class="card-text text-muted">₹{{ product.price }}</p>
+              <div class="d-flex justify-content-between">
+                <a href="{% url 'edit_product' product.id %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                <form method="post" action="{% url 'delete_product' product.id %}">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this product?')">Delete</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-muted">You haven't added any products yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

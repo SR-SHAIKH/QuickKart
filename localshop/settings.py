@@ -1,6 +1,11 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from decouple import config
+
+# Example
+DB_NAME = config('DB_NAME')
+
 
 # Load environment variables from .env file
 load_dotenv()
@@ -47,7 +52,7 @@ ROOT_URLCONF = "localshop.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "templates"],
+        "DIRS": [os.path.join(BASE_DIR, 'shop', 'templates')],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -130,3 +135,8 @@ LOGGING = {
         },
     },
 }
+AUTHENTICATION_BACKENDS = [
+    'shop.auth_backends.EmailOrPhoneBackend',     # 👈 Custom backend for phone/email login
+    'django.contrib.auth.backends.ModelBackend',  # 👈 Fallback to default username/password login
+]
+LOGIN_URL = '/login/'

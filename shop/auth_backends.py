@@ -1,16 +1,22 @@
 from django.contrib.auth.backends import ModelBackend
-from shop.models import CustomUser
+from users.models import CustomUser
 
 class EmailOrPhoneBackend(ModelBackend):
     def authenticate(self, request, username=None, password=None, **kwargs):
-        try:
-            user = CustomUser.objects.get(email=username)
-        except CustomUser.DoesNotExist:
-            try:
-                user = CustomUser.objects.get(phone=username)
-            except CustomUser.DoesNotExist:
-                return None
+        if not username or not password:
+            return None
 
-        if user.check_password(password):
+        user = None
+        try:
+            if '@' in username:
+                user = CustomUser.objects.filter(email=username).first()
+            else:
+                user = CustomUser.objects.filter(phone=username).first()
+        except Exception as e:
+            return None
+
+        if user and user.check_password(password):
             return user
         return None
+
+

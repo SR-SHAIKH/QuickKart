@@ -1,13 +1,15 @@
 {% extends 'shop/base.html' %}
 
-
 {% block content %}
-<div class="container mt-4">
-  <h2>Welcome, {{ request.user.username }}</h2>
+<div class="container mt-5">
+  <div class="text-center mb-4">
+    <h2>Welcome to Customer Dashboard, {{ request.user.email }}</h2>
+    <p class="text-muted">Here you can browse products, add to cart, and place orders.</p>
+  </div>
 
-  <div class="mt-4 d-grid gap-3">
-    <a href="{% url 'product_list' %}" class="btn btn-success btn-lg">Browse Products</a>
-    <a href="{% url 'cart' %}" class="btn btn-primary btn-lg">View Cart</a>
+  <div class="d-flex justify-content-center gap-3">
+    <a href="{% url 'product_list' %}" class="btn btn-success btn-lg px-4">Browse Products</a>
+    <a href="{% url 'cart_view' %}" class="btn btn-primary btn-lg px-4">Go to Cart</a>
   </div>
 </div>
 {% endblock %}
