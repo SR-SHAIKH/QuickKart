@@ -98,7 +98,7 @@ def login_view(request):
 
 def logout_view(request):
     logout(request)
-    return redirect('home')
+    return redirect('login')
 
 
 # --------------------- DASHBOARDS ---------------------
@@ -119,18 +119,19 @@ def shop_owner_dashboard(request):
     products = Product.objects.filter(shop_owner=request.user)
     return render(request, 'owner_dashboard.html', {'products': products})
 
+
 @login_required
 @user_passes_test(is_shop_owner)
 def shop_owner_products(request):
     products = Product.objects.filter(shop_owner=request.user)
-    return render(request, 'shop/owner_products.html', {'products': products})
+    return render(request, 'products/owner_products.html', {'products': products})
 
 
 @login_required
 @user_passes_test(is_shop_owner)
 def shop_owner_orders(request):
     orders = Order.objects.filter(items__product__shop_owner=request.user).distinct()
-    return render(request, 'shop/owner_orders.html', {'orders': orders})
+    return render(request, 'products/owner_orders.html', {'orders': orders})
 
 
 # --------------------- SHOP OWNER FEATURES ---------------------
@@ -209,7 +210,6 @@ def remove_from_cart(request, item_id):
     cart_item = get_object_or_404(CartItem, id=item_id, user=request.user)
     cart_item.delete()
     return redirect('cart')
-
 
 
 @login_required
