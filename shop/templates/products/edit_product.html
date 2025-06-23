@@ -1,14 +1,16 @@
-<!-- shop/templates/products/edit_product.html -->
 {% extends 'base.html' %}
 
 {% block content %}
 <div class="container mt-4">
-  <h2>Edit Product: {{ product.name }}</h2>
-  <form method="post" enctype="multipart/form-data">
+  <h2 class="mb-4">Edit Product: {{ product.name }}</h2>
+
+  <form method="post" enctype="multipart/form-data" class="card p-4 shadow-sm">
     {% csrf_token %}
     {{ form.as_p }}
-    <button type="submit" class="btn btn-primary">Update Product</button>
-    <a href="{% url 'owner_dashboard' %}">Go Back</a>
+    <div class="mt-3 d-flex gap-2">
+      <button type="submit" class="btn btn-primary">Update Product</button>
+      <a href="{% url 'shop_owner_dashboard' %}" class="btn btn-secondary">Go Back</a>
+    </div>
   </form>
 </div>
 {% endblock %}

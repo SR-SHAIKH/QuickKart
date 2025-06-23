@@ -5,11 +5,10 @@ from django.core.mail import send_mail
 from django.contrib import messages
 from django.conf import settings
 import random
-
-from .forms import RegistrationForm, ProductForm
-from .models import Product, CartItem, Order
+from .forms import ProfileUpdateForm
+from .forms import RegistrationForm, ProductForm, CustomerProfileForm
+from .models import Product, CartItem, Order, OrderItem
 from users.models import CustomUser
-
 
 # --------------------- GENERAL ---------------------
 def home(request):
@@ -62,17 +61,17 @@ def verify_otp(request):
             form = RegistrationForm(registration_data)
             if form.is_valid():
                 user = form.save()
+                user.username = user.email.split('@')[0]
+                user.first_name = registration_data.get('first_name', '')
+                user.last_name = registration_data.get('last_name', '')
+                user.save()
                 login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                 request.session.pop('registration_data', None)
                 request.session.pop('otp', None)
-                if user.role == 'shop_owner':
-                    return redirect('shop_owner_dashboard')
-                else:
-                    return redirect('customer_dashboard')
+                return redirect('shop_owner_dashboard' if user.role == 'shop_owner' else 'customer_dashboard')
         else:
             try:
-                user = CustomUser.objects.get(email=registration_data['email'])
-                user.delete()
+                CustomUser.objects.get(email=registration_data['email']).delete()
             except CustomUser.DoesNotExist:
                 pass
             error = 'Invalid OTP. Please try again.'
@@ -85,14 +84,10 @@ def login_view(request):
         email = request.POST.get('email')
         password = request.POST.get('password')
         user = authenticate(request, email=email, password=password)
-        if user is not None:
+        if user:
             login(request, user)
-            if user.role == 'shop_owner':
-                return redirect('shop_owner_dashboard')
-            elif user.role == 'customer':
-                return redirect('customer_dashboard')
-        else:
-            messages.error(request, 'Invalid email or password.')
+            return redirect('shop_owner_dashboard' if user.role == 'shop_owner' else 'customer_dashboard')
+        messages.error(request, 'Invalid email or password.')
     return render(request, 'shop/login.html')
 
 
@@ -112,12 +107,11 @@ def customer_dashboard(request):
 def is_shop_owner(user):
     return user.role == 'shop_owner'
 
-
 @login_required
 @user_passes_test(is_shop_owner)
 def shop_owner_dashboard(request):
     products = Product.objects.filter(shop_owner=request.user)
-    return render(request, 'owner_dashboard.html', {'products': products})
+    return render(request, 'products/owner_products.html', {'products': products})
 
 
 @login_required
@@ -128,9 +122,12 @@ def shop_owner_products(request):
 
 
 @login_required
-@user_passes_test(is_shop_owner)
+@user_passes_test(lambda u: u.role == 'shop_owner')
 def shop_owner_orders(request):
-    orders = Order.objects.filter(items__product__shop_owner=request.user).distinct()
+    orders = Order.objects.filter(
+        items__product__shop_owner=request.user
+    ).distinct().prefetch_related('items__product')
+
     return render(request, 'products/owner_orders.html', {'orders': orders})
 
 
@@ -157,7 +154,7 @@ def edit_product(request, product_id):
     form = ProductForm(request.POST or None, request.FILES or None, instance=product)
     if request.method == 'POST' and form.is_valid():
         form.save()
-        return redirect('shop_owner_dashboard')
+        return redirect('shop_owner_dashboard')  # ✅ Only the name, no extra dict
     return render(request, 'products/edit_product.html', {'form': form, 'product': product})
 
 
@@ -216,7 +213,92 @@ def remove_from_cart(request, item_id):
 def checkout(request):
     if request.user.role != 'customer':
         return redirect('home')
+
+    cart_items = CartItem.objects.filter(user=request.user).select_related('product')
+    if not cart_items.exists():
+        messages.warning(request, "Your cart is empty.")
+        return redirect('cart')
+
+    total = sum(item.product.price * item.quantity for item in cart_items)
+
     if request.method == 'POST':
-        # TODO: handle payment/order logic here
+        # Create the Order Change user to customer
+        order = Order.objects.create(
+            customer=request.customer,
+            total_amount=total
+        )
+
+        # Create OrderItems from CartItems
+        for item in cart_items:
+            OrderItem.objects.create(
+                order=order,
+                product=item.product,
+                quantity=item.quantity,
+                price=item.product.price
+            )
+
+        # Clear the cart
+        cart_items.delete()
+
         return redirect('order_success')
-    return render(request, 'shop/checkout.html')
+
+    return render(request, 'shop/checkout.html', {
+        'cart_items': cart_items,
+        'total': total,
+    })
+
+
+@login_required
+def my_orders(request):
+    if request.user.role != 'customer':
+        return redirect('home')
+
+    orders = Order.objects.filter(customer=request.user).prefetch_related('items__product')
+    return render(request, 'shop/my_orders.html', {'orders': orders})
+    
+
+# --------------------- PROFILE ---------------------
+@login_required
+def profile_view(request):
+    return render(request, 'dashboard/profile.html')
+
+
+@login_required
+def edit_profile(request):
+    if request.user.role != 'customer':
+        return redirect('home')
+
+    if request.method == 'POST':
+        form = CustomerProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Profile updated successfully.')
+            return redirect('profile')
+    else:
+        form = CustomerProfileForm(instance=request.user)
+
+    return render(request, 'dashboard/edit_profile.html', {'form': form})
+
+@login_required
+def profile_view(request):
+    user = request.user
+    if request.method == 'POST':
+        form = ProfileUpdateForm(request.POST, request.FILES, instance=user)
+        if form.is_valid():
+            form.save()
+            return redirect('profile')  # after saving
+    else:
+        form = ProfileUpdateForm(instance=user)
+
+    return render(request, 'dashboard/profile.html', {'form': form})
+
+
+# --------------------- ORDER SUCCESS ---------------------
+@login_required
+def order_success(request):
+    return render(request, 'shop/order_success.html')
+
+@login_required
+def product_detail(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    return render(request, 'products/product_detail.html', {'product': product})

@@ -8,6 +8,9 @@ class CustomUser(AbstractUser):
     address = models.TextField(null=True, blank=True)
     pin_code = models.CharField(max_length=10, null=True, blank=True)
 
+    # ✅ Add this line
+    profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+
     ROLE_CHOICES = (
         ('customer', 'Customer'),
         ('shop_owner', 'Shop Owner'),

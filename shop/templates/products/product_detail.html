@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="max-w-4xl mx-auto bg-white p-6 rounded shadow">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <img src="{{ product.image.url }}" class="w-full h-auto rounded" alt="{{ product.name }}">
+    
+    <div>
+      <h1 class="text-2xl font-bold">{{ product.name }}</h1>
+      <p class="text-lg text-green-600 font-semibold mt-2">₹{{ product.price }}</p>
+      <p class="mt-4">{{ product.description }}</p>
+
+      {% if product.stock > 0 %}
+        <p class="mt-2 text-sm text-gray-500">In Stock: {{ product.stock }}</p>
+        <a href="{% url 'add_to_cart' product.id %}" class="inline-block mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+          Add to Cart
+        </a>
+      {% else %}
+        <p class="mt-2 text-red-600">Out of Stock</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
