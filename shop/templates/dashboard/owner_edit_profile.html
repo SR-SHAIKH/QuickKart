@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">Edit Shop Owner Profile</h2>
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-success">✅ Save</button>
+    <a href="{% url 'owner_profile' %}" class="btn btn-outline-dark">Cancel</a>
+  </form>
+</div>
+{% endblock %}

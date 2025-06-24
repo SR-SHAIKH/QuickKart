@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container py-4">
   <h2 class="mb-4">👋 Welcome, {{ request.user.first_name|default:request.user.email }}</h2>
 
   <div class="mb-4 d-flex gap-2 flex-wrap">
@@ -16,21 +16,17 @@
     <div class="row">
       {% for product in products %}
         <div class="col-md-4 mb-4">
-          <div class="card h-100 shadow-sm">
+          <div class="card h-100 shadow-lg border-0">
             <a href="{% url 'product_detail' product.id %}">
               {% if product.image %}
-                <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" style="height: 250px; object-fit: cover;">
+                <img src="{{ product.image.url }}" class="card-img-top rounded-top" style="height: 220px; object-fit: cover;" alt="{{ product.name }}">
               {% else %}
-                <img src="{% static 'images/placeholder.png' %}" class="card-img-top" alt="No Image">
+                <img src="{% static 'images/placeholder.png' %}" class="card-img-top rounded-top" alt="No Image">
               {% endif %}
             </a>
             <div class="card-body">
-              <h5 class="card-title">
-                <a href="{% url 'product_detail' product.id %}" class="text-decoration-none text-dark">
-                  {{ product.name }}
-                </a>
-              </h5>
-              <p class="card-text text-muted">₹{{ product.price }}</p>
+              <h5 class="card-title text-primary">{{ product.name }}</h5>
+              <p class="card-text fw-semibold">₹{{ product.price }}</p>
               <div class="d-flex justify-content-between">
                 <a href="{% url 'edit_product' product.id %}" class="btn btn-sm btn-outline-primary">✏️ Edit</a>
                 <form method="post" action="{% url 'delete_product' product.id %}">

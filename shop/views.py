@@ -9,7 +9,11 @@ from .forms import ProfileUpdateForm
 from .forms import RegistrationForm, ProductForm, CustomerProfileForm
 from .models import Product, CartItem, Order, OrderItem
 from users.models import CustomUser
-
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, get_object_or_404, redirect
+from .models import Order, Product
+from django.template.loader import get_template
+from django.utils.timezone import now
 # --------------------- GENERAL ---------------------
 def home(request):
     products = Product.objects.all()
@@ -101,18 +105,20 @@ def logout_view(request):
 def customer_dashboard(request):
     if request.user.role != 'customer':
         return redirect('home')
-    return render(request, 'shop/customer_dashboard.html')
+    return render(request, 'dashboard/customer_dashboard.html')
 
 
 def is_shop_owner(user):
     return user.role == 'shop_owner'
 
 @login_required
-@user_passes_test(is_shop_owner)
+@user_passes_test(lambda u: u.role == 'shop_owner')
 def shop_owner_dashboard(request):
     products = Product.objects.filter(shop_owner=request.user)
-    return render(request, 'products/owner_products.html', {'products': products})
-
+    return render(request, 'products/owner_products.html', {
+        'products': products,
+        'now': now()
+    })
 
 @login_required
 @user_passes_test(is_shop_owner)
@@ -126,10 +132,9 @@ def shop_owner_products(request):
 def shop_owner_orders(request):
     orders = Order.objects.filter(
         items__product__shop_owner=request.user
-    ).distinct().prefetch_related('items__product')
+    ).prefetch_related('items__product', 'customer').distinct()
 
     return render(request, 'products/owner_orders.html', {'orders': orders})
-
 
 # --------------------- SHOP OWNER FEATURES ---------------------
 @login_required
@@ -224,7 +229,7 @@ def checkout(request):
     if request.method == 'POST':
         # Create the Order Change user to customer
         order = Order.objects.create(
-            customer=request.customer,
+            customer=request.user,
             total_amount=total
         )
 
@@ -259,38 +264,35 @@ def my_orders(request):
 
 # --------------------- PROFILE ---------------------
 @login_required
-def profile_view(request):
-    return render(request, 'dashboard/profile.html')
-
-
-@login_required
-def edit_profile(request):
+def customer_profile_view(request):
     if request.user.role != 'customer':
         return redirect('home')
 
     if request.method == 'POST':
-        form = CustomerProfileForm(request.POST, instance=request.user)
+        form = CustomerProfileForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Profile updated successfully.')
-            return redirect('profile')
+            return redirect('customer_profile')
     else:
         form = CustomerProfileForm(instance=request.user)
 
-    return render(request, 'dashboard/edit_profile.html', {'form': form})
+    return render(request, 'dashboard/customer_profile.html', {'form': form})
 
+# ✅ For Shop Owner
 @login_required
-def profile_view(request):
-    user = request.user
+def owner_profile_view(request):
+    if request.user.role != 'shop_owner':
+        return redirect('home')
+
     if request.method == 'POST':
-        form = ProfileUpdateForm(request.POST, request.FILES, instance=user)
+        form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
             form.save()
-            return redirect('profile')  # after saving
+            return redirect('owner_profile')
     else:
-        form = ProfileUpdateForm(instance=user)
+        form = ProfileUpdateForm(instance=request.user)
 
-    return render(request, 'dashboard/profile.html', {'form': form})
+    return render(request, 'dashboard/owner_profile.html', {'form': form})
 
 
 # --------------------- ORDER SUCCESS ---------------------
@@ -302,3 +304,8 @@ def order_success(request):
 def product_detail(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     return render(request, 'products/product_detail.html', {'product': product})
+
+@login_required
+def customer_dashboard(request):
+    return render(request, 'dashboard/customer_dashboard.html')
+

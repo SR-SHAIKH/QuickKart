@@ -1,20 +1,48 @@
 {% extends 'base.html' %}
-{% block content %}
-<h2 class="text-2xl font-bold mb-4">Customer Orders</h2>
+{% load static %}
 
-{% for order in orders %}
-<div class="bg-white p-4 shadow mb-4 rounded">
-  <h3 class="font-semibold">Order #{{ order.id }} by {{ order.customer.email }} - ₹{{ order.total_amount }}</h3>
-  <p class="text-sm text-gray-600">Placed on {{ order.created_at }}</p>
-  <ul class="list-disc ml-6 mt-2">
-    {% for item in order.items.all %}
-      {% if item.product.shop_owner == request.user %}
-        <li>{{ item.quantity }} x {{ item.product.name }} @ ₹{{ item.price }}</li>
-      {% endif %}
-    {% endfor %}
-  </ul>
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">Customer Orders</h2>
+
+  {% for order in orders %}
+    <div class="card mb-4 shadow rounded">
+      <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <div>
+          <strong>Order #{{ order.id }}</strong> by <strong>{{ order.customer.email }}</strong>
+        </div>
+        <div>
+          Status:
+          <select class="form-select d-inline-block w-auto" disabled>
+            <option selected>{{ order.status|title }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card-body">
+        {% for item in order.items.all %}
+          <div class="row mb-3 align-items-center">
+            <div class="col-md-2">
+              <img src="{{ item.product.image.url }}" class="img-fluid rounded" alt="{{ item.product.name }}">
+            </div>
+            <div class="col-md-6">
+              <h5>{{ item.product.name }}</h5>
+              <p>{{ item.product.description|truncatewords:15 }}</p>
+              <p><strong>Qty:</strong> {{ item.quantity }} @ ₹{{ item.price }}</p>
+            </div>
+            <div class="col-md-4 text-end">
+              <p><strong>Total:</strong> ₹{{ item.price|floatformat:2|add:""|add:item.quantity|floatformat:2 }}</p>
+            </div>
+          </div>
+          <hr>
+        {% endfor %}
+        <div class="text-end">
+          <h5>Total Amount: ₹{{ order.total_amount }}</h5>
+        </div>
+      </div>
+    </div>
+  {% empty %}
+    <p>No orders found.</p>
+  {% endfor %}
 </div>
-{% empty %}
-<p>No orders for your products yet.</p>
-{% endfor %}
 {% endblock %}

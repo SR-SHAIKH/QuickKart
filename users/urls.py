@@ -1,12 +1,23 @@
+# users/urls.py
+
 from django.urls import path
-from django.contrib.auth import views as auth_views
-from .views import CustomPasswordChangeView, profile_view, edit_profile
+from .views import (
+    CustomPasswordChangeView,
+    customer_profile_view,
+    customer_edit_profile,
+    owner_profile_view,
+    owner_edit_profile,
+)
 
 urlpatterns = [
-    path('profile/', profile_view, name='profile'),
-    path('profile/edit/', edit_profile, name='edit_profile'),
-    path('password/change/', CustomPasswordChangeView.as_view(), name='password_change'),
-    path('password/change/done/', auth_views.PasswordChangeDoneView.as_view(
-        template_name='users/password_change_done.html'
-    ), name='password_change_done'),
+    # 👤 Customer URLs
+    path('customer/profile/', customer_profile_view, name='customer_profile'),
+    path('customer/edit-profile/', customer_edit_profile, name='customer_edit_profile'),
+
+    # 🛍️ Shop Owner URLs
+    path('owner/profile/', owner_profile_view, name='owner_profile'),
+    path('owner/edit-profile/', owner_edit_profile, name='owner_edit_profile'),
+
+    # 🔐 Password Change
+    path('change-password/', CustomPasswordChangeView.as_view(), name='password_change'),
 ]

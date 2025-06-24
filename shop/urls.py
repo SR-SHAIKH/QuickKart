@@ -9,6 +9,7 @@ from users.views import CustomPasswordChangeView
 urlpatterns = [
     # 🌐 Public
     path('', views.home, name='home'),
+    path('cart/', views.cart_view, name='cart_view'),
 
     # 🔐 Auth
     path('login/', views.login_view, name='login'),
@@ -27,9 +28,13 @@ urlpatterns = [
     path('order-success/', views.order_success, name='order_success'),
     path('product/<int:product_id>/', views.product_detail, name='product_detail'),
 
-    # 👤 Profile (shared for both roles)
-    path('dashboard/profile/', user_views.profile_view, name='profile'),
-    path('dashboard/edit-profile/', user_views.edit_profile, name='edit_profile'),
+    # 👤 Customer Profile
+    path('dashboard/customer/profile/', user_views.customer_profile_view, name='customer_profile'),
+    path('dashboard/customer/edit-profile/', user_views.customer_edit_profile, name='customer_edit_profile'),
+
+    # 🛍️ Shop Owner Profile
+    path('dashboard/shop/profile/', user_views.owner_profile_view, name='owner_profile'),
+    path('dashboard/shop/edit-profile/', user_views.owner_edit_profile, name='owner_edit_profile'),
 
     # 🔐 Optional password change
     path('dashboard/change-password/', user_views.CustomPasswordChangeView.as_view(), name='password_change'),
