@@ -1,23 +1,14 @@
-# users/urls.py
-
 from django.urls import path
-from .views import (
-    CustomPasswordChangeView,
-    customer_profile_view,
-    customer_edit_profile,
-    owner_profile_view,
-    owner_edit_profile,
-)
+from . import views
 
 urlpatterns = [
-    # 👤 Customer URLs
-    path('customer/profile/', customer_profile_view, name='customer_profile'),
-    path('customer/edit-profile/', customer_edit_profile, name='customer_edit_profile'),
+    path('profile/customer/', views.customer_profile_view, name='customer_profile'),
+    path('profile/customer/edit/', views.customer_edit_profile, name='customer_edit_profile'),
 
-    # 🛍️ Shop Owner URLs
-    path('owner/profile/', owner_profile_view, name='owner_profile'),
-    path('owner/edit-profile/', owner_edit_profile, name='owner_edit_profile'),
+    path('profile/owner/', views.owner_profile_view, name='owner_profile'),
+    path('profile/owner/edit/', views.owner_edit_profile, name='owner_edit_profile'),
 
-    # 🔐 Password Change
-    path('change-password/', CustomPasswordChangeView.as_view(), name='password_change'),
+    path('profile/edit/', views.edit_profile, name='profile'),  # Optional if you use one route for both
+
+    path('password/change/', views.CustomPasswordChangeView.as_view(), name='password_change'),
 ]

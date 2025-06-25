@@ -22,6 +22,9 @@ urlpatterns = [
     path('products/', views.product_list, name='product_list'),
     path('cart/', views.cart_view, name='cart'),
     path('add-to-cart/<int:product_id>/', views.add_to_cart, name='add_to_cart'),
+    path('buy-now/<int:product_id>/', views.buy_now, name='buy_now'),
+    path('wishlist/add/<int:product_id>/', views.add_to_wishlist, name='add_to_wishlist'),
+    path('wishlist/', views.wishlist_page, name='wishlist'),
     path('remove-from-cart/<int:item_id>/', views.remove_from_cart, name='remove_from_cart'),
     path('checkout/', views.checkout, name='checkout'),
     path('orders/', views.my_orders, name='my_orders'),
@@ -54,7 +57,7 @@ urlpatterns = [
        template_name='users/password_change_done.html'
     ), name='password_change_done'),
     path('dashboard/change-password/', CustomPasswordChangeView.as_view(), name='password_change'),
-
+    path('buy/<int:product_id>/', views.buy_now, name='buy_now'),
 ]
 
 # 📦 Media

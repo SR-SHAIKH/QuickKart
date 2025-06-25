@@ -1,30 +1,22 @@
 import os
 from pathlib import Path
-from dotenv import load_dotenv
-from decouple import config
-
-# Example
-DB_NAME = config('DB_NAME')
-
-
-# Load environment variables from .env file
-load_dotenv()
+from decouple import config  # use python-decouple for clean env management
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-key")
-
-DEBUG = os.getenv("DEBUG", "True") == "True"
+# Load secret values from .env
+SECRET_KEY = config("SECRET_KEY", default="fallback-secret-key")
+DEBUG = config("DEBUG", default=True, cast=bool)
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
-RENDER_EXTERNAL_HOSTNAME = os.getenv("RENDER_EXTERNAL_HOSTNAME")
+RENDER_EXTERNAL_HOSTNAME = config("RENDER_EXTERNAL_HOSTNAME", default=None)
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
+# Custom User Model
 AUTH_USER_MODEL = 'users.CustomUser'
 
-
-# Application definition
+# Installed apps
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -32,10 +24,14 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.sites",  # recommended if using email-related features
     "shop",
     "users",
 ]
 
+SITE_ID = 1
+
+# Middleware
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -49,10 +45,11 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "localshop.urls"
 
+# Templates
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [os.path.join(BASE_DIR, 'templates')],
+        'DIRS': [os.path.join(BASE_DIR, 'shop/templates')],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -67,18 +64,19 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "localshop.wsgi.application"
 
-# Database
+# PostgreSQL database with decouple
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_NAME"),
-        "USER": os.getenv("DB_USER"),
-        "PASSWORD": os.getenv("DB_PASSWORD"),
-        "HOST": os.getenv("DB_HOST"),
-        "PORT": os.getenv("DB_PORT", "5432"),
+        "NAME": config("DB_NAME"),
+        "USER": config("DB_USER"),
+        "PASSWORD": config("DB_PASSWORD"),
+        "HOST": config("DB_HOST"),
+        "PORT": config("DB_PORT", default="5432"),
     }
 }
-# Password validation
+
+# Password validators
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
@@ -92,7 +90,7 @@ TIME_ZONE = "Asia/Kolkata"
 USE_I18N = True
 USE_TZ = True
 
-# Static files (CSS, JavaScript, Images)
+# Static files
 STATIC_URL = "/static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
@@ -104,14 +102,20 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 # Email configuration
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = os.getenv("EMAIL_HOST")
-EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))
-EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
-EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+EMAIL_HOST = config("EMAIL_HOST")
+EMAIL_PORT = config("EMAIL_PORT", cast=int, default=587)
+EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=True, cast=bool)
+EMAIL_HOST_USER = config("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
 
-# Default primary key field type
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+# Custom authentication backend
+AUTHENTICATION_BACKENDS = [
+    'shop.auth_backends.EmailOrPhoneBackend',     # custom phone/email backend
+    'django.contrib.auth.backends.ModelBackend',  # fallback username/password
+]
+
+# Redirect if login required
+LOGIN_URL = '/login/'
 
 # Logging
 LOG_DIR = BASE_DIR / "logs"
@@ -135,8 +139,6 @@ LOGGING = {
         },
     },
 }
-AUTHENTICATION_BACKENDS = [
-    'shop.auth_backends.EmailOrPhoneBackend',     # 👈 Custom backend for phone/email login
-    'django.contrib.auth.backends.ModelBackend',  # 👈 Fallback to default username/password login
-]
-LOGIN_URL = '/login/'
+
+# Default primary key field type
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

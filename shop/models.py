@@ -1,6 +1,6 @@
 from django.db import models
 from django.conf import settings
-
+from users.models import CustomUser
 # ✅ Product Model
 class Product(models.Model):
     shop_owner = models.ForeignKey(
@@ -59,3 +59,13 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.quantity} x {self.product.name}"
+class Wishlist(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'product')
+
+    def __str__(self):
+        return f"{self.user.email} - {self.product.name}"

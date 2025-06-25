@@ -56,3 +56,4 @@ def owner_edit_profile(request):
         form.save()
         return redirect('owner_profile')
     return render(request, 'dashboard/owner_edit_profile.html', {'form': form})
+

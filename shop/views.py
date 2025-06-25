@@ -14,12 +14,13 @@ from django.shortcuts import render, get_object_or_404, redirect
 from .models import Order, Product
 from django.template.loader import get_template
 from django.utils.timezone import now
+from .models import Wishlist, Product
+
 # --------------------- GENERAL ---------------------
 def home(request):
     products = Product.objects.all()
     print("Role:", getattr(request.user, 'role', 'Anonymous'))
-    return render(request, 'home.html', {'products': products})
-
+    return render(request, 'products/product_list.html', {'products': products})
 
 # --------------------- OTP UTILS ---------------------
 def generate_otp():
@@ -300,8 +301,8 @@ def owner_profile_view(request):
 def order_success(request):
     return render(request, 'shop/order_success.html')
 
-@login_required
 def product_detail(request, product_id):
+    print(f"Loading product detail for ID: {product_id}")
     product = get_object_or_404(Product, id=product_id)
     return render(request, 'products/product_detail.html', {'product': product})
 
@@ -309,3 +310,24 @@ def product_detail(request, product_id):
 def customer_dashboard(request):
     return render(request, 'dashboard/customer_dashboard.html')
 
+
+def buy_now(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+
+    # ✅ Store this product in session or direct user to checkout
+    # This is up to your logic
+    request.session['buy_now_product_id'] = product.id
+    
+    return redirect('checkout')  # or your custom checkout route
+
+
+@login_required
+def add_to_wishlist(request, product_id):
+    product = Product.objects.get(pk=product_id)
+    Wishlist.objects.get_or_create(user=request.user, product=product)
+    return redirect('home')
+
+@login_required
+def wishlist_page(request):
+    wishlist_items = Wishlist.objects.filter(user=request.user).select_related('product')
+    return render(request, 'shop/wishlist.html', {'wishlist_items': wishlist_items})

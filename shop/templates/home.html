@@ -1,4 +1,5 @@
-{% extends 'shop/base_customer.html' %} {% block content %}
+{% extends 'shop/base_customer.html' %}
+{% block content %}
 <style>
   :root {
     --primary: #a8d5ba;
@@ -18,93 +19,103 @@
   }
 
   .card {
+    position: relative;
     border: 1px solid #cce5d3;
     border-radius: 0.5rem;
+    height: 100%;
+  }
+
+  .wishlist-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: red;
+    font-size: 20px;
+    z-index: 2;
+    background: white;
+    border-radius: 50%;
+    padding: 5px;
+  }
+
+  .card-img-top {
+    height: 200px;
+    object-fit: contain;
+    padding: 10px;
   }
 
   .card-title {
     color: var(--text);
+    font-weight: bold;
   }
 
   .card-text {
     color: #4a5c3f;
   }
 
-  .btn-success {
-    background-color: var(--accent);
-    border-color: var(--accent);
-    color: white;
-  }
-
-  .btn-success:hover {
-    background-color: #3e6e43;
-    border-color: #3e6e43;
+  .btn-success,
+  .btn-primary {
+    width: 48%;
+    font-size: 0.9rem;
   }
 
   footer {
     background-color: var(--secondary);
     color: white;
   }
+
+  /* Custom col class to make 5 cards per row */
+  @media (min-width: 1400px) {
+    .col-xxl-2-4 {
+      flex: 0 0 auto;
+      width: 20%;
+    }
+  }
 </style>
 
-<!-- Welcome Banner -->
 <header class="text-center py-5 mb-4 shadow rounded">
   <div class="container">
     <h1 class="fw-bold text-3xl mb-2">Welcome to Local Shop</h1>
-    <p class="lead text-lg">
-      Find the best local products delivered to your doorstep
-    </p>
+    <p class="lead text-lg">Find the best local products delivered to your doorstep</p>
   </div>
 </header>
 
-<!-- Product Showcase -->
 <div class="container">
   <h2 class="mb-4 text-center">Featured Products</h2>
-  <div class="row">
-    {% if products %} {% for product in products %}
-    <div class="col-md-4 mb-4">
-      <a
-        href="{% url 'product_detail' product.id %}"
-        class="text-decoration-none text-reset"
-      >
-        <div class="card h-100 shadow-sm hover:shadow-lg">
-          {% if product.image %}
-          <img
-            src="{{ product.image.url }}"
-            class="card-img-top"
-            alt="{{ product.name }}"
-          />
-          {% else %}
-          <img
-            src="https://via.placeholder.com/300x200?text=No+Image"
-            class="card-img-top"
-            alt="No image"
-          />
-          {% endif %}
-          <div class="card-body d-flex flex-column">
-            <h5 class="card-title">{{ product.name }}</h5>
-            <p class="card-text text-truncate">{{ product.description }}</p>
-            <h6 class="text-primary">₹{{ product.price }}</h6>
+  <div class="row justify-content-start">
+    {% if products %}
+      {% for product in products %}
+      <div class="col-6 col-md-4 col-lg-3 col-xxl-2-4 mb-4">
+        <div class="card h-100 shadow-sm">
+          <a href="{% url 'product_detail' product.id %}" class="text-decoration-none text-reset">
+            <span class="wishlist-icon"><i class="bi bi-heart-fill"></i></span>
+            {% if product.image %}
+              <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
+            {% else %}
+              <img src="https://via.placeholder.com/300x200?text=No+Image" class="card-img-top" alt="No image">
+            {% endif %}
+            <div class="card-body">
+              <h5 class="card-title">{{ product.name }}</h5>
+              <p class="card-text text-truncate">{{ product.description }}</p>
+              <h6 class="text-primary fw-bold">₹{{ product.price }}</h6>
+            </div>
+          </a>
+          {% if user.is_authenticated and user.role == 'customer' %}
+          <div class="d-flex justify-content-between px-3 pb-3">
+            <a href="{% url 'add_to_cart' product.id %}" class="btn btn-success">Add to Cart</a>
+            <a href="{% url 'buy_now' product.id %}" class="btn btn-primary">Buy Now</a>
           </div>
+          {% else %}
+          <div class="px-3 pb-3">
+            <a href="{% url 'login' %}" class="btn btn-success w-100">Login to Buy</a>
+          </div>
+          {% endif %}
         </div>
-      </a>
-      {% if user.is_authenticated and user.role == 'customer' %}
-      <a
-        href="{% url 'add_to_cart' product.id %}"
-        class="btn btn-success w-100 mt-2"
-        >Add to Cart</a
-      >
-      {% else %}
-      <a href="{% url 'login' %}" class="btn btn-success w-100 mt-2"
-        >Login to Buy</a
-      >
-      {% endif %}
-    </div>
-
-    {% endfor %} {% else %}
-    <div class="col-12 text-center">
-      <p class="text-muted">No products available at the moment.</p>
-    </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="col-12 text-center">
+        <p class="text-muted">No products available at the moment.</p>
+      </div>
     {% endif %}
   </div>
 </div>
