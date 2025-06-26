@@ -5,22 +5,37 @@ from django.core.mail import send_mail
 from django.contrib import messages
 from django.conf import settings
 import random
-from .forms import ProfileUpdateForm
 from .forms import RegistrationForm, ProductForm, CustomerProfileForm
 from .models import Product, CartItem, Order, OrderItem
 from users.models import CustomUser
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, get_object_or_404, redirect
-from .models import Order, Product
 from django.template.loader import get_template
 from django.utils.timezone import now
 from .models import Wishlist, Product
-
+from django.http import JsonResponse
 # --------------------- GENERAL ---------------------
+from django.db.models import Q  # For flexible filtering
+
 def home(request):
+    query = request.GET.get('q', '')
     products = Product.objects.all()
-    print("Role:", getattr(request.user, 'role', 'Anonymous'))
-    return render(request, 'products/product_list.html', {'products': products})
+
+    if query:
+        products = products.filter(
+            Q(name__icontains=query) | Q(description__icontains=query)
+        )
+
+    wishlist_products = []
+    if request.user.is_authenticated and request.user.role == 'customer':
+        wishlist_products = Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True)
+
+    return render(request, 'products/product_list.html', {
+        'products': products,
+        'wishlist_products': wishlist_products,
+        'query': query,  # Pass query to keep value in input
+    })
+
+
 
 # --------------------- OTP UTILS ---------------------
 def generate_otp():
@@ -91,14 +106,12 @@ def login_view(request):
         user = authenticate(request, email=email, password=password)
         if user:
             login(request, user)
-            return redirect('shop_owner_dashboard' if user.role == 'shop_owner' else 'customer_dashboard')
+            if user.role == 'shop_owner':
+                return redirect('shop_owner_dashboard')
+            else:
+                return redirect('home')  # ✅ Redirect customers to home
         messages.error(request, 'Invalid email or password.')
     return render(request, 'shop/login.html')
-
-
-def logout_view(request):
-    logout(request)
-    return redirect('login')
 
 
 # --------------------- DASHBOARDS ---------------------
@@ -269,47 +282,21 @@ def customer_profile_view(request):
     if request.user.role != 'customer':
         return redirect('home')
 
-    if request.method == 'POST':
-        form = CustomerProfileForm(request.POST, request.FILES, instance=request.user)
-        if form.is_valid():
-            form.save()
-            return redirect('customer_profile')
-    else:
-        form = CustomerProfileForm(instance=request.user)
+    orders = Order.objects.filter(customer=request.user)
+    wishlist_items = Wishlist.objects.filter(user=request.user)
+    cart_items = CartItem.objects.filter(user=request.user)  # ✅ correct model
 
-    return render(request, 'dashboard/customer_profile.html', {'form': form})
-
-# ✅ For Shop Owner
-@login_required
-def owner_profile_view(request):
-    if request.user.role != 'shop_owner':
-        return redirect('home')
-
-    if request.method == 'POST':
-        form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user)
-        if form.is_valid():
-            form.save()
-            return redirect('owner_profile')
-    else:
-        form = ProfileUpdateForm(instance=request.user)
-
-    return render(request, 'dashboard/owner_profile.html', {'form': form})
-
-
+    context = {
+        'user': request.user,
+        'orders': orders,
+        'wishlist_items': wishlist_items,
+        'cart_items': cart_items,
+    }
+    return render(request, 'dashboard/customer_profile.html', context)
 # --------------------- ORDER SUCCESS ---------------------
 @login_required
 def order_success(request):
     return render(request, 'shop/order_success.html')
-
-def product_detail(request, product_id):
-    print(f"Loading product detail for ID: {product_id}")
-    product = get_object_or_404(Product, id=product_id)
-    return render(request, 'products/product_detail.html', {'product': product})
-
-@login_required
-def customer_dashboard(request):
-    return render(request, 'dashboard/customer_dashboard.html')
-
 
 def buy_now(request, product_id):
     product = get_object_or_404(Product, id=product_id)
@@ -331,3 +318,63 @@ def add_to_wishlist(request, product_id):
 def wishlist_page(request):
     wishlist_items = Wishlist.objects.filter(user=request.user).select_related('product')
     return render(request, 'shop/wishlist.html', {'wishlist_items': wishlist_items})
+
+def product_detail(request, pk):
+    product = get_object_or_404(Product, pk=pk)
+    suggested_products = Product.objects.exclude(pk=pk)[:5]
+
+    is_wishlisted = False
+    if request.user.is_authenticated:
+        is_wishlisted = Wishlist.objects.filter(user=request.user, product=product).exists()
+
+    return render(request, 'shop/product_detail.html', {
+        'product': product,
+        'suggested_products': suggested_products,
+        'is_wishlisted': is_wishlisted
+    })
+
+
+@login_required
+def toggle_wishlist_ajax(request):
+    if request.method == "POST":
+        product_id = request.POST.get("product_id")
+        product = get_object_or_404(Product, id=product_id)
+        wishlist_item, created = Wishlist.objects.get_or_create(user=request.user, product=product)
+
+        if not created:
+            wishlist_item.delete()
+            return JsonResponse({"status": "removed"})
+        return JsonResponse({"status": "added"})
+
+    return JsonResponse({"error": "Invalid request"}, status=400)
+
+# @login_required
+def edit_customer_profile(request):
+    if request.user.role != 'customer':
+        return redirect('home')
+
+    if request.method == 'POST':
+        form = CustomerProfileForm(request.POST, request.FILES, instance=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect('customer_profile')
+    else:
+        form = CustomerProfileForm(instance=request.user)
+
+    return render(request, 'dashboard/customer_edit_profile.html', {'form': form})
+
+@login_required
+def logout_view(request):
+    logout(request)
+    return redirect('login')
+
+def search_view(request):
+    query = request.GET.get('q', '')
+    # your product filtering logic here
+    results = Product.objects.filter(name__icontains=query)
+    return render(request, 'shop/search_results.html', {'results': results, 'query': query})
+
+@login_required
+def order_history(request):
+    orders = Order.objects.filter(customer=request.user)
+    return render(request, 'shop/my_orders.html', {'orders': orders})

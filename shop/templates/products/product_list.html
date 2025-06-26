@@ -5,32 +5,71 @@
   <h2 class="text-3xl font-bold text-center mb-8">Available Products</h2>
   <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
     {% for product in products %}
-      <div class="relative border rounded-lg shadow-md p-4 bg-white hover:shadow-lg transition">
+    <div class="relative group border rounded-lg shadow-md bg-white hover:shadow-lg transition overflow-hidden">
+      {% if user.is_authenticated and user.role == 'customer' %}
+      <!-- Wishlist Icon -->
+      <button class="wishlist-btn absolute top-2 right-2 text-xl text-red-500 z-10" data-product-id="{{ product.id }}">
+        <i class="bi {% if product.id in wishlist_products %}bi-heart-fill text-red-600{% else %}bi-heart{% endif %}"></i>
+      </button>
+      {% endif %}
 
-        <!-- Wishlist Icon -->
-        <a href="{% url 'add_to_wishlist' product.id %}" class="absolute top-2 right-2 text-red-500 text-xl">
-          <i class="bi bi-heart-fill"></i>
+      <!-- Entire card clickable -->
+      <a href="{% url 'product_detail' product.id %}" class="block p-4">
+        <img src="{{ product.image.url }}" alt="{{ product.name }}" class="w-full h-40 object-contain rounded mb-2" />
+        <h3 class="text-md font-semibold text-gray-800 mb-1">{{ product.name }}</h3>
+        <p class="text-green-600 font-bold">₹{{ product.price }}</p>
+      </a>
+
+      <!-- Action Buttons -->
+      {% if user.is_authenticated and user.role == 'customer' %}
+      <div class="flex items-center justify-between px-4 pb-4 space-x-2">
+        <a href="{% url 'add_to_cart' product.id %}" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-sm rounded w-1/2 text-center">
+          Add to Cart
         </a>
-
-        <!-- Clickable Image -->
-        <a href="{% url 'product_detail' product.id %}">
-          <img src="{{ product.image.url }}" alt="{{ product.name }}" class="w-full h-40 object-contain rounded mb-2">
+        <a href="{% url 'buy_now' product.id %}" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 text-sm rounded w-1/2 text-center">
+          Buy Now
         </a>
-
-        <h3 class="text-md font-semibold text-gray-800">{{ product.name }}</h3>
-        <p class="text-green-600 font-bold mt-1">₹{{ product.price }}</p>
-
-        <!-- Buttons -->
-        <div class="flex items-center justify-between mt-3 space-x-2">
-          <a href="{% url 'add_to_cart' product.id %}" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-sm rounded w-1/2 text-center">
-            Add to Cart
-          </a>
-          <a href="{% url 'buy_now' product.id %}" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 text-sm rounded w-1/2 text-center">
-            Buy Now
-          </a>
-        </div>
       </div>
+      {% else %}
+      <div class="px-4 pb-4">
+        <a href="{% url 'login' %}" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 text-sm rounded w-full block text-center">
+          Login to Purchase
+        </a>
+      </div>
+      {% endif %}
+    </div>
     {% endfor %}
   </div>
 </div>
+
+<!-- Wishlist Toggle Script -->
+<script>
+  document.querySelectorAll('.wishlist-btn').forEach(button => {
+    button.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation(); // Prevent card redirection
+      const productId = this.dataset.productId;
+      const icon = this.querySelector('i');
+
+      fetch("{% url 'toggle_wishlist' %}", {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': '{{ csrf_token }}',
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({ product_id: productId })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === "added") {
+          icon.classList.remove('bi-heart');
+          icon.classList.add('bi-heart-fill', 'text-red-600');
+        } else if (data.status === "removed") {
+          icon.classList.remove('bi-heart-fill', 'text-red-600');
+          icon.classList.add('bi-heart');
+        }
+      });
+    });
+  });
+</script>
 {% endblock %}

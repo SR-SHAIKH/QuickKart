@@ -3,10 +3,29 @@
 <div class="container mt-4">
   <h2 class="mb-4">Edit Shop Owner Profile</h2>
   <form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-success">✅ Save</button>
-    <a href="{% url 'owner_profile' %}" class="btn btn-outline-dark">Cancel</a>
-  </form>
+  {% csrf_token %}
+  <div class="grid grid-cols-2 gap-4">
+    {{ form.first_name.label_tag }} {{ form.first_name }}
+    {{ form.last_name.label_tag }} {{ form.last_name }}
+
+    {{ form.email.label_tag }} {{ form.email }}
+    {{ form.phone.label_tag }} {{ form.phone }}
+
+    {{ form.alt_phone.label_tag }} {{ form.alt_phone }}
+    {{ form.address_line1.label_tag }} {{ form.address_line1 }}
+    {{ form.address_line2.label_tag }} {{ form.address_line2 }}
+
+    {{ form.city.label_tag }} {{ form.city }}
+    {{ form.state.label_tag }} {{ form.state }}
+    {{ form.pin_code.label_tag }} {{ form.pin_code }}
+
+    {{ form.profile_picture.label_tag }} {{ form.profile_picture }}
+  </div>
+
+  <div class="mt-4">
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+  </div>
+</form>
+
 </div>
 {% endblock %}

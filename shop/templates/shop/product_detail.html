@@ -1,0 +1,114 @@
+{% extends "shop/base_customer.html" %} {% block content %}
+<div class="container mx-auto px-6 py-8">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+    
+    <!-- Product Image -->
+    <div class="flex justify-center items-start">
+      <img src="{{ product.image.url }}" alt="{{ product.name }}"
+           class="w-full max-w-sm object-contain rounded-lg shadow-md" />
+    </div>
+
+    <!-- Product Details -->
+    <div>
+      <div class="flex items-start justify-between">
+        <h1 class="text-2xl font-bold text-gray-900">{{ product.name }}</h1>
+
+        {% if user.is_authenticated %}
+          <button class="wishlist-btn text-2xl ml-4 mt-1" data-product-id="{{ product.id }}">
+            <i class="bi {% if is_wishlisted %}bi-heart-fill text-red-600{% else %}bi-heart{% endif %}"></i>
+          </button>
+        {% endif %}
+      </div>
+
+      <!-- Description -->
+      <p class="text-gray-600 text-sm leading-relaxed mt-2 mb-4">
+        {{ product.description }}
+      </p>
+
+      <!-- Price -->
+      <p class="text-green-600 text-lg font-semibold mb-4">₹{{ product.price }}</p>
+
+      <!-- Buttons -->
+      <div class="flex space-x-4">
+        <a href="{% url 'add_to_cart' product.id %}" 
+           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
+          Add to Cart
+        </a>
+        <a href="{% url 'buy_now' product.id %}" 
+           class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+          Buy Now
+        </a>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- 🧠 Suggested Products -->
+  <div class="mt-5">
+    <h2 class="mb-4">Suggested Products</h2>
+    <div class="row flex-nowrap overflow-auto" style="gap: 16px">
+      {% for item in suggested_products %}
+      <div class="col-6 col-md-3 col-lg-2" style="min-width: 180px">
+        <div class="card h-100 shadow-sm">
+          <a
+            href="{% url 'product_detail' item.id %}"
+            class="text-decoration-none text-reset"
+          >
+            {% if item.image %}
+            <img
+              src="{{ item.image.url }}"
+              class="card-img-top p-2"
+              alt="{{ item.name }}"
+              style="height: 140px; object-fit: contain"
+            />
+            {% else %}
+            <img
+              src="https://via.placeholder.com/150x100?text=No+Image"
+              class="card-img-top"
+              alt="No Image"
+            />
+            {% endif %}
+            <div class="card-body text-center">
+              <h6 class="card-title mb-1">{{ item.name|truncatechars:20 }}</h6>
+              <p class="text-success fw-bold mb-0">₹{{ item.price }}</p>
+            </div>
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- AJAX Wishlist Script -->
+<script>
+  document.querySelectorAll(".wishlist-btn").forEach((button) => {
+    button.addEventListener("click", function (e) {
+      e.preventDefault();
+
+      const productId = this.dataset.product;
+      const icon = this.querySelector("i");
+
+      fetch("{% url 'toggle_wishlist' %}", {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": "{{ csrf_token }}",
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({ product_id: productId }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.status === "added") {
+            icon.classList.remove("bi-heart");
+            icon.classList.add("bi-heart-fill", "text-danger");
+          } else if (data.status === "removed") {
+            icon.classList.remove("bi-heart-fill", "text-danger");
+            icon.classList.add("bi-heart");
+          }
+        });
+    });
+  });
+</script>
+{% endblock %}

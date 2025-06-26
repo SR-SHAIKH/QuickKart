@@ -5,6 +5,7 @@ from django.conf.urls.static import static
 from users import views as user_views
 from django.contrib.auth import views as auth_views
 from users.views import CustomPasswordChangeView
+from .views import edit_customer_profile
 
 urlpatterns = [
     # 🌐 Public
@@ -29,7 +30,6 @@ urlpatterns = [
     path('checkout/', views.checkout, name='checkout'),
     path('orders/', views.my_orders, name='my_orders'),
     path('order-success/', views.order_success, name='order_success'),
-    path('product/<int:product_id>/', views.product_detail, name='product_detail'),
 
     # 👤 Customer Profile
     path('dashboard/customer/profile/', user_views.customer_profile_view, name='customer_profile'),
@@ -58,6 +58,16 @@ urlpatterns = [
     ), name='password_change_done'),
     path('dashboard/change-password/', CustomPasswordChangeView.as_view(), name='password_change'),
     path('buy/<int:product_id>/', views.buy_now, name='buy_now'),
+    path('product/<int:pk>/', views.product_detail, name='product_detail'),
+    path('ajax/toggle_wishlist/', views.toggle_wishlist_ajax, name='toggle_wishlist'),
+    path('toggle-wishlist/', views.toggle_wishlist_ajax, name='toggle_wishlist'), # doubble duplicated
+    path('wishlist/', views.wishlist_page, name='view_wishlist'),
+    path('profile/customer/edit/', edit_customer_profile, name='edit_profile'),
+    path('logout/', views.logout_view, name='logout'),
+    path('wishlist/', views.wishlist_page, name='wishlist_page'),
+    path('search/', views.search_view, name='search'),
+    path('orders/history/', views.order_history, name='order_history'),
+
 ]
 
 # 📦 Media

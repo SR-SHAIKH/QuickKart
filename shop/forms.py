@@ -1,5 +1,3 @@
-# shop/forms.py
-
 from django import forms
 from users.models import CustomUser
 from .models import Product
@@ -13,23 +11,23 @@ class RegistrationForm(forms.ModelForm):
 
     class Meta:
         model = CustomUser
-        fields = ['email', 'phone', 'address', 'pin_code', 'role']
+        fields = [
+            'email', 'phone', 'address_line1', 'address_line2',
+            'city', 'state', 'country', 'pin_code', 'role'
+        ]
 
-    # ✅ Email Validation: Prevent duplicate email registration
     def clean_email(self):
         email = self.cleaned_data.get('email')
         if CustomUser.objects.filter(email=email).exists():
             raise forms.ValidationError("This email is already registered.")
         return email
 
-    # ✅ Phone Validation
     def clean_phone(self):
         phone = self.cleaned_data.get('phone')
         if phone and (not phone.isdigit() or len(phone) != 10):
             raise forms.ValidationError("Enter a valid 10-digit phone number.")
         return phone
 
-    # ✅ Password Match Validation
     def clean(self):
         cleaned_data = super().clean()
         password1 = cleaned_data.get("password1")
@@ -39,13 +37,13 @@ class RegistrationForm(forms.ModelForm):
             raise forms.ValidationError("Passwords do not match.")
         return cleaned_data
 
-    # ✅ Save with encrypted password
     def save(self, commit=True):
         user = super().save(commit=False)
         user.set_password(self.cleaned_data["password1"])
         if commit:
             user.save()
         return user
+
 
 # ---------------------- #
 # 2. Product Form
@@ -56,30 +54,39 @@ class ProductForm(forms.ModelForm):
         fields = ['name', 'price', 'image', 'description', 'stock', 'category']
 
 
-
 # -------------------------------- #
 # 3. Profile Edit Form for Customer
 # -------------------------------- #
-
 class CustomerProfileForm(forms.ModelForm):
     class Meta:
         model = CustomUser
-        fields = ['first_name', 'last_name', 'email']
+        fields = [
+            'first_name', 'last_name', 'email',
+            'phone', 'alt_phone',
+            'gender', 'date_of_birth',
+            'address_line1', 'address_line2', 
+            'city', 'state', 'country', 'pin_code',
+            'profile_picture',
+        ]
         widgets = {
-            'email': forms.EmailInput(attrs={'readonly': 'readonly'}),
+            'date_of_birth': forms.DateInput(attrs={'type': 'date'}),
         }
 
-# ---------------------------- #
-# 3. Profile Edit Form for Owner
-# ---------------------------- #
 
+
+# ---------------------------- #
+# 4. Profile Edit Form for Owner
+# ---------------------------- #
 class ProfileUpdateForm(forms.ModelForm):
     class Meta:
         model = CustomUser
-        fields = ['first_name', 'last_name', 'phone', 'address', 'profile_picture']
+        fields = [
+            'first_name', 'last_name', 'email', 'phone', 'alt_phone',
+            'gender', 'date_of_birth',
+            'address_line1', 'address_line2', 'city', 'state', 'country',
+            'pin_code', 'profile_picture'
+        ]
         widgets = {
-            'first_name': forms.TextInput(attrs={'class': 'form-input'}),
-            'last_name': forms.TextInput(attrs={'class': 'form-input'}),
-            'phone': forms.TextInput(attrs={'class': 'form-input'}),
-            'address': forms.Textarea(attrs={'class': 'form-textarea', 'rows': 3}),
+            'date_of_birth': forms.DateInput(attrs={'type': 'date'}),
+            'profile_picture': forms.FileInput(),
         }
