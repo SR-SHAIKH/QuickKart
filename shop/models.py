@@ -1,6 +1,13 @@
 from django.db import models
 from django.conf import settings
 from users.models import CustomUser
+
+
+class PinCode(models.Model):
+    code = models.CharField(max_length=10, unique=True)
+
+    def __str__(self):
+        return self.code
 # ✅ Product Model
 class Product(models.Model):
     shop_owner = models.ForeignKey(
@@ -13,10 +20,11 @@ class Product(models.Model):
     image = models.ImageField(upload_to='products/', null=True, blank=True)
     description = models.TextField(blank=True, null=True)
     stock = models.PositiveIntegerField(default=0)
-    category = models.CharField(max_length=100, blank=True, null=True)
+    category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return self.name
+
 
 # ✅ CartItem Model
 class CartItem(models.Model):
@@ -69,3 +77,31 @@ class Wishlist(models.Model):
 
     def __str__(self):
         return f"{self.user.email} - {self.product.name}"
+    
+# In shop/models.py
+
+class Category(models.Model):
+    name = models.CharField(max_length=100)
+    image = models.ImageField(upload_to='category_images/', blank=True, null=True)
+    class Meta:
+        verbose_name_plural = "Categories"
+
+    def __str__(self):
+        return self.name
+
+class Shop(models.Model):
+    owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    name = models.CharField(max_length=100)
+    logo = models.ImageField(upload_to='shop_logos/', blank=True, null=True)
+    city = models.CharField(max_length=100)
+    delivery_pincodes = models.ManyToManyField('PinCode', blank=True)
+
+    def __str__(self):
+        return self.name
+
+class Brand(models.Model):
+    name = models.CharField(max_length=100)
+    image = models.ImageField(upload_to='brand_images/', blank=True, null=True)
+
+    def __str__(self):
+        return self.name

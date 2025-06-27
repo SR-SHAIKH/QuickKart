@@ -53,7 +53,6 @@ class ProductForm(forms.ModelForm):
         model = Product
         fields = ['name', 'price', 'image', 'description', 'stock', 'category']
 
-
 # -------------------------------- #
 # 3. Profile Edit Form for Customer
 # -------------------------------- #

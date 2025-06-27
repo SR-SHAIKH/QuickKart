@@ -1,0 +1,16 @@
+<!-- shop/templates/shop/products_by_category.html -->
+<h2>Products in {{ category.name }}</h2>
+
+<div class="row">
+  {% for product in products %}
+    <div class="col-md-3">
+      <div class="card">
+        <img src="{{ product.image.url }}" class="card-img-top">
+        <div class="card-body">
+          <h5>{{ product.name }}</h5>
+          <p>₹{{ product.price }}</p>
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+</div>

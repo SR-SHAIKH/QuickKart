@@ -4,20 +4,27 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.core.mail import send_mail
 from django.contrib import messages
 from django.conf import settings
-import random
-from .forms import RegistrationForm, ProductForm, CustomerProfileForm
-from .models import Product, CartItem, Order, OrderItem
-from users.models import CustomUser
-from django.contrib.auth.decorators import login_required
 from django.template.loader import get_template
 from django.utils.timezone import now
-from .models import Wishlist, Product
 from django.http import JsonResponse
+
+from .forms import RegistrationForm, ProductForm, CustomerProfileForm
+from .models import (
+    Product, CartItem, Order, OrderItem,
+    Wishlist, Category, PinCode, Brand, Shop
+)
+from users.models import CustomUser
+
+import random
+
 # --------------------- GENERAL ---------------------
 from django.db.models import Q  # For flexible filtering
 
 def home(request):
     query = request.GET.get('q', '')
+    selected_pincode = request.session.get('selected_pincode')
+
+    categories = Category.objects.all()
     products = Product.objects.all()
 
     if query:
@@ -29,12 +36,21 @@ def home(request):
     if request.user.is_authenticated and request.user.role == 'customer':
         wishlist_products = Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True)
 
-    return render(request, 'products/product_list.html', {
-        'products': products,
-        'wishlist_products': wishlist_products,
-        'query': query,  # Pass query to keep value in input
-    })
+    shops_in_area = Shop.objects.all()
+    if selected_pincode:
+        shops_in_area = Shop.objects.filter(delivery_pincodes__code=selected_pincode).distinct()
+        products = products.filter(shop__in=shops_in_area)
 
+    bestselling_products = products.order_by('-sales_count')[:10] if selected_pincode else products[:10]
+
+    return render(request, 'shop/home.html', {
+        'products': products,
+        'bestselling_products': bestselling_products,
+        'categories': categories,
+        'shops_in_area': shops_in_area,
+        'wishlist_products': wishlist_products,
+        'query': query,
+    })
 
 
 # --------------------- OTP UTILS ---------------------
@@ -188,12 +204,12 @@ def delete_product(request, product_id):
 
 
 # --------------------- CUSTOMER FEATURES ---------------------
-@login_required
-def product_list(request):
-    if request.user.role != 'customer':
-        return redirect('home')
-    products = Product.objects.all()
-    return render(request, 'products/product_list.html', {'products': products})
+# @login_required
+# def product_list(request):
+#     if request.user.role != 'customer':
+#         return redirect('home')
+#     products = Product.objects.all()
+#     return render(request, 'products/product_list.html', {'products': products})
 
 
 @login_required
@@ -378,3 +394,16 @@ def search_view(request):
 def order_history(request):
     orders = Order.objects.filter(customer=request.user)
     return render(request, 'shop/my_orders.html', {'orders': orders})
+def products_by_category(request, category_id):
+    products = Product.objects.filter(category_id=category_id)
+    categories = Category.objects.all()
+    wishlist_products = []
+
+    if request.user.is_authenticated and request.user.role == 'customer':
+        wishlist_products = Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True)
+
+    return render(request, 'shop/home.html', {
+        'products': products,
+        'categories': categories,
+        'wishlist_products': wishlist_products,
+    })

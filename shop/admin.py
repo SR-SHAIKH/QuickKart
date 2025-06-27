@@ -1,7 +1,10 @@
 from django.contrib import admin
 from django import forms
-from shop.models import Product
 from users.models import CustomUser
+from .models import Product, Category
+from .models import PinCode
+admin.site.register(Category)
+admin.site.register(PinCode)
 
 # Custom form to filter only shop_owner users
 class ProductForm(forms.ModelForm):

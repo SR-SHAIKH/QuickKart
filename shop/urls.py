@@ -20,7 +20,7 @@ urlpatterns = [
 
     # 👤 Customer
     path('dashboard/customer/', views.customer_dashboard, name='customer_dashboard'),
-    path('products/', views.product_list, name='product_list'),
+    # path('products/', views.product_list, name='product_list'),
     path('cart/', views.cart_view, name='cart'),
     path('add-to-cart/<int:product_id>/', views.add_to_cart, name='add_to_cart'),
     path('buy-now/<int:product_id>/', views.buy_now, name='buy_now'),
@@ -67,8 +67,11 @@ urlpatterns = [
     path('wishlist/', views.wishlist_page, name='wishlist_page'),
     path('search/', views.search_view, name='search'),
     path('orders/history/', views.order_history, name='order_history'),
+    path('category/<int:category_id>/', views.products_by_category, name='products_by_category'),
+
 
 ]
 
 # 📦 Media
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
