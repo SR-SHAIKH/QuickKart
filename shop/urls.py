@@ -16,6 +16,10 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('register/', views.register, name='register'),
+
+    # users/urls.py
+    
+
     path('verify-otp/', views.verify_otp, name='verify_otp'),
 
     # 👤 Customer
@@ -68,7 +72,11 @@ urlpatterns = [
     path('search/', views.search_view, name='search'),
     path('orders/history/', views.order_history, name='order_history'),
     path('category/<int:category_id>/', views.products_by_category, name='products_by_category'),
+    path('register/owner/step1/', views.register_owner_step1, name='register_owner_step1'),
+    path('register/owner/step2/', views.register_owner_step2, name='register_owner_step2'),
+    path('register/owner/step3/', views.register_owner_step3, name='register_owner_step3'),
 
+    path('register/select/', views.select_role_view, name='select_role'),
 
 ]
 

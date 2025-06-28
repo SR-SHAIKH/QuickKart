@@ -12,4 +12,7 @@ urlpatterns = [
 
     # ✅ Password Change
     path('password/change/', views.CustomPasswordChangeView.as_view(), name='password_change'),
+    path('register/', views.register, name='register'),
+    path('register/customer/', views.customer_register_otp, name='customer_register_otp'),
+    path('register/customer/verify-otp/', views.verify_customer_otp, name='verify_customer_otp'),
 ]

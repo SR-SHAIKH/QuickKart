@@ -1,4 +1,4 @@
-<!-- {% extends "shop/base_customer.html" %} -->
+<!-- {% extends "shop/base_customer.html" %}
 {% load static %}
 {% block content %}
 <div class="container mx-auto px-4 py-8">
@@ -7,20 +7,20 @@
     {% for product in products %}
     <div class="relative group border rounded-lg shadow-md bg-white hover:shadow-lg transition overflow-hidden">
       {% if user.is_authenticated and user.role == 'customer' %}
-      <!-- Wishlist Icon -->
+      Wishlist Icon
       <button class="wishlist-btn absolute top-2 right-2 text-xl text-red-500 z-10" data-product-id="{{ product.id }}">
         <i class="bi {% if product.id in wishlist_products %}bi-heart-fill text-red-600{% else %}bi-heart{% endif %}"></i>
       </button>
       {% endif %}
 
-      <!-- Entire card clickable -->
+      <!-- Entire card clickable
       <a href="{% url 'product_detail' product.id %}" class="block p-4">
         <img src="{{ product.image.url }}" alt="{{ product.name }}" class="w-full h-40 object-contain rounded mb-2" />
         <h3 class="text-md font-semibold text-gray-800 mb-1">{{ product.name }}</h3>
         <p class="text-green-600 font-bold">₹{{ product.price }}</p>
       </a>
 
-      <!-- Action Buttons -->
+      Action Buttons
       {% if user.is_authenticated and user.role == 'customer' %}
       <div class="flex items-center justify-between px-4 pb-4 space-x-2">
         <a href="{% url 'add_to_cart' product.id %}" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-sm rounded w-1/2 text-center">
@@ -43,7 +43,7 @@
 </div>
 
 <!-- Wishlist Toggle Script -->
-<script>
+<!-- <script>
   document.querySelectorAll('.wishlist-btn').forEach(button => {
     button.addEventListener('click', function(e) {
       e.preventDefault();
@@ -52,14 +52,14 @@
       const icon = this.querySelector('i');
 
       fetch("{% url 'toggle_wishlist' %}", {
-        method: 'POST',
-        headers: {
-          'X-CSRFToken': '{{ csrf_token }}',
-          'Content-Type': 'application/x-www-form-urlencoded',
+        method: 'POST', -->
+        <!-- headers: {
+          'X-CSRFToken': '{{ csrf_token }}', -->
+          <!-- 'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({ product_id: productId })
-      })
-      .then(res => res.json())
+      }) -->
+      <!-- .then(res => res.json())
       .then(data => {
         if (data.status === "added") {
           icon.classList.remove('bi-heart');
@@ -72,4 +72,4 @@
     });
   });
 </script>
-{% endblock %}
+{% endblock %} --> -->

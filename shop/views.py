@@ -7,8 +7,13 @@ from django.conf import settings
 from django.template.loader import get_template
 from django.utils.timezone import now
 from django.http import JsonResponse
+from shop.forms.owner_step1_form import OwnerPersonalForm
+from shop.forms.owner_step2_form import ShopForm
+from shop.forms.owner_step3_form import ShopBankForm
+from shop.forms.registration_form import RegistrationForm
+from shop.forms.product_form import ProductForm
+from shop.forms.customer_profile_form import CustomerProfileForm
 
-from .forms import RegistrationForm, ProductForm, CustomerProfileForm
 from .models import (
     Product, CartItem, Order, OrderItem,
     Wishlist, Category, PinCode, Brand, Shop
@@ -69,18 +74,52 @@ def send_otp_email(email, otp):
 
 # --------------------- AUTH ---------------------
 def register(request):
+    role_from_get = request.GET.get("role")
+
+    # 🔁 Redirect to role selection if no role and not POST
+    if not role_from_get and request.method != 'POST':
+        return redirect('select_role')  # 👈 You must define this route and view
+
     if request.method == 'POST':
         form = RegistrationForm(request.POST)
         if form.is_valid():
+            role = form.cleaned_data.get('role')
+            email = form.cleaned_data['email']
+
+            # Email already registered
+            if CustomUser.objects.filter(email=email).exists():
+                messages.error(request, "This email is already registered.")
+                return render(request, 'shop/register.html', {'form': form})
+
+            # 🔁 Shop Owner ➤ Go to Step 1
+            if role == 'shop_owner':
+                request.session['owner_user_data'] = {
+                    'first_name': form.cleaned_data.get('first_name', ''),
+                    'last_name': form.cleaned_data.get('last_name', ''),
+                    'username': email.split('@')[0],  # fallback username
+                    'email': email,
+                    'password': form.cleaned_data['password1'],
+                }
+                return redirect('register_owner_step1')
+
+            # ✅ Customer ➤ OTP verification
             otp = generate_otp()
             request.session['registration_data'] = form.cleaned_data
             request.session['otp'] = str(otp)
-            send_otp_email(form.cleaned_data['email'], otp)
-            return redirect('verify_otp')
-    else:
-        form = RegistrationForm()
-    return render(request, 'shop/register.html', {'form': form})
 
+            try:
+                send_otp_email(email, otp)
+            except Exception as e:
+                messages.error(request, "Failed to send OTP. Try again later.")
+                return render(request, 'shop/register.html', {'form': form})
+
+            return redirect('verify_otp')
+
+    else:
+        # Pre-fill role in form from query param
+        form = RegistrationForm(initial={'role': role_from_get})
+
+    return render(request, 'shop/register.html', {'form': form})
 
 def verify_otp(request):
     error = None
@@ -407,3 +446,123 @@ def products_by_category(request, category_id):
         'categories': categories,
         'wishlist_products': wishlist_products,
     })
+from django.shortcuts import render, redirect
+from django.contrib.auth.hashers import make_password
+
+from django.contrib import messages
+
+def register_owner_step1(request):
+    if request.method == 'POST':
+        form = OwnerPersonalForm(request.POST)
+        if form.is_valid():
+            request.session['owner_user_data'] = {
+                'first_name': form.cleaned_data['first_name'],
+                'last_name': form.cleaned_data['last_name'],
+                'username': form.cleaned_data['username'],
+                'email': form.cleaned_data['email'],
+                'password': make_password(form.cleaned_data['password']),
+            }
+            return redirect('register_owner_step2')
+    else:
+        form = OwnerPersonalForm()
+    return render(request, 'shop/register_owner_step1.html', {'form': form})
+
+
+
+from shop.models import Shop
+
+from datetime import time
+
+from datetime import time
+
+def register_owner_step2(request):
+    if 'owner_user_data' not in request.session:
+        return redirect('register_owner_step1')
+
+    if request.method == 'POST':
+        form = ShopForm(request.POST, request.FILES)
+        if form.is_valid():
+            shop_data = form.cleaned_data.copy()
+
+            # Convert time fields to string
+            for key in ['opening_time', 'closing_time']:
+                if key in shop_data and isinstance(shop_data[key], time):
+                    shop_data[key] = shop_data[key].strftime('%H:%M:%S')
+
+            # Extract delivery pin IDs
+            delivery_pincodes = shop_data.pop('delivery_pincodes', [])
+            request.session['delivery_pincodes'] = [p.id for p in delivery_pincodes]  # ✅ Convert to list of IDs
+
+            # Remove file objects (handled separately)
+            shop_data.pop('shop_logo', None)
+            shop_data.pop('ownership_proof', None)
+
+            request.session['owner_shop_data'] = shop_data
+            request.session['shop_logo_file'] = request.FILES.get('shop_logo').name
+            request.session['ownership_file'] = request.FILES.get('ownership_proof').name
+            import base64
+
+            request.session['shop_logo'] = base64.b64encode(request.FILES['shop_logo'].read()).decode('utf-8')
+            request.session['ownership_proof'] = base64.b64encode(request.FILES['ownership_proof'].read()).decode('utf-8')
+
+            return redirect('register_owner_step3')
+    else:
+        form = ShopForm()
+
+    return render(request, 'shop/register_owner_step2.html', {'form': form})
+
+
+from shop.models import ShopBankInfo, PinCode
+from django.db import transaction
+
+from datetime import datetime  # ✅ Needed for parsing string to time
+
+def register_owner_step3(request):
+    if 'owner_user_data' not in request.session or 'owner_shop_data' not in request.session:
+        return redirect('register_owner_step1')
+
+    if request.method == 'POST':
+        form = ShopBankForm(request.POST)
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    # ✅ Create user
+                    user_data = request.session['owner_user_data']
+                    user = CustomUser.objects.create(
+                        first_name=user_data['first_name'],
+                        last_name=user_data['last_name'],
+                        username=user_data['username'],
+                        email=user_data['email'],
+                        password=user_data['password'],
+                        role='shop_owner'
+                    )
+
+                    # ✅ Convert time fields back before creating shop
+                    shop_data = request.session['owner_shop_data']
+                    shop_data['opening_time'] = datetime.strptime(shop_data['opening_time'], '%H:%M:%S').time()
+                    shop_data['closing_time'] = datetime.strptime(shop_data['closing_time'], '%H:%M:%S').time()
+
+                    shop = Shop.objects.create(owner=user, **shop_data)
+
+                    pin_ids = request.session.get('delivery_pincodes', [])
+                    shop.delivery_pincodes.set(PinCode.objects.filter(id__in=pin_ids))
+
+                    # ✅ Create bank info
+                    ShopBankInfo.objects.create(shop=shop, **form.cleaned_data)
+
+                    # ✅ Clear session
+                    del request.session['owner_user_data']
+                    del request.session['owner_shop_data']
+                    del request.session['delivery_pincodes']
+
+                    messages.success(request, "Registration successful!")
+                    login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+                    return redirect('shop_owner_dashboard')
+            except Exception as e:
+                messages.error(request, f"Registration failed: {e}")
+    else:
+        form = ShopBankForm()
+
+    return render(request, 'shop/register_owner_step3.html', {'form': form})
+def select_role_view(request):
+    return render(request, 'shop/select_role.html')

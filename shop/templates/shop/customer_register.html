@@ -3,11 +3,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Verify OTP</title>
+  <title>Customer Registration</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
-      background: #f8f9fa;
+      background: #f4f4f4;
       font-family: Arial, sans-serif;
       display: flex;
       justify-content: center;
@@ -17,16 +17,17 @@
 
     .container {
       background: white;
-      padding: 30px 40px;
+      padding: 30px;
       border-radius: 10px;
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
       width: 100%;
-      max-width: 400px;
+      max-width: 480px;
     }
 
     h2 {
       text-align: center;
       margin-bottom: 20px;
+      color: #333;
     }
 
     form {
@@ -34,16 +35,11 @@
       flex-direction: column;
     }
 
-    label {
-      margin-bottom: 10px;
-      font-weight: bold;
-    }
-
     input {
       padding: 12px;
-      margin-bottom: 20px;
-      border: 1.5px solid #ccc;
-      border-radius: 6px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
       font-size: 1rem;
     }
 
@@ -53,46 +49,57 @@
       color: white;
       border: none;
       border-radius: 6px;
-      font-size: 1.1rem;
-      cursor: pointer;
+      font-size: 1rem;
       font-weight: bold;
+      cursor: pointer;
     }
 
     button:hover {
       background-color: #45a049;
     }
 
-    .error {
+    .errorlist {
       color: red;
       font-size: 0.9rem;
-      margin-top: -10px;
       margin-bottom: 10px;
     }
 
-    .success {
-      color: green;
+    .login-link {
+      text-align: center;
+      margin-top: 15px;
       font-size: 0.9rem;
-      margin-bottom: 10px;
+    }
+
+    .login-link a {
+      color: #4CAF50;
+      text-decoration: none;
+    }
+
+    .login-link a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
+
 <body>
   <div class="container">
-    <h2>Verify Your Email</h2>
+    <h2>Register as Customer</h2>
 
-    <form method="post">
+    <form method="POST">
       {% csrf_token %}
-      <label for="otp">Enter OTP sent to your email</label>
-      <input type="text" name="otp" id="otp" required />
-
-      {% if messages %}
-        {% for message in messages %}
-          <p class="{% if message.tags == 'error' %}error{% else %}success{% endif %}">{{ message }}</p>
-        {% endfor %}
-      {% endif %}
-
-      <button type="submit">Verify OTP</button>
+      {% for field in form %}
+        {{ field.label_tag }}
+        {{ field }}
+        {% if field.errors %}
+          <div class="errorlist">{{ field.errors|striptags }}</div>
+        {% endif %}
+      {% endfor %}
+      <button type="submit">Send OTP</button>
     </form>
+
+    <div class="login-link">
+      Already have an account? <a href="{% url 'login' %}">Log in</a>
+    </div>
   </div>
 </body>
 </html>

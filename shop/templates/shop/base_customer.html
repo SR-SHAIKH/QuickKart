@@ -77,11 +77,7 @@
 
         <div class="d-flex align-items-center gap-4">
           <!-- 🔍 Expanding Search -->
-          <form
-            method="get"
-            action="{% url 'search' %}"
-            class="position-relative"
-          >
+          <form method="get" action="{% url 'search' %}" class="position-relative">
             <div id="searchBox" class="search-wrapper">
               <input
                 type="text"
@@ -118,38 +114,21 @@
                 class="profile-pic"
               />
             </a>
-            <ul
-              class="dropdown-menu dropdown-menu-end"
-              aria-labelledby="profileDropdown"
-            >
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
               {% if request.user.role == 'customer' %}
-              <li>
-                <a class="dropdown-item" href="{% url 'customer_profile' %}"
-                  >Profile</a
-                >
-              </li>
+              <li><a class="dropdown-item" href="{% url 'customer_profile' %}">Profile</a></li>
               {% elif request.user.role == 'shop_owner' %}
-              <li>
-                <a class="dropdown-item" href="{% url 'owner_profile' %}"
-                  >Profile</a
-                >
-              </li>
+              <li><a class="dropdown-item" href="{% url 'owner_profile' %}">Profile</a></li>
               {% endif %}
-              <li>
-                <a class="dropdown-item" href="{% url 'wishlist_page' %}"
-                  >Wishlist</a
-                >
-              </li>
+              <li><a class="dropdown-item" href="{% url 'wishlist_page' %}">Wishlist</a></li>
               <li><hr class="dropdown-divider" /></li>
-              <li>
-                <a class="dropdown-item text-danger" href="{% url 'logout' %}"
-                  >Logout</a
-                >
-              </li>
+              <li><a class="dropdown-item text-danger" href="{% url 'logout' %}">Logout</a></li>
             </ul>
           </div>
           {% else %}
-          <a href="{% url 'login' %}" class="text-white">Login</a>
+          <!-- Login & Register Buttons -->
+          <a href="{% url 'login' %}" class="text-white me-3">Login</a>
+          <a href="#" class="text-white" data-bs-toggle="modal" data-bs-target="#registerModal">Register</a>
           {% endif %}
         </div>
       </div>
@@ -157,6 +136,19 @@
 
     <!-- ✅ BODY -->
     <main class="container my-5">{% block content %}{% endblock %}</main>
+
+    <!-- ✅ Register Modal -->
+    <div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content p-4 rounded-4">
+          <h5 class="modal-title text-center mb-3" id="registerModalLabel">Register As</h5>
+          <div class="d-flex flex-column gap-3">
+            <a href="{% url 'register' %}?role=customer" class="btn btn-outline-primary">🧑 Register as Customer</a>
+            <a href="{% url 'register' %}?role=shop_owner" class="btn btn-outline-success">🏪 Register as Shop Owner</a>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- ✅ JS -->
     <script>
@@ -167,7 +159,6 @@
 
       searchToggle.addEventListener("click", function (e) {
         e.preventDefault();
-
         const isExpanded = searchBox.classList.contains("expanded");
 
         if (!isExpanded) {
@@ -185,7 +176,6 @@
         }
       });
 
-      // Click outside to close
       document.addEventListener("click", function (e) {
         if (!searchBox.contains(e.target) && !searchToggle.contains(e.target)) {
           searchBox.classList.remove("expanded");

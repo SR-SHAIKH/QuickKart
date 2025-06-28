@@ -1,7 +1,6 @@
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
 from django.utils.crypto import get_random_string
-
 ROLE_CHOICES = (
     ('customer', 'Customer'),
     ('shop_owner', 'Shop Owner'),
@@ -80,3 +79,18 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.email
+
+
+class CustomerProfile(models.Model):
+    from django.conf import settings
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
+    phone_number = models.CharField(max_length=15, blank=True)
+    date_of_birth = models.DateField(blank=True, null=True)
+    gender_choices = [('M', 'Male'), ('F', 'Female'), ('O', 'Other')]
+    gender = models.CharField(max_length=1, choices=gender_choices, blank=True)
+    country = models.CharField(max_length=100, blank=True)
+    address = models.TextField(blank=True)
+
+    def __str__(self):
+        return self.user.username

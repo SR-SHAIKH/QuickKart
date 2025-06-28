@@ -9,6 +9,12 @@ from shop.models import Order
 from shop.models import Wishlist  
 from shop.models import CartItem
 
+from django.contrib import messages
+from django.core.mail import send_mail
+from django.conf import settings
+from .forms import RegistrationForm
+from users.models import CustomUser
+import random
 
 # from cart.models import Cart  
 
@@ -97,3 +103,64 @@ def owner_profile_view(request):
         form = ProfileUpdateForm(instance=request.user)
 
     return render(request, 'dashboard/owner_profile.html', {'form': form})
+
+def register(request):
+    role = request.GET.get('role')
+    if role == 'shop_owner':
+        request.session['register_role'] = 'shop_owner'
+        return redirect('register_owner_step1')  # You will define this in shop/views.py
+    elif role == 'customer':
+        request.session['register_role'] = 'customer'
+        return redirect('customer_register_otp')
+    else:
+        return redirect('home')
+
+
+def customer_register_otp(request):
+    if request.method == 'POST':
+        form = RegistrationForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            request.session['temp_user_data'] = form.cleaned_data
+            otp = str(random.randint(100000, 999999))
+            request.session['otp'] = otp
+
+            # Send OTP via email
+            send_mail(
+                'Your OTP Code',
+                f'Your OTP code is {otp}',
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False,
+            )
+            return redirect('verify_customer_otp')
+    else:
+        form = RegistrationForm()
+    return render(request, 'users/customer_register.html', {'form': form})
+
+
+def verify_customer_otp(request):
+    if request.method == 'POST':
+        entered_otp = request.POST.get('otp')
+        if entered_otp == request.session.get('otp'):
+            data = request.session.get('temp_user_data')
+            if data:
+                # Save the user only after successful OTP
+                user = CustomUser.objects.create_user(
+                    username=data['username'],
+                    email=data['email'],
+                    password=data['password'],
+                    first_name=data.get('first_name', ''),
+                    last_name=data.get('last_name', ''),
+                    role='customer',
+                )
+                user.save()
+
+                # Clear session
+                request.session.pop('otp')
+                request.session.pop('temp_user_data')
+                messages.success(request, 'Registration successful. Please log in.')
+                return redirect('login')
+        else:
+            messages.error(request, 'Invalid OTP.')
+    return render(request, 'users/verify_otp.html')

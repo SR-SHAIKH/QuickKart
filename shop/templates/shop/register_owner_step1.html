@@ -1,0 +1,40 @@
+{% extends "base.html" %} {% load static %} {% block title %}Register as Shop
+Owner{% endblock %} {% block content %}
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <h2 class="mb-4 text-center">👤 Personal Information</h2>
+      <form method="post">
+        {% csrf_token %} {{ form.non_field_errors }}
+
+        <div>
+          <form method="post">
+  {% csrf_token %}
+
+  {{ form.non_field_errors }}
+
+  <label>First name:</label>
+  {{ form.first_name }} {{ form.first_name.errors }}
+
+  <label>Last name:</label>
+  {{ form.last_name }} {{ form.last_name.errors }}
+
+  <label>Username:</label>
+  {{ form.username }} {{ form.username.errors }}
+
+  <label>Email:</label>
+  {{ form.email }} {{ form.email.errors }}
+
+  <label>Password:</label>
+  {{ form.password }} {{ form.password.errors }}
+
+  <label>Confirm Password:</label>
+  {{ form.confirm_password }} {{ form.confirm_password.errors }}
+
+  <button type="submit">Continue to Shop Details</button>
+</form>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
