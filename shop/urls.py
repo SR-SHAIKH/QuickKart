@@ -77,6 +77,9 @@ urlpatterns = [
     path('register/owner/step3/', views.register_owner_step3, name='register_owner_step3'),
 
     path('register/select/', views.select_role_view, name='select_role'),
+    path('register/owner/verify-otp/', views.verify_owner_otp, name='verify_owner_otp'),
+    
+
 
 ]
 

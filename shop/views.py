@@ -30,23 +30,29 @@ def home(request):
     selected_pincode = request.session.get('selected_pincode')
 
     categories = Category.objects.all()
-    products = Product.objects.all()
-
-    if query:
-        products = products.filter(
-            Q(name__icontains=query) | Q(description__icontains=query)
-        )
-
+    products = Product.objects.none()
+    shops_in_area = Shop.objects.none()
     wishlist_products = []
+
     if request.user.is_authenticated and request.user.role == 'customer':
-        wishlist_products = Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True)
+        if selected_pincode:
+            # Filter shops & products based on user's selected pin code
+            shops_in_area = Shop.objects.filter(delivery_pincodes__code=selected_pincode).distinct()
+            products = Product.objects.filter(shop__in=shops_in_area)
 
-    shops_in_area = Shop.objects.all()
-    if selected_pincode:
-        shops_in_area = Shop.objects.filter(delivery_pincodes__code=selected_pincode).distinct()
-        products = products.filter(shop__in=shops_in_area)
+            # Apply search filter if applicable
+            if query:
+                products = products.filter(
+                    Q(name__icontains=query) | Q(description__icontains=query)
+                )
 
-    bestselling_products = products.order_by('-sales_count')[:10] if selected_pincode else products[:10]
+            # Get wishlist items
+            wishlist_products = Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True)
+
+        # If selected_pincode is missing, nothing is shown (no fallback)
+
+    # Non-logged-in users: products and shops stay empty
+    bestselling_products = products.order_by('-sales_count')[:10] if products.exists() else []
 
     return render(request, 'shop/home.html', {
         'products': products,
@@ -56,7 +62,6 @@ def home(request):
         'wishlist_products': wishlist_products,
         'query': query,
     })
-
 
 # --------------------- OTP UTILS ---------------------
 def generate_otp():
@@ -449,22 +454,45 @@ def products_by_category(request, category_id):
 from django.shortcuts import render, redirect
 from django.contrib.auth.hashers import make_password
 
+import random
 from django.contrib import messages
+from django.core.mail import send_mail
+from django.conf import settings
 
 def register_owner_step1(request):
     if request.method == 'POST':
         form = OwnerPersonalForm(request.POST)
         if form.is_valid():
+            email = form.cleaned_data['email']
+            otp = random.randint(100000, 999999)
+
+            # Save user data and OTP in session
             request.session['owner_user_data'] = {
                 'first_name': form.cleaned_data['first_name'],
                 'last_name': form.cleaned_data['last_name'],
                 'username': form.cleaned_data['username'],
-                'email': form.cleaned_data['email'],
+                'email': email,
                 'password': make_password(form.cleaned_data['password']),
             }
-            return redirect('register_owner_step2')
+            request.session['otp'] = str(otp)
+
+            # Send OTP via email
+            subject = 'Your OTP Code for Shop Owner Registration'
+            message = f'Hello {form.cleaned_data["first_name"]},\n\nYour OTP code is: {otp}'
+            from_email = settings.EMAIL_HOST_USER
+            recipient_list = [email]
+
+            try:
+                send_mail(subject, message, from_email, recipient_list)
+                messages.success(request, 'OTP sent to your email.')
+            except Exception as e:
+                messages.error(request, f'Error sending OTP: {e}')
+                return redirect('register_owner_step1')
+
+            return redirect('verify_owner_otp')  # 👈 Make sure this route/view exists
     else:
         form = OwnerPersonalForm()
+
     return render(request, 'shop/register_owner_step1.html', {'form': form})
 
 
@@ -566,3 +594,20 @@ def register_owner_step3(request):
     return render(request, 'shop/register_owner_step3.html', {'form': form})
 def select_role_view(request):
     return render(request, 'shop/select_role.html')
+
+from django.shortcuts import render, redirect
+from django.contrib import messages
+
+def verify_owner_otp(request):
+    if request.method == 'POST':
+        entered_otp = request.POST.get('otp')
+        actual_otp = request.session.get('otp')
+
+        if entered_otp == actual_otp:
+            # OTP matched — proceed to next step
+            return redirect('register_owner_step2')
+        else:
+            messages.error(request, 'Invalid OTP. Please try again.')
+
+    return render(request, 'shop/verify_otp.html')  # your OTP input template
+

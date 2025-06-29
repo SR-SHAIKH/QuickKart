@@ -65,3 +65,15 @@ class CustomerProfileForm(forms.ModelForm):
         self.fields['profile_picture'].widget.clear_checkbox_label = ''
         self.fields['profile_picture'].widget.initial_text = ''
         self.fields['profile_picture'].widget.input_text = ''
+from django import forms
+from users.models import CustomUser
+
+class CustomerRegistrationForm(forms.ModelForm):
+    password = forms.CharField(
+        widget=forms.PasswordInput(attrs={'placeholder': 'Enter password'}),
+        label='Password'
+    )
+
+    class Meta:
+        model = CustomUser
+        fields = ['first_name', 'last_name', 'email', 'phone', 'password']
