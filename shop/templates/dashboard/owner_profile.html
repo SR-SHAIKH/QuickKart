@@ -1,11 +1,62 @@
 {% extends 'base.html' %}
+{% block title %}My Profiles{% endblock %}
 {% block content %}
+
 <div class="container mt-4">
-  <h2>Shop Owner Profile</h2>
-  <form method="POST" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-warning">Update Profile</button>
-  </form>
+  <h3 class="mb-4"><i class="bi bi-person-circle"></i> My Profiles</h3>
+
+  <!-- Personal Section -->
+  <div class="card mb-4 border-success">
+    <div class="card-header bg-success text-white">Personal Details</div>
+    <div class="card-body">
+      <p><strong>Full Name:</strong> {{ user.get_full_name }}</p>
+      <p><strong>Username:</strong> {{ user.username }}</p>
+      <p><strong>Email:</strong> {{ user.email }}</p>
+      <p><strong>Phone:</strong> {{ user.phone }}</p>
+      <p><strong>Gender:</strong> {{ user.gender|default:"N/A" }}</p>
+      <p><strong>Date of Birth:</strong> {{ user.dob|date:"F j, Y" }}</p>
+      <div class="text-end">
+        <a href="{% url 'owner_edit_profile' %}" class="btn btn-outline-success btn-sm">Update Personal</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shop Section -->
+  {% if shop %}
+  <div class="card mb-4 border-primary">
+    <div class="card-header bg-primary text-white">Shop Details</div>
+    <div class="card-body">
+      <p><strong>Shop Name:</strong> {{ shop.shop_name }}</p>
+      <p><strong>Category:</strong> {{ shop.shop_category }}</p>
+      <p><strong>GST Number:</strong> {{ shop.gst_number }}</p>
+      <p><strong>City:</strong> {{ shop.city }}</p>
+      <p><strong>Address:</strong> {{ shop.shop_address }}</p>
+      <p><strong>Opening Time:</strong> {{ shop.opening_time }}</p>
+      <p><strong>Closing Time:</strong> {{ shop.closing_time }}</p>
+      <div class="text-end">
+        <a href="{% url 'edit_shop_profile' %}" class="btn btn-outline-primary btn-sm">Update Shop</a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Bank Section -->
+  {% if bank %}
+  <div class="card mb-4 border-dark">
+    <div class="card-header bg-dark text-white">Bank Details</div>
+    <div class="card-body">
+      <p><strong>Account Holder Name:</strong> {{ bank.account_holder_name }}</p>
+      <p><strong>Bank Name:</strong> {{ bank.bank_name }}</p>
+      <p><strong>Account Number:</strong> {{ bank.account_number }}</p>
+      <p><strong>IFSC Code:</strong> {{ bank.ifsc_code }}</p>
+      <p><strong>UPI ID:</strong> {{ bank.upi_id }}</p>
+      <div class="text-end">
+        <a href="#" class="btn btn-outline-dark btn-sm disabled">Update Bank (Coming Soon)</a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
 </div>
+
 {% endblock %}

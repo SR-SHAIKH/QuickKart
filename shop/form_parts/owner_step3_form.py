@@ -18,3 +18,4 @@ class ShopBankForm(forms.ModelForm):
                 ('UPI', 'UPI'),
             ])
         }
+

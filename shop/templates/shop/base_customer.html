@@ -3,7 +3,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>{% block title %}LocalShop{% endblock %}</title>
+    <title>{% block title %}QuickKart{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <!-- Bootstrap Icons -->
@@ -66,79 +66,89 @@
   <body class="bg-gray-100 text-gray-800">
     <!-- ✅ NAVBAR -->
     <nav class="bg-green-600 py-3 shadow text-white">
-      <div class="container d-flex justify-between align-items-center">
-        <!-- Logo as link to home -->
-        <a
-          href="{% url 'home' %}"
-          class="text-white text-decoration-none"
-        >
-          <h1 class="text-2xl fw-bold">LocalShop</h1>
-        </a>
+      <div class="container d-flex justify-content-between align-items-center">
+        <!-- Logo Section -->
+        <!-- Logo Section -->
+<div>
+  {% if request.user.is_authenticated %}
+    {% if request.user.role == 'shop_owner' %}
+      <h1 class="text-2xl fw-bold text-white mb-0" style="cursor: default;">QuickKart</h1>
+    {% else %}
+      <a href="{% url 'home' %}" class="text-white text-decoration-none">
+        <h1 class="text-2xl fw-bold mb-0">QuickKart</h1>
+      </a>
+    {% endif %}
+  {% else %}
+    <a href="{% url 'home' %}" class="text-white text-decoration-none">
+      <h1 class="text-2xl fw-bold mb-0">QuickKart</h1>
+    </a>
+  {% endif %}
+</div>
 
+
+        <!-- Right Section -->
         <div class="d-flex align-items-center gap-4">
-          <!-- 🔍 Expanding Search -->
-          <!-- <form method="get" action="{% url 'search' %}" class="position-relative">
-            <div id="searchBox" class="search-wrapper">
-              <input
-                type="text"
-                name="q"
-                value="{{ request.GET.q }}"
-                placeholder="Search..."
-                class="text-black bg-transparent py-1"
-              />
-              <button type="button" id="searchToggle" class="btn p-0 px-2">
-                <i id="searchIcon" class="bi bi-search text-white"></i>
-              </button>
-            </div>
-          </form> -->
-
-          <!-- Cart -->
-          <a href="{% url 'cart_view' %}" class="text-white">
-            <i class="bi bi-cart-fill" style="font-size: 1.4rem"></i>
-          </a>
-
           {% if request.user.is_authenticated %}
-          <!-- Profile Dropdown -->
-          <div class="dropdown">
-            <a
-              class="dropdown-toggle d-flex align-items-center"
-              href="#"
-              role="button"
-              id="profileDropdown"
-              data-bs-toggle="dropdown"
-              aria-expanded="false"
-            >
-              <img
-                src="{% if request.user.profile_picture %}{{ request.user.profile_picture.url }}{% else %}{% static 'images/default_profile.png' %}{% endif %}"
-                alt="Profile"
-                class="profile-pic"
-              />
+            <!-- Cart -->
+            <a href="{% url 'cart_view' %}" class="text-white">
+              <i class="bi bi-cart-fill" style="font-size: 1.4rem"></i>
             </a>
-            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
-              {% if request.user.role == 'customer' %}
-              <li><a class="dropdown-item" href="{% url 'customer_profile' %}">Profile</a></li>
-              {% elif request.user.role == 'shop_owner' %}
-              <li><a class="dropdown-item" href="{% url 'owner_profile' %}">Profile</a></li>
-              {% endif %}
-              <li><a class="dropdown-item" href="{% url 'wishlist_page' %}">Wishlist</a></li>
-              <li><hr class="dropdown-divider" /></li>
-              <li><a class="dropdown-item text-danger" href="{% url 'logout' %}">Logout</a></li>
-            </ul>
-          </div>
+
+            <!-- Profile Dropdown -->
+            <div class="dropdown">
+              <a
+                class="dropdown-toggle d-flex align-items-center"
+                href="#"
+                role="button"
+                id="profileDropdown"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                <img
+                  src="{% if request.user.profile_picture %}{{ request.user.profile_picture.url }}{% else %}{% static 'images/default_profile.png' %}{% endif %}"
+                  alt="Profile"
+                  class="profile-pic"
+                />
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                {% if request.user.role == 'customer' %}
+                  <li><a class="dropdown-item" href="{% url 'customer_profile' %}">Profile</a></li>
+                {% elif request.user.role == 'shop_owner' %}
+                  <li><a class="dropdown-item" href="{% url 'owner_profile' %}">Profile</a></li>
+                {% endif %}
+                <li><a class="dropdown-item" href="{% url 'wishlist_page' %}">Wishlist</a></li>
+                <li><hr class="dropdown-divider" /></li>
+                <li><a class="dropdown-item text-danger" href="{% url 'logout' %}">Logout</a></li>
+              </ul>
+            </div>
           {% else %}
-          <!-- Login & Register Buttons -->
-          <a href="{% url 'login' %}" class="text-white me-3">Login</a>
-          <a href="#" class="text-white" data-bs-toggle="modal" data-bs-target="#registerModal">Register</a>
+            <!-- Login & Register Buttons -->
+            <a href="{% url 'login' %}" class="text-white me-3">Login</a>
+            <a
+              href="#"
+              class="text-white"
+              data-bs-toggle="modal"
+              data-bs-target="#registerModal"
+              >Register</a
+            >
           {% endif %}
         </div>
       </div>
     </nav>
 
     <!-- ✅ BODY -->
-    <main class="container my-5">{% block content %}{% endblock %}</main>
+    <main class="container my-5">
+      {% block content %}{% endblock %}
+    </main>
 
     <!-- ✅ Register Modal -->
-    <div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
+    <div
+      class="modal fade"
+      id="registerModal"
+      tabindex="-1"
+      aria-labelledby="registerModalLabel"
+      aria-hidden="true"
+    >
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content p-4 rounded-4">
           <h5 class="modal-title text-center mb-3" id="registerModalLabel">Register As</h5>
@@ -154,35 +164,37 @@
     <script>
       const searchBox = document.getElementById("searchBox");
       const searchToggle = document.getElementById("searchToggle");
-      const searchInput = searchBox.querySelector("input");
+      const searchInput = searchBox?.querySelector("input");
       const searchIcon = document.getElementById("searchIcon");
 
-      searchToggle.addEventListener("click", function (e) {
-        e.preventDefault();
-        const isExpanded = searchBox.classList.contains("expanded");
+      if (searchToggle) {
+        searchToggle.addEventListener("click", function (e) {
+          e.preventDefault();
+          const isExpanded = searchBox.classList.contains("expanded");
 
-        if (!isExpanded) {
-          searchBox.classList.add("expanded");
-          searchIcon.classList.replace("text-white", "text-black");
-          setTimeout(() => searchInput.focus(), 100);
-        } else {
-          if (searchInput.value.trim()) {
-            searchBox.closest("form").submit();
+          if (!isExpanded) {
+            searchBox.classList.add("expanded");
+            searchIcon.classList.replace("text-white", "text-black");
+            setTimeout(() => searchInput.focus(), 100);
           } else {
+            if (searchInput.value.trim()) {
+              searchBox.closest("form").submit();
+            } else {
+              searchBox.classList.remove("expanded");
+              searchInput.value = "";
+              searchIcon.classList.replace("text-black", "text-white");
+            }
+          }
+        });
+
+        document.addEventListener("click", function (e) {
+          if (!searchBox.contains(e.target) && !searchToggle.contains(e.target)) {
             searchBox.classList.remove("expanded");
             searchInput.value = "";
             searchIcon.classList.replace("text-black", "text-white");
           }
-        }
-      });
-
-      document.addEventListener("click", function (e) {
-        if (!searchBox.contains(e.target) && !searchToggle.contains(e.target)) {
-          searchBox.classList.remove("expanded");
-          searchInput.value = "";
-          searchIcon.classList.replace("text-black", "text-white");
-        }
-      });
+        });
+      }
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

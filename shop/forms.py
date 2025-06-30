@@ -1,7 +1,7 @@
 from django import forms
 from users.models import CustomUser
 from .models import Product
-from shop.forms import ShopDetailsForm
+from shop.form_parts import ShopForm
 from django.shortcuts import render, redirect
 from .models import Shop
 
@@ -11,6 +11,7 @@ ROLE_CHOICES = [
 ]
 
 # ✅ Customer registration form
+
 class RegistrationForm(forms.ModelForm):
     password1 = forms.CharField(label='Password', widget=forms.PasswordInput)
     password2 = forms.CharField(label='Confirm Password', widget=forms.PasswordInput)
@@ -96,7 +97,7 @@ def register_owner_step2(request):
         return redirect('register_owner_step1')
 
     if request.method == 'POST':
-        form = ShopDetailsForm(request.POST, request.FILES)
+        form = ShopForm(request.POST, request.FILES)
         if form.is_valid():
             shop_data = form.cleaned_data
             request.session['owner_shop_data'] = {
@@ -108,7 +109,7 @@ def register_owner_step2(request):
             )
             return redirect('register_owner_step3')
     else:
-        form = ShopDetailsForm()
+        form = ShopForm()
     return render(request, 'shop/register_owner_step2.html', {'form': form})
 
 
@@ -121,13 +122,28 @@ class ShopBankForm(forms.ModelForm):
 
 from .models import PinCode
 
-class ShopForm(forms.ModelForm):
-    delivery_pincodes = forms.ModelMultipleChoiceField(
-        queryset=PinCode.objects.all(),
-        widget=forms.CheckboxSelectMultiple,  # Or SelectMultiple for dropdown
-        required=True
-    )
-
+class EditShopProfileForm(forms.ModelForm):
     class Meta:
         model = Shop
-        fields = ['name', 'category', 'address', 'logo', 'ownership_proof', 'gst_number', 'opening_time', 'closing_time', 'delivery_pincodes']
+        fields = [
+            'shop_name',
+            'shop_category',
+            'shop_address',
+            'shop_logo',
+            'ownership_proof',
+            'gst_number',
+            'opening_time',
+            'closing_time',
+            'delivery_pincodes',
+            'city',
+        ]
+        widgets = {
+            'delivery_pincodes': forms.CheckboxSelectMultiple,
+            'opening_time': forms.TimeInput(attrs={'type': 'time'}),
+            'closing_time': forms.TimeInput(attrs={'type': 'time'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(EditShopProfileForm, self).__init__(*args, **kwargs)
+        self.fields['shop_name'].label = "Shop Name"
+

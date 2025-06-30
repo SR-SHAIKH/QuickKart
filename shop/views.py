@@ -7,13 +7,15 @@ from django.conf import settings
 from django.template.loader import get_template
 from django.utils.timezone import now
 from django.http import JsonResponse
-from shop.forms.owner_step1_form import OwnerPersonalForm
-from shop.forms.owner_step2_form import ShopForm
-from shop.forms.owner_step3_form import ShopBankForm
-from shop.forms.registration_form import RegistrationForm
-from shop.forms.product_form import ProductForm
-from shop.forms.customer_profile_form import CustomerProfileForm
+from shop.form_parts.owner_step1_form import OwnerPersonalForm
+from shop.form_parts.owner_step2_form import ShopForm
+from shop.form_parts.owner_step3_form import ShopBankForm
+from shop.form_parts.registration_form import RegistrationForm
+from shop.form_parts.product_form import ProductForm
+from shop.form_parts.customer_profile_form import CustomerProfileForm
+from .forms import EditShopProfileForm
 
+from .models import Shop, PinCode
 from .models import (
     Product, CartItem, Order, OrderItem,
     Wishlist, Category, PinCode, Brand, Shop
@@ -189,10 +191,11 @@ def is_shop_owner(user):
 @user_passes_test(lambda u: u.role == 'shop_owner')
 def shop_owner_dashboard(request):
     products = Product.objects.filter(shop_owner=request.user)
-    return render(request, 'products/owner_products.html', {
+    return render(request, 'dashboard/shop_owner_dashboard.html', {
         'products': products,
-        'now': now()
+        # Include extra context if needed like total_orders, monthly_revenue, etc.
     })
+
 
 @login_required
 @user_passes_test(is_shop_owner)
@@ -611,3 +614,101 @@ def verify_owner_otp(request):
 
     return render(request, 'shop/verify_otp.html')  # your OTP input template
 
+@login_required
+def edit_shop_profile(request):
+    shop = Shop.objects.get(owner=request.user)
+
+    if request.method == 'POST':
+        form = EditShopProfileForm(request.POST, instance=shop)
+
+        if form.is_valid():
+            form.save()
+
+            # handle pin codes
+            pincode_ids = request.POST.getlist('pincodes')
+            shop.delivery_pincodes.set(pincode_ids)  # many-to-many relation
+
+            return redirect('shop_owner_dashboard')
+  # or wherever you want
+    else:
+        form = EditShopProfileForm(instance=shop)
+
+    all_pincodes = PinCode.objects.all()
+    current_pincodes = shop.delivery_pincodes.all()
+
+
+    return render(request, 'shop/edit_shop_profile.html', {
+        'form': form,
+        'all_pincodes': all_pincodes,
+        'current_pincodes': current_pincodes
+    })
+
+@login_required
+def owner_profiles(request):
+    print("Logged in user:", request.user)
+    
+    shop = Shop.objects.filter(owner=request.user).first()
+    print("Shop found:", shop)
+
+    bank = None
+    if shop:
+        bank = ShopBankInfo.objects.filter(shop=shop).first()
+        print("Bank info found:", bank)
+
+    return render(request, 'shop/owner_profiles.html', {
+        'user': request.user,
+        'shop': shop,
+        'bank': bank,
+    })
+
+# @login_required
+# def edit_bank_details(request):
+#     shop = Shop.objects.filter(owner=request.user).first()
+#     if not shop:
+#         messages.error(request, "Shop not found.")
+#         return redirect('owner_profiles')
+
+#     bank = ShopBankInfo.objects.filter(shop=shop).first()
+
+#     if not bank:
+#         messages.error(request, "Bank details not found.")
+#         return redirect('owner_profiles')
+    
+from django.contrib import messages
+from shop.form_parts.bank_edit_form import EditBankDetailsForm
+from shop.models import Shop, ShopBankInfo
+
+@login_required
+def edit_bank_details(request):
+    shop = Shop.objects.filter(owner=request.user).first()
+    if not shop:
+        messages.error(request, "Shop not found.")
+        return redirect('owner_profiles')
+
+    bank = ShopBankInfo.objects.filter(shop=shop).first()
+    if not bank:
+        messages.error(request, "Bank details not found.")
+        return redirect('owner_profiles')
+
+    if request.method == 'POST':
+        form = EditBankDetailsForm(request.POST, instance=bank)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Bank details updated successfully.")
+            return redirect('owner_profiles')
+    else:
+        form = EditBankDetailsForm(instance=bank)
+
+    return render(request, 'shop/edit_bank_details.html', {'form': form})
+from django.db.models import Sum
+
+@login_required
+def shop_product_detail(request, product_id):
+    product = get_object_or_404(Product, id=product_id, shop__owner=request.user)
+    total_orders = OrderItem.objects.filter(product=product).count()
+    total_revenue = OrderItem.objects.filter(product=product).aggregate(total=Sum('price'))['total'] or 0
+    return render(request, 'shop/shop_product_detail.html', {
+        'product': product,
+        'total_orders': total_orders,
+        'total_revenue': total_revenue,
+    })

@@ -75,11 +75,13 @@ urlpatterns = [
     path('register/owner/step1/', views.register_owner_step1, name='register_owner_step1'),
     path('register/owner/step2/', views.register_owner_step2, name='register_owner_step2'),
     path('register/owner/step3/', views.register_owner_step3, name='register_owner_step3'),
-
     path('register/select/', views.select_role_view, name='select_role'),
     path('register/owner/verify-otp/', views.verify_owner_otp, name='verify_owner_otp'),
-    
-
+    path('shop/edit/', views.edit_shop_profile, name='edit_shop_profile'),
+    path('owner/profiles/', views.owner_profiles, name='owner_profiles'),
+    path('owner/edit-bank/', views.edit_bank_details, name='edit_bank_details'),
+    # path('edit-bank/', views.edit_bank_details, name='edit_bank_details'),
+    path('dashboard/shop/product/<int:product_id>/', views.shop_product_detail, name='shop_product_detail'),
 
 ]
 
