@@ -1,19 +1,62 @@
 {% extends "base.html" %}
 {% load static %}
+{% load widget_tweaks %}
 
-{% block title %}Bank Details{% endblock %}
+{% block title %}Register as Shop Owner - Step 3{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
   <div class="row justify-content-center">
-    <div class="col-md-6">
-      <h2 class="mb-4 text-center">💳 Bank Information</h2>
-      <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
+    <div class="col-md-8 col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h3 class="text-center mb-4">💳 Bank & Payment Information</h3>
 
-        <button type="submit" class="btn btn-success w-100 mt-3">Complete Registration</button>
-      </form>
+          <form method="post">
+            {% csrf_token %}
+
+            <!-- Payment Method as radio -->
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Select Payment Method:</label>
+              {{ form.payment_method|add_class:"form-select" }}
+              {% if form.payment_method.errors %}
+                <div class="text-danger small">{{ form.payment_method.errors.0 }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Bank Details -->
+            <div class="mb-3">
+              <label class="form-label">Account Holder Name</label>
+              {{ form.account_holder_name|add_class:"form-control" }}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Account Number</label>
+              {{ form.account_number|add_class:"form-control" }}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">IFSC Code</label>
+              {{ form.ifsc_code|add_class:"form-control" }}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Bank Name</label>
+              {{ form.bank_name|add_class:"form-control" }}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">UPI ID</label>
+              {{ form.upi_id|add_class:"form-control" }}
+            </div>
+
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary">Finish Registration</button>
+            </div>
+          </form>
+
+        </div>
+      </div>
     </div>
   </div>
 </div>

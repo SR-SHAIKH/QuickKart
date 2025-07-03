@@ -1,3 +1,4 @@
+# from .views import home
 from django.urls import path
 from . import views
 from django.conf import settings
@@ -82,6 +83,9 @@ urlpatterns = [
     path('owner/edit-bank/', views.edit_bank_details, name='edit_bank_details'),
     # path('edit-bank/', views.edit_bank_details, name='edit_bank_details'),
     path('dashboard/shop/product/<int:product_id>/', views.shop_product_detail, name='shop_product_detail'),
+    path('owner/product/<int:pk>/', views.owner_product_detail, name='owner_product_detail'),
+    path('owner/dashboard/', views.shop_owner_dashboard, name='dashboard_owner'),
+    path('delete-product/<int:product_id>/', views.delete_product, name='delete_product'),
 
 ]
 

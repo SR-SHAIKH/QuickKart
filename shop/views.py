@@ -14,8 +14,10 @@ from shop.form_parts.registration_form import RegistrationForm
 from shop.form_parts.product_form import ProductForm
 from shop.form_parts.customer_profile_form import CustomerProfileForm
 from .forms import EditShopProfileForm
-
+# from django.contrib.auth.decorators import login_required
+# from django.db.models import Sum
 from .models import Shop, PinCode
+import json
 from .models import (
     Product, CartItem, Order, OrderItem,
     Wishlist, Category, PinCode, Brand, Shop
@@ -27,43 +29,63 @@ import random
 # --------------------- GENERAL ---------------------
 from django.db.models import Q  # For flexible filtering
 
+from django.db.models import Q
+from .models import Category, Product, Shop, Wishlist, PinCode
+
 def home(request):
-    query = request.GET.get('q', '')
-    selected_pincode = request.session.get('selected_pincode')
+    print("🔥 Home view called")
+    query = request.GET.get('q', '').strip()
+    selected_pincode = request.session.get('selected_pincode') or request.GET.get('pincode')
+
+    # Agar GET se pincode aya hai to session me save karo
+    if selected_pincode:
+        request.session['selected_pincode'] = selected_pincode
 
     categories = Category.objects.all()
     products = Product.objects.none()
     shops_in_area = Shop.objects.none()
     wishlist_products = []
 
-    if request.user.is_authenticated and request.user.role == 'customer':
-        if selected_pincode:
-            # Filter shops & products based on user's selected pin code
-            shops_in_area = Shop.objects.filter(delivery_pincodes__code=selected_pincode).distinct()
-            products = Product.objects.filter(shop__in=shops_in_area)
+    if selected_pincode:
+        # ✅ Debug print
+        print("Selected PinCode:", selected_pincode)
 
-            # Apply search filter if applicable
+        try:
+            # ✅ Shops delivering to selected pin
+            shops_in_area = Shop.objects.filter(delivery_pincodes__code=selected_pincode).distinct()
+            print("Shops in Area:", shops_in_area)
+
+            # ✅ Products from those shops (without is_active)
+            products = Product.objects.filter(shop__in=shops_in_area).distinct()
+            print("Filtered Products:", products)
+
+            # ✅ Search filter
             if query:
                 products = products.filter(
                     Q(name__icontains=query) | Q(description__icontains=query)
                 )
 
-            # Get wishlist items
-            wishlist_products = Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True)
+            # ✅ Wishlist if customer
+            if request.user.is_authenticated and request.user.role == 'customer':
+                wishlist_products = Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True)
 
-        # If selected_pincode is missing, nothing is shown (no fallback)
+        except PinCode.DoesNotExist:
+            print("Invalid pincode selected.")
 
-    # Non-logged-in users: products and shops stay empty
-    bestselling_products = products.order_by('-sales_count')[:10] if products.exists() else []
+    # ✅ Bestselling products logic
+    bestselling_products = products.order_by('-stock')[:10] if products.exists() else []
 
-    return render(request, 'shop/home.html', {
+    context = {
         'products': products,
         'bestselling_products': bestselling_products,
         'categories': categories,
         'shops_in_area': shops_in_area,
         'wishlist_products': wishlist_products,
         'query': query,
-    })
+    }
+
+    return render(request, 'shop/home.html', context)
+
 
 # --------------------- OTP UTILS ---------------------
 def generate_otp():
@@ -215,18 +237,20 @@ def shop_owner_orders(request):
 
 # --------------------- SHOP OWNER FEATURES ---------------------
 @login_required
-@user_passes_test(is_shop_owner)
+@user_passes_test(lambda u: u.role == 'shop_owner')
 def create_product(request):
     if request.method == 'POST':
         form = ProductForm(request.POST, request.FILES)
         if form.is_valid():
             product = form.save(commit=False)
+            # ✅ Assign the shop of the logged-in shop owner
+            product.shop = request.user.shop  # make sure `OneToOneField` is set in Shop model
             product.shop_owner = request.user
             product.save()
-            return redirect('shop_owner_dashboard')
+            return redirect('shop_owner_products')
     else:
         form = ProductForm()
-    return render(request, 'products/create_product.html', {'form': form})
+    return render(request, 'shop/create_product.html', {'form': form})
 
 
 @login_required
@@ -243,11 +267,15 @@ def edit_product(request, product_id):
 @login_required
 @user_passes_test(is_shop_owner)
 def delete_product(request, product_id):
-    product = get_object_or_404(Product, id=product_id, shop_owner=request.user)
+    product = get_object_or_404(Product, id=product_id)
+
+    # 🔐 Ensure only the owner can delete
+    if product.shop.shop_owner != request.user:
+        return HttpResponseForbidden("You are not authorized to delete this product.")
+
     if request.method == 'POST':
         product.delete()
-        return redirect('shop_owner_dashboard')
-    return render(request, 'products/delete_product.html', {'product': product})
+        return redirect('dashboard_owner')
 
 
 # --------------------- CUSTOMER FEATURES ---------------------
@@ -382,7 +410,13 @@ def wishlist_page(request):
     wishlist_items = Wishlist.objects.filter(user=request.user).select_related('product')
     return render(request, 'shop/wishlist.html', {'wishlist_items': wishlist_items})
 
+from django.http import HttpResponseForbidden
+
 def product_detail(request, pk):
+    # Block shop owners
+    if request.user.is_authenticated and hasattr(request.user, 'shop'):
+        return HttpResponseForbidden("Access Denied. Shop owners cannot view this page.")
+
     product = get_object_or_404(Product, pk=pk)
     suggested_products = Product.objects.exclude(pk=pk)[:5]
 
@@ -395,6 +429,31 @@ def product_detail(request, pk):
         'suggested_products': suggested_products,
         'is_wishlisted': is_wishlisted
     })
+
+
+
+@login_required
+def owner_product_detail(request, pk):
+    user = request.user
+
+    # Check if this user is a shop owner
+    try:
+        shop = user.shop  # This confirms shop owner identity
+    except Shop.DoesNotExist:
+        return HttpResponseForbidden("Access Denied. Only shop owners can view this page.")
+
+    # FIX: Use user (not shop) for querying Product
+    product = get_object_or_404(Product, pk=pk, shop_owner=user)
+
+    total_orders = OrderItem.objects.filter(product=product).count()
+    total_revenue = OrderItem.objects.filter(product=product).aggregate(Sum('price'))['price__sum'] or 0
+
+    return render(request, 'shop/owner_product_detail.html', {
+        'product': product,
+        'total_orders': total_orders,
+        'total_revenue': total_revenue,
+    })
+
 
 
 @login_required
@@ -442,9 +501,15 @@ def order_history(request):
     orders = Order.objects.filter(customer=request.user)
     return render(request, 'shop/my_orders.html', {'orders': orders})
 def products_by_category(request, category_id):
-    products = Product.objects.filter(category_id=category_id)
+    selected_pincode = request.session.get('selected_pincode')
     categories = Category.objects.all()
     wishlist_products = []
+
+    products = Product.objects.filter(category_id=category_id, is_active=True)
+
+    if selected_pincode:
+        shops = Shop.objects.filter(delivery_pincodes__code=selected_pincode).distinct()
+        products = products.filter(shop__in=shops)
 
     if request.user.is_authenticated and request.user.role == 'customer':
         wishlist_products = Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True)
@@ -476,7 +541,10 @@ def register_owner_step1(request):
                 'username': form.cleaned_data['username'],
                 'email': email,
                 'password': make_password(form.cleaned_data['password']),
+                'gender': form.cleaned_data.get('gender', ''),
+                'date_of_birth': str(form.cleaned_data.get('date_of_birth'))  # convert to string to store in session
             }
+
             request.session['otp'] = str(otp)
 
             # Send OTP via email
@@ -540,13 +608,24 @@ def register_owner_step2(request):
     else:
         form = ShopForm()
 
-    return render(request, 'shop/register_owner_step2.html', {'form': form})
+        all_pincodes = PinCode.objects.all()
+        all_pincodes_json = json.dumps([
+        {"id": p.id, "code": p.code, "area": p.area_name} for p in all_pincodes
+    ])
+
+    return render(request, 'shop/register_owner_step2.html', {
+        'form': form,
+        'all_pincodes_json': all_pincodes_json
+    })
 
 
 from shop.models import ShopBankInfo, PinCode
 from django.db import transaction
 
 from datetime import datetime  # ✅ Needed for parsing string to time
+
+from django.core.files.base import ContentFile
+import base64
 
 def register_owner_step3(request):
     if 'owner_user_data' not in request.session or 'owner_shop_data' not in request.session:
@@ -557,46 +636,84 @@ def register_owner_step3(request):
         if form.is_valid():
             try:
                 with transaction.atomic():
-                    # ✅ Create user
+                    # ✅ Step 1: Create the user
                     user_data = request.session['owner_user_data']
+                    if 'date_of_birth' in user_data:
+                        try:
+                            user_data['date_of_birth'] = datetime.strptime(user_data['date_of_birth'], "%Y-%m-%d").date()
+                        except:
+                            user_data['date_of_birth'] = None
+
                     user = CustomUser.objects.create(
                         first_name=user_data['first_name'],
                         last_name=user_data['last_name'],
                         username=user_data['username'],
                         email=user_data['email'],
                         password=user_data['password'],
+                        gender=user_data.get('gender', ''),
+                        date_of_birth=user_data.get('date_of_birth'),
                         role='shop_owner'
                     )
 
-                    # ✅ Convert time fields back before creating shop
+                    # ✅ Step 2: Prepare shop data
                     shop_data = request.session['owner_shop_data']
                     shop_data['opening_time'] = datetime.strptime(shop_data['opening_time'], '%H:%M:%S').time()
                     shop_data['closing_time'] = datetime.strptime(shop_data['closing_time'], '%H:%M:%S').time()
 
-                    shop = Shop.objects.create(owner=user, **shop_data)
+                    # ✅ Step 3: Decode image files
+                    shop_logo_data = request.session.get('shop_logo')
+                    shop_logo_name = request.session.get('shop_logo_file', 'logo.png')
+                    shop_logo_file = ContentFile(base64.b64decode(shop_logo_data), name=shop_logo_name) if shop_logo_data else None
 
+                    ownership_data = request.session.get('ownership_proof')
+                    ownership_name = request.session.get('ownership_file', 'proof.png')
+                    ownership_file = ContentFile(base64.b64decode(ownership_data), name=ownership_name) if ownership_data else None
+
+                    # ✅ Step 4: Create Shop object
+                    shop = Shop.objects.create(
+                        owner=user,
+                        shop_name=shop_data['shop_name'],
+                        shop_category=shop_data['shop_category'],
+                        shop_address=shop_data['shop_address'],
+                        city=shop_data['city'],
+                        gst_number=shop_data['gst_number'],
+                        shop_logo=shop_logo_file,
+                        ownership_proof=ownership_file,
+                        opening_time=shop_data['opening_time'],
+                        closing_time=shop_data['closing_time'],
+                    )
+
+                    # ✅ Step 5: Link selected delivery pincodes from session
                     pin_ids = request.session.get('delivery_pincodes', [])
-                    shop.delivery_pincodes.set(PinCode.objects.filter(id__in=pin_ids))
+                    if pin_ids:
+                        print("📦 Delivery pin IDs:", pin_ids)
 
-                    # ✅ Create bank info
+                    shop.delivery_pincodes.set(PinCode.objects.filter(id__in=pin_ids))  # ✅ This line links pin codes                       
+
+                    # ✅ Step 6: Save bank info
                     ShopBankInfo.objects.create(shop=shop, **form.cleaned_data)
 
-                    # ✅ Clear session
-                    del request.session['owner_user_data']
-                    del request.session['owner_shop_data']
-                    del request.session['delivery_pincodes']
+                    # ✅ Step 7: Clear session data
+                    keys_to_clear = [
+                        'owner_user_data', 'owner_shop_data', 'delivery_pincodes',
+                        'shop_logo', 'ownership_proof', 'shop_logo_file', 'ownership_file'
+                    ]
+                    for key in keys_to_clear:
+                        request.session.pop(key, None)
 
+                    # ✅ Step 8: Login and redirect
                     messages.success(request, "Registration successful!")
                     login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                     return redirect('shop_owner_dashboard')
+
             except Exception as e:
                 messages.error(request, f"Registration failed: {e}")
+
     else:
         form = ShopBankForm()
 
     return render(request, 'shop/register_owner_step3.html', {'form': form})
-def select_role_view(request):
-    return render(request, 'shop/select_role.html')
+
 
 from django.shortcuts import render, redirect
 from django.contrib import messages
@@ -712,3 +829,32 @@ def shop_product_detail(request, product_id):
         'total_orders': total_orders,
         'total_revenue': total_revenue,
     })
+
+def select_role_view(request):
+    return render(request, 'shop/select_role.html')
+
+def create_shop(request):
+    if request.method == 'POST':
+        form = ShopForm(request.POST, request.FILES)
+        if form.is_valid():
+            shop = form.save(commit=False)
+            shop.owner = request.user  # ya jo bhi logic ho
+            shop.save()
+            form.save_m2m()  # ✅ THIS LINE IS MUST for ManyToMany like delivery_pincodes
+            messages.success(request, "Shop created!")
+            return redirect('shop_dashboard')
+
+@login_required
+def edit_shop(request):
+    shop = get_object_or_404(Shop, owner=request.user)
+
+    if request.method == 'POST':
+        form = ShopForm(request.POST, request.FILES, instance=shop)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Shop updated successfully.")
+            return redirect('shop_owner_dashboard')
+    else:
+        form = ShopForm(instance=shop)
+
+    return render(request, 'shop/edit_shop.html', {'form': form})

@@ -2,16 +2,9 @@
 {% block content %}
 <div class="container mt-4">
   <h2>Edit Shop Profile</h2>
-  <form method="POST">
+  <form method="POST" enctype="multipart/form-data">
     {% csrf_token %}
     {{ form.as_p }}
-
-    <label><strong>Delivery Pin Codes:</strong></label><br>
-    {% for pin in all_pincodes %}
-      <input type="checkbox" name="delivery_pincodes" value="{{ pin.id }}"
-             {% if pin in current_pincodes %}checked{% endif %}>
-      {{ pin.code }}<br>
-    {% endfor %}
 
     <button type="submit" class="btn btn-success mt-3">Save Changes</button>
   </form>

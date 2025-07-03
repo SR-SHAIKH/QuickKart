@@ -8,6 +8,7 @@ class ShopForm(forms.ModelForm):
             'shop_name',
             'shop_category',
             'shop_address',
+            'city',
             'shop_logo',
             'ownership_proof',
             'gst_number',

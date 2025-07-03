@@ -99,17 +99,23 @@ def register_owner_step2(request):
     if request.method == 'POST':
         form = ShopForm(request.POST, request.FILES)
         if form.is_valid():
-            shop_data = form.cleaned_data
-            request.session['owner_shop_data'] = {
-                field: form.cleaned_data[field]
-                for field in form.fields if field != 'delivery_pincodes'  # ✅ correct field name
+            # Save all form fields except the M2M separately
+            shop_data = {
+                field: form.cleaned_data.get(field)
+                for field in form.fields
+                if field != 'delivery_pincodes'
             }
-            request.session['delivery_pincodes'] = list(
-                form.cleaned_data['delivery_pincodes'].values_list('id', flat=True)
-            )
+
+            request.session['owner_shop_data'] = shop_data
+
+            # Save delivery_pincodes as list of IDs
+            delivery_pincode_ids = list(form.cleaned_data['delivery_pincodes'].values_list('id', flat=True))
+            request.session['delivery_pincodes'] = delivery_pincode_ids
+
             return redirect('register_owner_step3')
     else:
         form = ShopForm()
+
     return render(request, 'shop/register_owner_step2.html', {'form': form})
 
 
@@ -118,7 +124,39 @@ from .models import ShopBankInfo
 class ShopBankForm(forms.ModelForm):
     class Meta:
         model = ShopBankInfo
-        exclude = ['shop']  # Shop will be assigned in the view
+        fields = [
+            'payment_method',
+            'account_holder_name',
+            'account_number',
+            'ifsc_code',
+            'bank_name',
+            'upi_id',
+        ]
+        widgets = {
+            'payment_method': forms.Select(attrs={'class': 'form-select'}),
+            'account_holder_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'account_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'ifsc_code': forms.TextInput(attrs={'class': 'form-control'}),
+            'bank_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'upi_id': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        method = cleaned_data.get('payment_method')
+
+        if method in ['bank', 'both'] and not all([
+            cleaned_data.get('account_holder_name'),
+            cleaned_data.get('account_number'),
+            cleaned_data.get('ifsc_code'),
+            cleaned_data.get('bank_name')
+        ]):
+            raise forms.ValidationError("Please fill all bank details.")
+
+        if method in ['upi', 'both'] and not cleaned_data.get('upi_id'):
+            raise forms.ValidationError("UPI ID is required for UPI or Both method.")
+
+        return cleaned_data
 
 from .models import PinCode
 

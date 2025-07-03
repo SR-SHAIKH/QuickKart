@@ -1,11 +1,11 @@
-{% extends 'base.html' %}
-{% block title %}My Profiles{% endblock %}
-{% block content %}
+{% extends 'base.html' %} {% block title %}My Profiles{% endblock %} {% block
+content %}
 
 <div class="container mt-4">
   <h3 class="mb-4"><i class="bi bi-person-circle"></i> My Profiles</h3>
 
   <!-- Personal Section -->
+
   <div class="card mb-4 border-success">
     <div class="card-header bg-success text-white">Personal Details</div>
     <div class="card-body">
@@ -13,10 +13,18 @@
       <p><strong>Username:</strong> {{ user.username }}</p>
       <p><strong>Email:</strong> {{ user.email }}</p>
       <p><strong>Phone:</strong> {{ user.phone }}</p>
-      <p><strong>Gender:</strong> {{ user.gender|default:"N/A" }}</p>
-      <p><strong>Date of Birth:</strong> {{ user.dob|date:"F j, Y" }}</p>
+      <p>
+        <strong>Gender:</strong> {{ user.get_gender_display|default:"N/A" }}
+      </p>
+      <p>
+        <strong>Date of Birth:</strong> {{ user.date_of_birth|date:"F j, Y" }}
+      </p>
       <div class="text-end">
-        <a href="{% url 'owner_edit_profile' %}" class="btn btn-outline-success btn-sm">Update Personal</a>
+        <a
+          href="{% url 'owner_edit_profile' %}"
+          class="btn btn-outline-success btn-sm"
+          >Update Personal</a
+        >
       </div>
     </div>
   </div>
@@ -34,7 +42,11 @@
       <p><strong>Opening Time:</strong> {{ shop.opening_time }}</p>
       <p><strong>Closing Time:</strong> {{ shop.closing_time }}</p>
       <div class="text-end">
-        <a href="{% url 'edit_shop_profile' %}" class="btn btn-outline-primary btn-sm">Update Shop</a>
+        <a
+          href="{% url 'edit_shop_profile' %}"
+          class="btn btn-outline-primary btn-sm"
+          >Update Shop</a
+        >
       </div>
     </div>
   </div>
@@ -45,18 +57,21 @@
   <div class="card mb-4 border-dark">
     <div class="card-header bg-dark text-white">Bank Details</div>
     <div class="card-body">
-      <p><strong>Account Holder Name:</strong> {{ bank.account_holder_name }}</p>
+      <p>
+        <strong>Account Holder Name:</strong> {{ bank.account_holder_name }}
+      </p>
       <p><strong>Bank Name:</strong> {{ bank.bank_name }}</p>
       <p><strong>Account Number:</strong> {{ bank.account_number }}</p>
       <p><strong>IFSC Code:</strong> {{ bank.ifsc_code }}</p>
       <p><strong>UPI ID:</strong> {{ bank.upi_id }}</p>
       <div class="text-end">
-        <a href="#" class="btn btn-outline-dark btn-sm disabled">Update Bank (Coming Soon)</a>
+        <a href="#" class="btn btn-outline-dark btn-sm disabled"
+          >Update Bank (Coming Soon)</a
+        >
       </div>
     </div>
   </div>
   {% endif %}
-
 </div>
 
 {% endblock %}

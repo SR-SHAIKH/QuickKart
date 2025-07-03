@@ -5,17 +5,17 @@ class ShopBankForm(forms.ModelForm):
     class Meta:
         model = ShopBankInfo
         fields = [
+            'payment_method',          # This is correct as per your model
             'account_holder_name',
-            'bank_name',
             'account_number',
             'ifsc_code',
+            'bank_name',
             'upi_id',
-            'preferred_payment_method',
         ]
         widgets = {
-            'preferred_payment_method': forms.Select(choices=[
-                ('Bank', 'Bank'),
-                ('UPI', 'UPI'),
+            'payment_method': forms.Select(choices=[
+                ('bank', 'Bank Transfer'),
+                ('upi', 'UPI'),
+                ('both', 'Both'),
             ])
         }
-

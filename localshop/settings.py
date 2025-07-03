@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "django.contrib.sites",  # recommended if using email-related features
     "shop",
     "users",
+    'widget_tweaks',
 ]
 
 SITE_ID = 1
