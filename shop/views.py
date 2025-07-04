@@ -18,6 +18,7 @@ from .forms import EditShopProfileForm
 # from django.db.models import Sum
 from .models import Shop, PinCode
 import json
+from shop.forms import ShopBankForm
 from .models import (
     Product, CartItem, Order, OrderItem,
     Wishlist, Category, PinCode, Brand, Shop
@@ -32,14 +33,21 @@ from django.db.models import Q  # For flexible filtering
 from django.db.models import Q
 from .models import Category, Product, Shop, Wishlist, PinCode
 
+from django.shortcuts import render
+from django.db.models import Q
+from shop.models import Product, Category, Shop, PinCode, Wishlist
+
 def home(request):
     print("🔥 Home view called")
-    query = request.GET.get('q', '').strip()
-    selected_pincode = request.session.get('selected_pincode') or request.GET.get('pincode')
 
-    # Agar GET se pincode aya hai to session me save karo
-    if selected_pincode:
-        request.session['selected_pincode'] = selected_pincode
+    # GET se pincode mila? to session me save karo
+    if request.GET.get('pincode'):
+        request.session['selected_pincode'] = request.GET.get('pincode')
+
+    # PinCode: pehle session se lo (GET se agar hai to upar hi save ho chuka)
+    selected_pincode = request.session.get('selected_pincode')
+
+    query = request.GET.get('q', '').strip()
 
     categories = Category.objects.all()
     products = Product.objects.none()
@@ -47,32 +55,31 @@ def home(request):
     wishlist_products = []
 
     if selected_pincode:
-        # ✅ Debug print
-        print("Selected PinCode:", selected_pincode)
+        print("🧠 Selected PinCode:", selected_pincode)
 
         try:
-            # ✅ Shops delivering to selected pin
-            shops_in_area = Shop.objects.filter(delivery_pincodes__code=selected_pincode).distinct()
-            print("Shops in Area:", shops_in_area)
+            pin_obj = PinCode.objects.get(code=selected_pincode)
+            print("✅ PinCode object:", pin_obj)
 
-            # ✅ Products from those shops (without is_active)
-            products = Product.objects.filter(shop__in=shops_in_area).distinct()
-            print("Filtered Products:", products)
+            shops_in_area = Shop.objects.filter(delivery_pincodes=pin_obj).distinct()
+            print("🏪 Shops in Area:", shops_in_area)
 
-            # ✅ Search filter
+            products = Product.objects.filter(shop__in=shops_in_area, is_active=True).distinct()
+            print("📦 Filtered Products:", products)
+
             if query:
                 products = products.filter(
                     Q(name__icontains=query) | Q(description__icontains=query)
                 )
 
-            # ✅ Wishlist if customer
-            if request.user.is_authenticated and request.user.role == 'customer':
-                wishlist_products = Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True)
+            if request.user.is_authenticated and getattr(request.user, 'role', None) == 'customer':
+                wishlist_products = Wishlist.objects.filter(
+                    user=request.user
+                ).values_list('product_id', flat=True)
 
         except PinCode.DoesNotExist:
-            print("Invalid pincode selected.")
+            print("❌ PinCode not found!")
 
-    # ✅ Bestselling products logic
     bestselling_products = products.order_by('-stock')[:10] if products.exists() else []
 
     context = {

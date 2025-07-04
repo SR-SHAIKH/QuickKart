@@ -1,13 +1,72 @@
 {% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Edit Shop Details{% endblock %}
+
 {% block content %}
 <div class="container mt-5">
-  <h3 class="mb-4 text-dark"><i class="bi bi-bank"></i> Edit Bank Details</h3>
-  <form method="post">
+  <h3 class="mb-4 text-dark"><i class="bi bi-shop"></i> Edit Shop Details</h3>
+
+  <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
-    <div class="card p-4 shadow-sm border-dark">
-      {{ form.as_p }}
-      <button type="submit" class="btn btn-dark mt-2">Update</button>
+
+    <!-- Shop Name -->
+    <div class="mb-3">
+      <label for="id_name" class="form-label">Shop Name</label>
+      {{ form.name|add_class:"form-control" }}
     </div>
+
+    <!-- Description -->
+    <div class="mb-3">
+      <label for="id_description" class="form-label">Description</label>
+      {{ form.description|add_class:"form-control" }}
+    </div>
+
+    <!-- Opening and Closing Time -->
+    <div class="row mb-3">
+      <div class="col">
+        <label for="id_opening_time" class="form-label">Opening Time</label>
+        {{ form.opening_time|add_class:"form-control" }}
+      </div>
+      <div class="col">
+        <label for="id_closing_time" class="form-label">Closing Time</label>
+        {{ form.closing_time|add_class:"form-control" }}
+      </div>
+    </div>
+
+    <!-- Shop Logo -->
+    <div class="mb-3">
+      <label class="form-label">Shop Logo Currently:</label>
+      {% if form.instance.logo %}
+        <a href="{{ form.instance.logo.url }}" target="_blank">{{ form.instance.logo.name }}</a>
+        <br>
+      {% endif %}
+      <label for="id_logo" class="form-label">Change:</label>
+      {{ form.logo|add_class:"form-control" }}
+      {{ form.logo.clear_checkbox }}
+    </div>
+
+    <!-- Ownership Proof -->
+    <div class="mb-3">
+      <label class="form-label">Ownership Proof Currently:</label>
+      {% if form.instance.ownership_proof %}
+        <a href="{{ form.instance.ownership_proof.url }}" target="_blank">{{ form.instance.ownership_proof.name }}</a>
+        <br>
+      {% endif %}
+      <label for="id_ownership_proof" class="form-label">Change:</label>
+      {{ form.ownership_proof|add_class:"form-control" }}
+      {{ form.ownership_proof.clear_checkbox }}
+    </div>
+
+    <!-- Delivery Pincodes (Multi-select fix) -->
+    <div class="mb-3">
+      <label for="id_delivery_pincodes" class="form-label">Delivery Pincodes</label>
+      {{ form.delivery_pincodes|add_class:"form-control" }}
+      <small class="form-text text-muted">Hold Ctrl (or Cmd) to select multiple pincodes</small>
+    </div>
+
+    <!-- Submit Button -->
+    <button type="submit" class="btn btn-primary">Save Changes</button>
   </form>
 </div>
 {% endblock %}

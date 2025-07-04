@@ -121,6 +121,10 @@ def register_owner_step2(request):
 
 from .models import ShopBankInfo
 
+# forms.py
+from django import forms
+from shop.models import ShopBankInfo
+
 class ShopBankForm(forms.ModelForm):
     class Meta:
         model = ShopBankInfo
@@ -133,7 +137,10 @@ class ShopBankForm(forms.ModelForm):
             'upi_id',
         ]
         widgets = {
-            'payment_method': forms.Select(attrs={'class': 'form-select'}),
+            'payment_method': forms.Select(
+                choices=ShopBankInfo.PAYMENT_CHOICES,  # ✅ Correct usage
+                attrs={'class': 'form-select'}
+            ),
             'account_holder_name': forms.TextInput(attrs={'class': 'form-control'}),
             'account_number': forms.TextInput(attrs={'class': 'form-control'}),
             'ifsc_code': forms.TextInput(attrs={'class': 'form-control'}),
@@ -158,6 +165,7 @@ class ShopBankForm(forms.ModelForm):
 
         return cleaned_data
 
+
 from .models import PinCode
 
 class EditShopProfileForm(forms.ModelForm):
@@ -176,7 +184,7 @@ class EditShopProfileForm(forms.ModelForm):
             'city',
         ]
         widgets = {
-            'delivery_pincodes': forms.CheckboxSelectMultiple,
+            'delivery_pincodes': forms.SelectMultiple(attrs={'class': 'form-control'}),
             'opening_time': forms.TimeInput(attrs={'type': 'time'}),
             'closing_time': forms.TimeInput(attrs={'type': 'time'}),
         }

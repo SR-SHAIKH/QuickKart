@@ -1,12 +1,67 @@
 {% extends 'base.html' %}
+{% load widget_tweaks %}
+{% block title %}Edit Shop Profile{% endblock %}
 {% block content %}
-<div class="container mt-4">
-  <h2>Edit Shop Profile</h2>
-  <form method="POST" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form.as_p }}
+<div class="container mt-5">
+  <h2 class="mb-4">Edit Shop Details</h2>
 
-    <button type="submit" class="btn btn-success mt-3">Save Changes</button>
+  <form method="post" enctype="multipart/form-data" class="row g-3">
+    {% csrf_token %}
+
+    <div class="col-md-6">
+      <label class="form-label">{{ form.shop_name.label }}</label>
+      {{ form.shop_name|add_class:"form-control" }}
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">{{ form.shop_category.label }}</label>
+      {{ form.shop_category|add_class:"form-control" }}
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">{{ form.city.label }}</label>
+      {{ form.city|add_class:"form-control" }}
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">{{ form.gst_number.label }}</label>
+      {{ form.gst_number|add_class:"form-control" }}
+    </div>
+
+    <div class="col-12">
+      <label class="form-label">{{ form.shop_address.label }}</label>
+      {{ form.shop_address|add_class:"form-control" }}
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">{{ form.opening_time.label }}</label>
+      {{ form.opening_time|add_class:"form-control" }}
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">{{ form.closing_time.label }}</label>
+      {{ form.closing_time|add_class:"form-control" }}
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">{{ form.shop_logo.label }}</label>
+      {{ form.shop_logo|add_class:"form-control" }}
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">{{ form.ownership_proof.label }}</label>
+      {{ form.ownership_proof|add_class:"form-control" }}
+    </div>
+
+    <div class="col-12">
+      <label class="form-label">{{ form.delivery_pincodes.label }}</label>
+      {{ form.delivery_pincodes|add_class:"form-select" }}
+      <small class="text-muted">Hold Ctrl (or Cmd) to select multiple pincodes</small>
+    </div>
+
+    <div class="col-12 mt-3">
+      <button type="submit" class="btn btn-primary">Save Changes</button>
+    </div>
   </form>
 </div>
 {% endblock %}

@@ -1,31 +1,70 @@
 {% extends 'base.html' %}
+{% load widget_tweaks %}
+{% block title %}Edit Personal Profile{% endblock %}
 {% block content %}
-<div class="container mt-4">
-  <h2 class="mb-4">Edit Shop Owner Profile</h2>
-  <form method="post" enctype="multipart/form-data">
-  {% csrf_token %}
-  <div class="grid grid-cols-2 gap-4">
-    {{ form.first_name.label_tag }} {{ form.first_name }}
-    {{ form.last_name.label_tag }} {{ form.last_name }}
+<div class="container mt-5">
+  <h2 class="mb-4">Edit Personal Details</h2>
+  <form method="post" enctype="multipart/form-data" class="row g-3">
+    {% csrf_token %}
+    
+    <div class="col-md-6">
+      <label class="form-label">{{ form.first_name.label }}</label>
+      {{ form.first_name|add_class:"form-control" }}
+    </div>
 
-    {{ form.email.label_tag }} {{ form.email }}
-    {{ form.phone.label_tag }} {{ form.phone }}
+    <div class="col-md-6">
+      <label class="form-label">{{ form.last_name.label }}</label>
+      {{ form.last_name|add_class:"form-control" }}
+    </div>
 
-    {{ form.alt_phone.label_tag }} {{ form.alt_phone }}
-    {{ form.address_line1.label_tag }} {{ form.address_line1 }}
-    {{ form.address_line2.label_tag }} {{ form.address_line2 }}
+    <div class="col-md-6">
+      <label class="form-label">{{ form.email.label }}</label>
+      {{ form.email|add_class:"form-control" }}
+    </div>
 
-    {{ form.city.label_tag }} {{ form.city }}
-    {{ form.state.label_tag }} {{ form.state }}
-    {{ form.pin_code.label_tag }} {{ form.pin_code }}
+    <div class="col-md-6">
+      <label class="form-label">{{ form.phone.label }}</label>
+      {{ form.phone|add_class:"form-control" }}
+    </div>
 
-    {{ form.profile_picture.label_tag }} {{ form.profile_picture }}
-  </div>
+    <div class="col-md-6">
+      <label class="form-label">{{ form.alt_phone.label }}</label>
+      {{ form.alt_phone|add_class:"form-control" }}
+    </div>
 
-  <div class="mt-4">
-    <button type="submit" class="btn btn-primary">Save Changes</button>
-  </div>
-</form>
+    <div class="col-md-6">
+      <label class="form-label">{{ form.city.label }}</label>
+      {{ form.city|add_class:"form-control" }}
+    </div>
 
+    <div class="col-md-6">
+      <label class="form-label">{{ form.state.label }}</label>
+      {{ form.state|add_class:"form-control" }}
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">{{ form.pin_code.label }}</label>
+      {{ form.pin_code|add_class:"form-control" }}
+    </div>
+
+    <div class="col-12">
+      <label class="form-label">{{ form.address_line1.label }}</label>
+      {{ form.address_line1|add_class:"form-control" }}
+    </div>
+
+    <div class="col-12">
+      <label class="form-label">{{ form.address_line2.label }}</label>
+      {{ form.address_line2|add_class:"form-control" }}
+    </div>
+
+    <div class="col-md-6">
+      <label class="form-label">{{ form.profile_picture.label }}</label>
+      {{ form.profile_picture|add_class:"form-control" }}
+    </div>
+
+    <div class="col-12 mt-4">
+      <button type="submit" class="btn btn-success">Save Changes</button>
+    </div>
+  </form>
 </div>
 {% endblock %}
