@@ -865,3 +865,66 @@ def edit_shop(request):
         form = ShopForm(instance=shop)
 
     return render(request, 'shop/edit_shop.html', {'form': form})
+
+def update_cart(request):
+    if request.method == "POST":
+        for key, value in request.POST.items():
+            if key.startswith("quantity_"):
+                try:
+                    cart_item_id = int(key.split("_")[1])
+                    quantity = int(value)
+                    item = CartItem.objects.get(id=cart_item_id, user=request.user)
+                    item.quantity = quantity
+                    item.save()
+                except (ValueError, CartItem.DoesNotExist):
+                    continue
+        return redirect('cart_view')  # Use your actual cart page view name here
+    return redirect('cart_view')
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+from .models import CartItem
+@csrf_exempt
+def update_cart_quantity_ajax(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        item_id = data.get('item_id')
+        quantity = int(data.get('quantity'))
+
+        cart_item = CartItem.objects.get(id=item_id, user=request.user)
+        cart_item.quantity = quantity
+        cart_item.save()
+
+        return JsonResponse({'status': 'success'})
+
+def shipping_address_update(request):
+    if request.method == 'POST':
+        address_line1 = request.POST.get('address_line1', '')
+        address_line2 = request.POST.get('address_line2', '')
+        city = request.POST.get('city', '')
+        state = request.POST.get('state', '')
+        country = request.POST.get('country', '')
+        pin_code = request.POST.get('pin_code', '')
+
+        request.session['shipping_address'] = {
+            'address_line1': address_line1,
+            'address_line2': address_line2,
+            'city': city,
+            'state': state,
+            'country': country,
+            'pin_code': pin_code,
+        }
+        from django.contrib import messages
+        messages.success(request, "Shipping address updated!")
+        return redirect('cart_view')
+
+    shipping_address = request.session.get('shipping_address', {
+        'address_line1': getattr(request.user, 'address_line1', ''),
+        'address_line2': getattr(request.user, 'address_line2', ''),
+        'city': getattr(request.user, 'city', ''),
+        'state': getattr(request.user, 'state', ''),
+        'country': getattr(request.user, 'country', ''),
+        'pin_code': getattr(request.user, 'pin_code', ''),
+    })
+    return render(request, 'shop/shipping_address_update.html', {'shipping_address': shipping_address})

@@ -1,24 +1,111 @@
-{% extends 'base.html' %}
+{% extends 'shop/base_customer.html' %}
+{% load static %}
+{% load cart_filters %}
 
 {% block content %}
-<h2 class="text-2xl font-bold mb-4">Checkout</h2>
-
-{% if cart_items %}
-  <ul class="mb-4">
-    {% for item in cart_items %}
-      <li>{{ item.product.name }} (x{{ item.quantity }}) - ₹{{ item.product.price }}</li>
-    {% endfor %}
-  </ul>
-
-  <p class="font-semibold">Total: ₹{{ total }}</p>
-  <form method="POST">
+<div class="w-full min-h-[80vh] flex justify-center items-start">
+  <form method="POST" class="w-2/3 mx-auto bg-white rounded-2xl shadow-lg p-12 py-16">
     {% csrf_token %}
-    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded mt-4">
-      Confirm Order
-    </button>
-  </form>
-{% else %}
-  <p>Your cart is empty.</p>
-{% endif %}
-{% endblock %}
+    <h2 class="text-4xl font-extrabold mb-10 text-[#2e4e1b] text-center">Checkout</h2>
 
+    <!-- Shipping Address -->
+    <div class="mb-10 p-6 rounded-xl border-2 border-[#a8d5ba] bg-[#f0f8f4] flex justify-between items-center">
+      <div>
+        <h3 class="text-2xl font-bold mb-2 text-[#2e4e1b]">Shipping Address</h3>
+        {% if request.session.shipping_address or user.address_line1 %}
+          <p class="text-lg text-[#2e4e1b]">
+            {% with addr=request.session.shipping_address %}
+              {{ addr.address_line1|default:user.address_line1 }}, {{ addr.address_line2|default:user.address_line2 }}<br>
+              {{ addr.city|default:user.city }}, {{ addr.state|default:user.state }}, {{ addr.country|default:user.country }} - {{ addr.pin_code|default:user.pin_code }}
+            {% endwith %}
+          </p>
+        {% else %}
+          <p class="text-lg text-red-600">No shipping address set. Please add your shipping address.</p>
+        {% endif %}
+      </div>
+      <a href="{% url 'shipping_address_update' %}" class="ml-6 px-6 py-3 rounded bg-[#4a8c52] text-white font-semibold text-lg hover:bg-[#35703c] transition">Edit Address</a>
+    </div>
+
+    <!-- Payment Method -->
+    <div class="mb-10 p-6 rounded-xl border-2 border-[#a8d5ba] bg-[#f0f8f4]">
+      <h3 class="text-2xl font-bold mb-4 text-[#2e4e1b]">Payment Method</h3>
+      <div class="flex items-center gap-8 mb-4">
+        <label class="flex items-center text-xl font-semibold">
+          <input type="radio" name="payment_method" value="cod" required class="mr-2 w-6 h-6"> Cash on Delivery
+        </label>
+        <label class="flex items-center text-xl font-semibold">
+          <input type="radio" name="payment_method" value="upi" required class="mr-2 w-6 h-6"> UPI
+        </label>
+      </div>
+      <input type="text" name="upi_id" id="upi_id_input" placeholder="Enter UPI ID (if selected)" class="form-input mt-2 w-full text-lg px-4 py-2 border-2 border-[#a8d5ba] rounded hidden">
+    </div>
+
+    <!-- Order Summary -->
+    <div class="mb-10 p-6 rounded-2xl shadow bg-white border border-[#e0e0e0]">
+      <h3 class="text-2xl font-bold mb-6 text-[#2e4e1b]">Order Summary</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-lg rounded-xl overflow-hidden">
+          <thead>
+            <tr class="bg-[#eaf6ee] text-[#4a8c52]">
+              <th class="py-3 px-4 text-left font-semibold">Product</th>
+              <th class="py-3 px-4 text-center font-semibold">Qty</th>
+              <th class="py-3 px-4 text-right font-semibold">Price</th>
+              <th class="py-3 px-4 text-right font-semibold">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in cart_items %}
+            <tr class="border-b last:border-b-0 hover:bg-[#f6fbf8] transition">
+              <td class="py-3 px-4 flex items-center gap-3">
+                {% if item.product.image %}
+                  <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="w-10 h-10 object-cover rounded" />
+                {% else %}
+                  <div class="w-10 h-10 bg-gray-200 rounded flex items-center justify-center text-gray-400 text-xl">🛒</div>
+                {% endif %}
+                <span class="font-medium">{{ item.product.name }}</span>
+              </td>
+              <td class="py-3 px-4 text-center">{{ item.quantity }}</td>
+              <td class="py-3 px-4 text-right">₹{{ item.product.price }}</td>
+              <td class="py-3 px-4 text-right font-bold">₹{{ item.quantity|mul:item.product.price }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="mt-8 flex flex-col items-end gap-2">
+        <div class="w-full sm:w-1/2 bg-[#f0f8f4] rounded-xl p-4 flex flex-col gap-2">
+          <div class="flex justify-between text-base">
+            <span class="text-gray-600">Subtotal</span>
+            <span class="font-semibold">₹{{ total }}</span>
+          </div>
+          <div class="flex justify-between text-base">
+            <span class="text-gray-600">Shipping</span>
+            <span class="text-[#4a8c52] font-semibold">Free</span>
+          </div>
+          <div class="flex justify-between text-xl font-extrabold border-t pt-2 mt-2">
+            <span>Total</span>
+            <span class="text-[#4a8c52]">₹{{ total }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" class="w-full bg-[#4a8c52] text-white text-2xl font-bold py-4 rounded-xl hover:bg-[#35703c] transition">Place Order</button>
+  </form>
+</div>
+<script>
+  // Show UPI input only if UPI is selected
+  document.querySelectorAll('input[name="payment_method"]').forEach(function(radio) {
+    radio.addEventListener('change', function() {
+      var upiInput = document.getElementById('upi_id_input');
+      if (this.value === 'upi') {
+        upiInput.classList.remove('hidden');
+        upiInput.required = true;
+      } else {
+        upiInput.classList.add('hidden');
+        upiInput.required = false;
+      }
+    });
+  });
+</script>
+{% endblock %}

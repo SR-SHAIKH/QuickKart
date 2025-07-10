@@ -1,0 +1,63 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}QuickKart{% endblock %}</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --primary: #a8d5ba;
+        --secondary: #6ca775;
+        --background: #f0f8f4;
+        --accent: #4a8c52;
+        --text: #2e4e1b;
+      }
+      body {
+        background-color: var(--background);
+      }
+    </style>
+  </head>
+  <body class="min-h-screen flex flex-col" style="background-color: #f0f8f4;">
+    <!-- Navbar with Profile Dropdown -->
+    <nav class="w-full bg-[#a8d5ba] py-3 px-10 flex justify-between items-center shadow relative z-10">
+      <a href="/" class="text-2xl font-bold text-[#2e4e1b]">QuickKart</a>
+      <div class="relative">
+        {% if request.user.is_authenticated %}
+          <button id="profileDropdownBtn" class="focus:outline-none">
+            <img src="{% if request.user.profile_picture %}{{ request.user.profile_picture.url }}{% else %}{% static 'images/default_profile.png' %}{% endif %}"
+                 alt="Profile" class="w-10 h-10 rounded-full object-cover border-2 border-[#4a8c52]" />
+          </button>
+          <div id="profileDropdown" class="hidden absolute right-0 mt-2 w-44 bg-white rounded-lg shadow-lg py-2 border border-gray-200">
+            <a href="{% url 'customer_profile' %}" class="block px-4 py-2 text-gray-700 hover:bg-[#a8d5ba]">Profile</a>
+            <a href="{% url 'wishlist_page' %}" class="block px-4 py-2 text-gray-700 hover:bg-[#a8d5ba]">Wishlist</a>
+            <a href="{% url 'logout' %}" class="block px-4 py-2 text-red-600 hover:bg-[#a8d5ba]">Logout</a>
+          </div>
+          <script>
+            const btn = document.getElementById('profileDropdownBtn');
+            const dropdown = document.getElementById('profileDropdown');
+            btn.addEventListener('click', function(e) {
+              e.stopPropagation();
+              dropdown.classList.toggle('hidden');
+            });
+            document.addEventListener('click', function(e) {
+              if (!dropdown.classList.contains('hidden')) {
+                dropdown.classList.add('hidden');
+              }
+            });
+          </script>
+        {% else %}
+          <a href="{% url 'login' %}" class="text-[#2e4e1b] font-semibold">Login</a>
+        {% endif %}
+      </div>
+    </nav>
+    <main class="w-full flex-1">
+      {% block content %}{% endblock %}
+    </main>
+    <footer class="w-full bg-[#6ca775] text-white text-center py-4 mt-10">
+      &copy; {% now "Y" %} QuickKart. All rights reserved.
+    </footer>
+  </body>
+</html> 

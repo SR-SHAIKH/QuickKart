@@ -58,6 +58,45 @@
   </head>
 
   <body class="bg-gray-100 text-gray-800">
+    <!-- ✅ TOAST NOTIFICATIONS -->
+    <div id="toast-container" class="fixed top-6 right-6 z-50 flex flex-col gap-3"></div>
+    {% if messages %}
+      <script>
+        document.addEventListener('DOMContentLoaded', function() {
+          {% for message in messages %}
+            showToast("{{ message|escapejs }}", "{{ message.tags }}");
+          {% endfor %}
+        });
+      </script>
+    {% endif %}
+    <script>
+      function showToast(msg, type) {
+        const colors = {
+          success: 'bg-green-700',
+          error: 'bg-red-600',
+          warning: 'bg-yellow-400 text-black',
+          info: 'bg-blue-700',
+        };
+        const color = colors[type] || 'bg-green-900';
+        const toast = document.createElement('div');
+        toast.className = `min-w-[220px] max-w-xs px-5 py-3 rounded-lg shadow-lg text-white font-semibold flex items-center gap-2 ${color} animate-fade-in`;
+        toast.innerHTML = `<span>${msg}</span>`;
+        document.getElementById('toast-container').appendChild(toast);
+        setTimeout(() => {
+          toast.classList.add('opacity-0');
+          setTimeout(() => toast.remove(), 400);
+        }, 3000);
+      }
+    </script>
+    <style>
+      @keyframes fade-in {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .animate-fade-in {
+        animation: fade-in 0.3s;
+      }
+    </style>
     <!-- ✅ NAVBAR -->
     <nav class="bg-green-600 py-3 shadow text-white">
       <div class="container d-flex justify-content-between align-items-center">
@@ -89,7 +128,7 @@
             <!-- Profile Dropdown -->
             <div class="dropdown">
               <a
-                class="dropdown-toggle d-flex align-items-center"
+                class="d-flex align-items-center"
                 href="#"
                 role="button"
                 id="profileDropdown"

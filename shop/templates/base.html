@@ -1,130 +1,229 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% block title %}QuickKart{% endblock %}</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}QuickKart{% endblock %}</title>
 
-  <!-- Bootstrap CSS & Icons -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
-  <link href="{% static 'css/styles.css' %}" rel="stylesheet" />
+    <!-- Bootstrap CSS & Icons -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css"
+      rel="stylesheet"
+    />
+    <link href="{% static 'css/styles.css' %}" rel="stylesheet" />
 
-  <style>
-    .navbar-light .nav-link {
-      color: #333;
-      font-weight: 500;
-      transition: color 0.3s ease;
-    }
+    <style>
+      .navbar-light .nav-link {
+        color: #333;
+        font-weight: 500;
+        transition: color 0.3s ease;
+      }
 
-    .navbar-light .nav-link:hover {
-      color: #198754;
-    }
+      .navbar-light .nav-link:hover {
+        color: #198754;
+      }
 
-    .navbar-light .navbar-brand {
-      color: #198754;
-      font-weight: 600;
-    }
+      .navbar-light .navbar-brand {
+        color: #198754;
+        font-weight: 600;
+      }
 
-    .navbar-light .navbar-brand:hover {
-      text-decoration: none;
-      color: #145c36;
-    }
-  </style>
-</head>
-<body class="bg-light">
+      .navbar-light .navbar-brand:hover {
+        text-decoration: none;
+        color: #145c36;
+      }
 
- <!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm">
-  <div class="container">
-    <a class="navbar-brand fw-semibold fs-4 text-success" href="{% url 'home' %}">🛒 QuickKart</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
+      :root {
+        --primary-green: #1faf38;
+        --light-green: #a6d3b3;
+        --mint-green: #e7f6ea;
+        --button-green: #16a34a;
+        --accent-green: #8acca3;
+      }
 
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
-        {% if request.user.is_authenticated %}
-          {% if request.user.role == 'shop_owner' %}
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'shop_owner_dashboard' %}">Dashboard</a>
-            </li>
+      body {
+        background-color: var(--light-green) !important;
+      }
 
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'owner_profiles' %}">Profiles</a>
-            </li>
-          {% endif %}
+      .card,
+      .bg-white {
+        background-color: var(--mint-green) !important;
+      }
 
-          <li class="nav-item">
-  <a class="nav-link text-danger" href="#" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal">Logout</a>
-</li>
+      .btn-primary {
+        background-color: var(--button-green);
+        border-color: var(--button-green);
+      }
 
-        {% else %}
-          <li class="nav-item">
-            <a class="nav-link" href="{% url 'login' %}">Login</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#registerModal">Register</a>
-          </li>
-        {% endif %}
-      </ul>
-    </div>
-  </div>
-</nav>
+      .btn-primary:hover {
+        background-color: #128038;
+        border-color: #128038;
+      }
 
+      footer {
+        background-color: var(--primary-green) !important;
+        color: white !important;
+      }
+    </style>
+  </head>
+  <body class="bg-light">
+    <!-- Navbar -->
+    <nav
+      class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm"
+    >
+      <div class="container">
+        <a
+          class="navbar-brand fw-semibold fs-4 text-success"
+          href="{% url 'home' %}"
+          >🛒 QuickKart</a
+        >
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
 
-  <!-- Register Choice Modal -->
-  <div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content p-4 rounded-4">
-        <h5 class="modal-title text-center mb-3" id="registerModalLabel">Register As</h5>
-        <div class="d-flex flex-column gap-3">
-          <a href="{% url 'register' %}?role=customer" class="btn btn-outline-primary">🧑 Register as Customer</a>
-          <a href="{% url 'register' %}?role=shop_owner" class="btn btn-outline-success">🏪 Register as Shop Owner</a>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            {% if request.user.is_authenticated %}
+  {% if request.user.role == 'shop_owner' %}
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'shop_owner_dashboard' %}">Dashboard</a>
+    </li>
+
+    <li class="nav-item">
+      <a class="nav-link" href="{% url 'owner_profiles' %}">Profiles</a>
+    </li>
+  {% endif %}
+
+  <li class="nav-item">
+    <a
+      class="nav-link text-danger"
+      href="#"
+      data-bs-toggle="modal"
+      data-bs-target="#logoutConfirmModal"
+      >Logout</a
+    >
+  </li>
+{% else %}
+  <li class="nav-item">
+    <a class="nav-link" href="{% url 'login' %}">Login</a>
+  </li>
+  <li class="nav-item">
+    <a
+      class="nav-link"
+      href="#"
+      data-bs-toggle="modal"
+      data-bs-target="#registerModal"
+      >Register</a
+    >
+  </li>
+{% endif %}
+
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Register Choice Modal -->
+    <div
+      class="modal fade"
+      id="registerModal"
+      tabindex="-1"
+      aria-labelledby="registerModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content p-4 rounded-4">
+          <h5 class="modal-title text-center mb-3" id="registerModalLabel">
+            Register As
+          </h5>
+          <div class="d-flex flex-column gap-3">
+            <a
+              href="{% url 'register' %}?role=customer"
+              class="btn btn-outline-primary"
+              >🧑 Register as Customer</a
+            >
+            <a
+              href="{% url 'register' %}?role=shop_owner"
+              class="btn btn-outline-success"
+              >🏪 Register as Shop Owner</a
+            >
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Main -->
-  <main class="container py-4">
-    {% if messages %}
-      {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    <!-- Main -->
+    <main class="container py-4">
+      {% if messages %} {% for message in messages %}
+      <div
+        class="alert alert-{{ message.tags }} alert-dismissible fade show"
+        role="alert"
+      >
+        {{ message }}
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+        ></button>
+      </div>
+      {% endfor %} {% endif %} {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer
+      class="text-white text-center py-3 mt-5"
+      style="background-color: var(--primary-green)"
+    >
+      &copy; {% now "Y" %} QuickKart. All rights reserved.
+    </footer>
+    <!-- Logout Confirmation Modal -->
+    <div
+      class="modal fade"
+      id="logoutConfirmModal"
+      tabindex="-1"
+      aria-labelledby="logoutConfirmModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content p-3 rounded-3">
+          <div class="modal-header">
+            <h5 class="modal-title" id="logoutConfirmModalLabel">
+              Confirm Logout
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body">Are you sure you want to log out?</div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <a href="{% url 'logout' %}" class="btn btn-danger">Yes, Logout</a>
+          </div>
         </div>
-      {% endfor %}
-    {% endif %}
-    {% block content %}{% endblock %}
-  </main>
-
-  <!-- Footer -->
-  <footer class="bg-dark text-white text-center py-3 mt-5">
-    &copy; {{ now.year }} QuickKart. All rights reserved.
-  </footer>
-<!-- Logout Confirmation Modal -->
-<div class="modal fade" id="logoutConfirmModal" tabindex="-1" aria-labelledby="logoutConfirmModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content p-3 rounded-3">
-      <div class="modal-header">
-        <h5 class="modal-title" id="logoutConfirmModalLabel">Confirm Logout</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        Are you sure you want to log out?
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <a href="{% url 'logout' %}" class="btn btn-danger">Yes, Logout</a>
       </div>
     </div>
-  </div>
-</div>
 
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-</body>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
 </html>

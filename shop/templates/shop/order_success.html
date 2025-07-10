@@ -1,7 +1,12 @@
-{% extends 'base.html' %}
+{% extends 'shop/base_customer.html' %}
 
 {% block content %}
-  <h2 class="text-2xl font-bold mb-4 text-green-600">Order Placed Successfully!</h2>
-  <p>Thank you for your purchase.</p>
-  <a href="{% url 'customer_dashboard' %}" class="text-blue-600 hover:underline">Go back to Dashboard</a>
+<div class="min-h-[70vh] flex items-center justify-center bg-[#f6fbf8]">
+  <div class="bg-white rounded-2xl shadow-xl px-8 py-12 w-full max-w-lg flex flex-col items-center">
+    <div class="text-6xl mb-4">🎉</div>
+    <h2 class="text-3xl font-extrabold text-[#2e4e1b] mb-2 text-center">Order Placed Successfully!</h2>
+    <p class="text-lg text-gray-700 mb-6 text-center">Thank you for your purchase.<br/>Aapka order jaldi hi deliver ho jayega.</p>
+    <a href="{% url 'customer_dashboard' %}" class="mt-4 w-full bg-[#4a8c52] text-white text-xl font-bold py-3 rounded-xl text-center hover:bg-[#35703c] transition">Go to Dashboard</a>
+  </div>
+</div>
 {% endblock %}

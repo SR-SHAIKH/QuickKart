@@ -1,44 +1,105 @@
 {% extends 'shop/base_customer.html' %}
+{% load static %}
+{% load cart_filters %}
+
 {% block content %}
-<div class="p-6 max-w-5xl mx-auto">
-    <h2 class="text-3xl font-bold mb-6 text-gray-800">🛒 Your Shopping Cart</h2>
+{% if not cart_items %}
+  <div class="min-h-[70vh] flex items-center justify-center">
+    <a href="{% url 'home' %}" class="px-8 py-4 rounded-xl bg-[#4a8c52] text-white text-2xl font-bold shadow-lg hover:bg-[#35703c] transition">Explore Shops & Products</a>
+  </div>
+{% else %}
+<div class="min-h-[80vh] w-full flex justify-center items-start">
+  <div class="w-11/12 mx-auto px-24 py-24">
+    <!-- Cart Title -->
+    <div class="text-4xl font-extrabold mb-4 text-[#2e4e1b]">Cart</div>
+    <div class="border-t-2 border-black my-12"></div>
+    <!-- Address Section -->
+    <div class="flex items-center justify-between mb-0">
+      <div>
+        <div class="text-xl font-bold mb-1 text-[#2e4e1b]">Address</div>
+        <div class="text-lg font-semibold mb-2 text-[#2e4e1b]">
+          {{ user.address_line1 }}, {{ user.address_line2 }}<br>
+          {{ user.city }}, {{ user.state }}, {{ user.country }} - {{ user.pin_code }}
+        </div>
+      </div>
+      <a href="{% url 'shipping_address_update' %}" class="ml-4 px-6 py-3 rounded bg-[#4a8c52] text-white font-semibold text-lg hover:bg-[#35703c] transition">Edit Address</a>
+    </div>
+    <div class="border-t-2 border-black my-12"></div>
 
-    {% if cart_items %}
-        <div class="overflow-x-auto">
-            <table class="w-full table-auto text-left border border-gray-200 rounded-md shadow">
-                <thead class="bg-gray-100">
-                    <tr>
-                        <th class="py-3 px-4">Product</th>
-                        <th class="py-3 px-4 text-center">Price</th>
-                        <th class="py-3 px-4 text-center">Quantity</th>
-                        <th class="py-3 px-4 text-center">Total</th>
-                        <th class="py-3 px-4 text-center">Action</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    {% for item in cart_items %}
-                    <tr>
-                        <td class="py-3 px-4">{{ item.product.name }}</td>
-                        <td class="py-3 px-4 text-center">₹{{ item.product.price }}</td>
-                        <td class="py-3 px-4 text-center">{{ item.quantity }}</td>
-                        <td class="py-3 px-4 text-center">₹{{ item.total_price }}</td>
-                        <td class="py-3 px-4 text-center">
-                            <a href="{% url 'remove_from_cart' item.id %}" class="text-red-600 hover:underline">Remove</a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    <!-- Cart Items -->
+    {% for item in cart_items %}
+    <div class="flex items-center gap-6 mb-12">
+      <!-- Small Image/Icon -->
+      <div class="flex-shrink-0 w-20 h-20 rounded-xl flex items-center justify-center text-xl font-bold bg-[#a8d5ba] text-[#2e4e1b]">
+        {% if item.product.image %}
+          <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="w-16 h-16 object-contain rounded" />
+        {% else %}
+          <span>IMG</span>
+        {% endif %}
+      </div>
+      <!-- Title + Description -->
+      <div class="flex flex-col min-w-0 flex-1 justify-center">
+        <div class="text-2xl font-bold truncate text-[#2e4e1b]">{{ item.product.name }}</div>
+        <div class="text-base text-gray-700 truncate">{{ item.product.description }}</div>
+      </div>
+      <!-- Quantity + Remove (side by side) -->
+      <div class="flex items-center gap-4 ml-6">
+        <form method="post" action="{% url 'update_cart_quantity_ajax' %}" class="flex items-center">
+          {% csrf_token %}
+          <input type="hidden" name="item_id" value="{{ item.id }}">
+          <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="10"
+            class="w-16 text-lg py-2 border-2 border-black rounded bg-transparent text-center cart-qty-input" data-price="{{ item.product.price }}" data-item-id="{{ item.id }}" />
+        </form>
+        <form method="post" action="{% url 'remove_from_cart' item.id %}">
+          {% csrf_token %}
+          <button type="submit" class="px-6 py-2 rounded font-bold bg-[#6ca775] text-white text-lg">Remove</button>
+        </form>
+      </div>
+      <!-- Item Total (live update) -->
+      <div class="ml-8 font-bold text-[#2e4e1b] text-2xl">
+        ₹<span id="item-total-{{ item.id }}">{{ item.quantity|mul:item.product.price }}</span>
+      </div>
+    </div>
+    {% endfor %}
 
-        <div class="mt-6 text-right">
-            <p class="text-lg font-semibold">Total: ₹{{ total }}</p>
-            <a href="{% url 'checkout' %}" class="inline-block bg-green-600 hover:bg-green-700 text-white font-medium px-6 py-2 rounded mt-4">Proceed to Checkout</a>
-        </div>
-    {% else %}
-        <div class="bg-yellow-100 text-yellow-800 p-4 rounded-md text-center">
-            🛍️ Your cart is currently empty. <a href="{% url 'home' %}" class="text-blue-500 underline">Continue shopping</a>
-        </div>
-    {% endif %}
+    <div class="border-t-2 border-black my-12"></div>
+
+    <!-- Summary Section (only shipping and total) -->
+    <div class="flex flex-col gap-0 mb-2">
+      <div class="flex justify-between items-center py-4">
+        <span class="font-bold text-xl text-[#2e4e1b]">Shipping charge</span>
+        <span class="font-bold text-xl text-right text-[#4a8c52] min-w-[80px]">Free</span>
+      </div>
+      <div class="flex justify-between items-center py-4">
+        <span class="font-bold text-xl text-[#2e4e1b]">Total</span>
+        <span class="font-bold text-xl text-right text-[#4a8c52] min-w-[80px]" id="cart-grand-total">₹{{ total }}</span>
+      </div>
+    </div>
+    <div class="border-t-2 border-black my-12"></div>
+    <div class="flex justify-end">
+      <a href="{% url 'checkout' %}" class="px-12 py-4 rounded font-bold text-2xl transition bg-[#4a8c52] text-white">Check out</a>
+    </div>
+  </div>
 </div>
+<script>
+  // Live update item total and grand total on quantity change
+  document.querySelectorAll('.cart-qty-input').forEach(function(input) {
+    input.addEventListener('input', function() {
+      const price = parseFloat(this.dataset.price);
+      const qty = parseInt(this.value) || 0;
+      const itemId = this.dataset.itemId;
+      const itemTotal = price * qty;
+      document.getElementById('item-total-' + itemId).textContent = itemTotal.toFixed(2);
+      // Update grand total
+      let grandTotal = 0;
+      document.querySelectorAll('.cart-qty-input').forEach(function(inp) {
+        const p = parseFloat(inp.dataset.price);
+        const q = parseInt(inp.value) || 0;
+        grandTotal += p * q;
+      });
+      document.getElementById('cart-grand-total').textContent = '₹' + grandTotal.toFixed(2);
+    });
+  });
+</script>
+{% endif %}
 {% endblock %}
