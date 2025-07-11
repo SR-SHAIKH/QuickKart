@@ -240,7 +240,57 @@ def shop_owner_orders(request):
         items__product__shop_owner=request.user
     ).prefetch_related('items__product', 'customer').distinct()
 
-    return render(request, 'products/owner_orders.html', {'orders': orders})
+    # For each order, find eligible riders (by pin code)
+    eligible_riders_map = {}
+    for order in orders:
+        import re
+        match = re.search(r'(\d{6})', order.delivery_address)
+        pin_code = match.group(1) if match else None
+        print(f"Order {order.id} delivery_address: {order.delivery_address}, extracted pin_code: {pin_code}")
+        if pin_code:
+            eligible_riders = CustomUser.objects.filter(role='rider', on_duty=True, delivery_pincodes__code=pin_code).distinct()
+            print(f"Eligible riders for pincode {pin_code}: {[r.email for r in eligible_riders]}")
+        else:
+            eligible_riders = CustomUser.objects.none()
+        eligible_riders_map[order.id] = eligible_riders
+
+    manual_status_choices = [
+        ('customer_pickup', 'Customer Pickup'),
+        ('cancelled', 'Cancelled'),
+        ('owner_delivery', 'Owner Delivery'),
+    ]
+
+    if request.method == 'POST':
+        order_id = request.POST.get('order_id')
+        action = request.POST.get('action')
+        rider_ids = request.POST.getlist('rider_ids')
+        manual_status = request.POST.get('manual_status')
+        order = Order.objects.get(id=order_id)
+        if action == 'confirm' and order.status == 'pending' and order.items.first().product.shop_owner == request.user:
+            order.status = 'confirmed'
+            order.save()
+            messages.success(request, f'Order #{order.id} confirmed!')
+            return redirect('shop_owner_orders')
+        if order.status == 'confirmed' and order.items.first().product.shop_owner == request.user:
+            if rider_ids:
+                order.delivery_rider_id = rider_ids[0]
+                order.status = 'shipped'
+                order.save()
+                order.backup_riders.set(rider_ids[1:])
+                messages.success(request, f'Order #{order.id} assigned to rider(s) successfully!')
+            elif manual_status:
+                order.status = manual_status
+                order.save()
+                messages.info(request, f'Order #{order.id} status updated to {order.get_status_display()}.')
+            return redirect('shop_owner_orders')
+        if action == 'mark_delivered' and order.status in ['shipped', 'out_for_delivery']:
+            order.status = 'delivered'
+            order.save()
+            messages.success(request, f'Order #{order.id} marked as delivered!')
+            return redirect('shop_owner_orders')
+        return redirect('shop_owner_orders')
+
+    return render(request, 'products/owner_orders.html', {'orders': orders, 'eligible_riders_map': eligible_riders_map, 'manual_status_choices': manual_status_choices})
 
 # --------------------- SHOP OWNER FEATURES ---------------------
 @login_required
@@ -339,9 +389,30 @@ def checkout(request):
     total = sum(item.product.price * item.quantity for item in cart_items)
 
     if request.method == 'POST':
-        # Create the Order Change user to customer
+        # Get the shop from the first cart item
+        first_item = cart_items.first()
+        shop = first_item.product.shop if first_item else None
+        shop_pincode = None
+        if shop and shop.delivery_pincodes.exists():
+            shop_pincode = shop.delivery_pincodes.first().code
+
+        # Build the delivery address
+        shipping_address = request.session.get('shipping_address')
+        if shipping_address:
+            # Compose address string from session dict
+            address_str = f"{shipping_address.get('address_line1', '')}, {shipping_address.get('address_line2', '')}, {shipping_address.get('city', '')}, {shipping_address.get('state', '')}, {shipping_address.get('country', '')} - {shipping_address.get('pin_code', '')}"
+        else:
+            # Fallback to user profile address
+            address_str = f"{request.user.address_line1}, {request.user.address_line2}, {request.user.city}, {request.user.state}, {request.user.country} - {request.user.pin_code}"
+
+        # Ensure the shop's pincode is in the address
+        if shop_pincode and shop_pincode not in address_str:
+            address_str = address_str.strip() + f" - {shop_pincode}"
+
         order = Order.objects.create(
             customer=request.user,
+            delivery_address=address_str,
+            phone=request.user.phone,
             total_amount=total
         )
 
@@ -398,12 +469,61 @@ def order_success(request):
 
 def buy_now(request, product_id):
     product = get_object_or_404(Product, id=product_id)
-
-    # ✅ Store this product in session or direct user to checkout
-    # This is up to your logic
     request.session['buy_now_product_id'] = product.id
-    
-    return redirect('checkout')  # or your custom checkout route
+    return redirect('buy_now_checkout')
+
+@login_required
+def buy_now_checkout(request):
+    product_id = request.session.get('buy_now_product_id')
+    if not product_id:
+        return redirect('home')
+    product = get_object_or_404(Product, id=product_id)
+    quantity = 1
+    total = product.price * quantity
+
+    # Always ensure shipping address is in session
+    shipping_address = request.session.get('shipping_address')
+    if not shipping_address or not shipping_address.get('address_line1') or not shipping_address.get('pin_code'):
+        # Save user profile address to session if not present
+        if request.user.address_line1 and request.user.pin_code:
+            request.session['shipping_address'] = {
+                'address_line1': request.user.address_line1,
+                'address_line2': request.user.address_line2,
+                'city': request.user.city,
+                'state': request.user.state,
+                'country': request.user.country,
+                'pin_code': request.user.pin_code,
+            }
+            shipping_address = request.session['shipping_address']
+        else:
+            messages.warning(request, "No shipping address set. Please add your shipping address before placing the order.")
+            return redirect('shipping_address_update')
+
+    address_str = f"{shipping_address.get('address_line1', '')}, {shipping_address.get('address_line2', '')}, {shipping_address.get('city', '')}, {shipping_address.get('state', '')}, {shipping_address.get('country', '')} - {shipping_address.get('pin_code', '')}"
+
+    if request.method == 'POST':
+        order = Order.objects.create(
+            customer=request.user,
+            delivery_address=address_str,
+            phone=request.user.phone,
+            total_amount=total,
+            status='pending',
+        )
+        OrderItem.objects.create(
+            order=order,
+            product=product,
+            quantity=quantity,
+            price=product.price
+        )
+        request.session.pop('buy_now_product_id', None)
+        return redirect('order_success')
+
+    return render(request, 'shop/checkout.html', {
+        'buy_now_product': product,
+        'cart_items': None,
+        'total': total,
+        'is_buy_now': True,
+    })
 
 
 @login_required
@@ -928,3 +1048,104 @@ def shipping_address_update(request):
         'pin_code': getattr(request.user, 'pin_code', ''),
     })
     return render(request, 'shop/shipping_address_update.html', {'shipping_address': shipping_address})
+
+@login_required
+def order_detail(request, order_id):
+    order = get_object_or_404(Order, id=order_id, customer=request.user)
+    items = order.items.select_related('product')
+    return render(request, 'shop/order_detail.html', {
+        'order': order,
+        'items': items,
+    })
+
+@login_required
+def rider_order_detail(request, order_id):
+    order = get_object_or_404(Order, id=order_id, delivery_rider=request.user)
+    items = order.items.select_related('product')
+    if request.method == 'POST' and request.POST.get('action') == 'mark_delivered':
+        if order.rider_status == 'accepted' and order.status == 'out_for_delivery':
+            order.status = 'delivered'
+            order.save()
+            messages.success(request, f'Order #{order.id} marked as Delivered!')
+            return redirect('rider_order_detail', order_id=order.id)
+    return render(request, 'shop/order_detail.html', {
+        'order': order,
+        'items': items,
+    })
+
+@login_required
+def rider_dashboard(request):
+    # raise Exception('TEST RIDER DASHBOARD')  # Removed test exception
+    if request.user.role != 'rider':
+        return redirect('home')
+
+    # Handle POST for toggling duty status
+    if request.method == 'POST' and 'toggle_duty' in request.POST:
+        request.user.on_duty = not request.user.on_duty
+        request.user.save()
+        messages.info(request, f'You are now {"On Duty" if request.user.on_duty else "Off Duty"}.')
+        return redirect('rider_dashboard')
+
+    # Show all orders assigned to the rider
+    orders = Order.objects.filter(
+        delivery_rider=request.user
+    ).prefetch_related('items__product', 'customer')
+
+    # Stats for Earnings & Stats
+    all_assigned_orders = Order.objects.filter(delivery_rider=request.user)
+    total_assigned = all_assigned_orders.count()
+    total_rejected = all_assigned_orders.filter(rider_status='declined').count()
+    total_selected = all_assigned_orders.filter(rider_status='accepted').count()
+    total_delivered = all_assigned_orders.filter(status='delivered').count()
+    total_pending = all_assigned_orders.filter(rider_status='accepted', status='out_for_delivery').count()
+
+    print('DEBUG Rider Dashboard Stats:')
+    print('total_assigned:', total_assigned)
+    print('total_rejected:', total_rejected)
+    print('total_selected:', total_selected)
+    print('total_delivered:', total_delivered)
+    print('total_pending:', total_pending)
+
+    # Handle POST for status update or rejection
+    if request.method == 'POST' and 'order_id' in request.POST:
+        order_id = request.POST.get('order_id')
+        action = request.POST.get('action')
+        order = Order.objects.get(id=order_id, delivery_rider=request.user)
+        if action == 'reject':
+            order.rider_status = 'declined'
+            # Assign next backup rider if available
+            backups = list(order.backup_riders.all())
+            if backups:
+                next_rider = backups[0]
+                order.delivery_rider = next_rider
+                order.backup_riders.remove(next_rider)
+                order.rider_status = 'pending'
+                order.save()
+                messages.info(request, f'Order #{order.id} assigned to next backup rider.')
+            else:
+                order.delivery_rider = None
+                order.status = 'confirmed'  # Or another status to indicate needs reassignment
+                order.save()
+                messages.warning(request, f'All backup riders rejected Order #{order.id}. Please reassign.')
+            return redirect('rider_dashboard')
+        elif action == 'accept' and order.rider_status == 'pending' and order.status == 'shipped':
+            order.rider_status = 'accepted'
+            order.status = 'out_for_delivery'
+            order.save()
+            messages.success(request, f'Order #{order.id} accepted and marked as Out for Delivery.')
+            return redirect('rider_dashboard')
+        elif action == 'mark_delivered' and order.rider_status == 'accepted' and order.status == 'out_for_delivery':
+            order.status = 'delivered'
+            order.save()
+            messages.success(request, f'Order #{order.id} marked as Delivered!')
+            return redirect('rider_dashboard')
+    return render(request, 'users/rider_dashboard.html', {
+        'assigned_deliveries': orders,
+        'rider': request.user,
+        'on_duty': request.user.on_duty,
+        'total_assigned': total_assigned,
+        'total_rejected': total_rejected,
+        'total_selected': total_selected,
+        'total_delivered': total_delivered,
+        'total_pending': total_pending,
+    })

@@ -1,0 +1,66 @@
+{% extends 'shop/base_customer.html' %}
+{% block content %}
+<style>
+.rider-action-btn {
+  padding: 8px 24px;
+  font-size: 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+}
+</style>
+<div class="container max-w-2xl mx-auto my-8 p-6 bg-white rounded-xl shadow">
+  <div class="mb-6 flex items-center justify-between">
+    <h2 class="text-2xl font-bold text-[#2e4e1b]">Order #{{ order.id }}</h2>
+    <span class="px-4 py-2 rounded-full text-white font-semibold text-sm bg-green-600">{{ order.get_status_display }}</span>
+  </div>
+  <div class="mb-4 text-gray-700">
+    <div><span class="font-semibold">Customer Name:</span> {{ order.customer.get_full_name|default:order.customer.email }}</div>
+    <div><span class="font-semibold">Customer Email:</span> {{ order.customer.email }}</div>
+    <div><span class="font-semibold">Customer Phone:</span> {{ order.customer.phone }}</div>
+    <div><span class="font-semibold">Order Date:</span> {{ order.order_date|date:'d M Y, H:i' }}</div>
+    <div><span class="font-semibold">Total:</span> ₹{{ order.total_amount }}</div>
+  </div>
+  <div class="mb-6 p-4 bg-gray-50 rounded">
+    <div class="font-semibold mb-1">Shipping Address</div>
+    <div class="text-gray-800">{{ order.delivery_address }}</div>
+    <div class="text-gray-600 text-sm mt-1">Phone: {{ order.phone }}</div>
+  </div>
+  <div class="mb-6">
+    <div class="font-semibold mb-2">Products in this order:</div>
+    <div class="divide-y">
+      {% for item in items %}
+      <div class="flex items-center gap-4 py-4">
+        <div class="w-16 h-16 flex items-center justify-center bg-gray-100 rounded">
+          {% if item.product.image %}
+            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="w-14 h-14 object-contain rounded" />
+          {% else %}
+            <span class="text-gray-400">IMG</span>
+          {% endif %}
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="font-bold text-lg text-[#2e4e1b] truncate">{{ item.product.name }}</div>
+          <div class="text-gray-600 text-sm truncate">{{ item.product.description|truncatewords:10 }}</div>
+        </div>
+        <div class="text-gray-700 text-base">Qty: {{ item.quantity }}</div>
+        <div class="font-bold text-green-700 text-lg">₹{{ item.price }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="flex justify-end gap-4">
+    {% if request.user.role == 'rider' and order.delivery_rider == request.user and order.status == 'out_for_delivery' and order.rider_status == 'accepted' %}
+      <form method="post" action="" class="inline">
+        {% csrf_token %}
+        <input type="hidden" name="order_id" value="{{ order.id }}">
+        <input type="hidden" name="action" value="mark_delivered">
+        <button type="submit" class="rider-action-btn bg-green-600 text-white hover:bg-green-700 transition">Mark as Delivered</button>
+      </form>
+    {% endif %}
+    {% if request.user.role == 'rider' %}
+      <a href="{% url 'rider_dashboard' %}" class="rider-action-btn bg-[#4a8c52] text-white hover:bg-[#35703c] transition">Back to Rider Dashboard</a>
+    {% else %}
+      <a href="{% url 'my_orders' %}" class="px-6 py-3 rounded bg-[#4a8c52] text-white font-semibold text-lg hover:bg-[#35703c] transition">Back to My Orders</a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %} 

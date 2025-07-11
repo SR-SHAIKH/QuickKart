@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+  <div class="card shadow p-4" style="max-width: 400px; width: 100%; background: var(--mint-green); border-radius: 1.5rem;">
+    <h2 class="mb-4 text-center text-success">Login to QuickKart</h2>
+    {% if error %}
+      <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+    <form method="post" action="{% url 'login' %}">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label for="id_email" class="form-label">Email</label>
+        <input type="email" name="email" class="form-control" id="id_email" required autofocus>
+      </div>
+      <div class="mb-3">
+        <label for="id_password" class="form-label">Password</label>
+        <input type="password" name="password" class="form-control" id="id_password" required>
+      </div>
+      <button type="submit" class="btn btn-success w-100 mb-2">Login</button>
+    </form>
+    <div class="text-center mt-2">
+      <span>Don't have an account?</span>
+      <a href="#" class="text-success fw-semibold" data-bs-toggle="modal" data-bs-target="#registerModal">Register</a>
+    </div>
+  </div>
+</div>
+{% endblock %} 

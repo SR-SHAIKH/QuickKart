@@ -142,21 +142,34 @@
       aria-hidden="true"
     >
       <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content p-4 rounded-4">
-          <h5 class="modal-title text-center mb-3" id="registerModalLabel">
-            Register As
-          </h5>
+        <div class="modal-content p-4 rounded-4" style="background: var(--mint-green); border: none; box-shadow: 0 8px 32px rgba(0,0,0,0.12);">
+          <h3 class="modal-title text-center mb-4 text-success fw-bold" id="registerModalLabel">
+            <i class="bi bi-person-plus me-2"></i>Register As
+          </h3>
           <div class="d-flex flex-column gap-3">
             <a
               href="{% url 'register' %}?role=customer"
-              class="btn btn-outline-primary"
-              >🧑 Register as Customer</a
+              class="btn btn-outline-primary btn-lg rounded-pill d-flex align-items-center justify-content-center gap-2"
+              ><i class="bi bi-person"></i> Register as Customer</a
             >
             <a
               href="{% url 'register' %}?role=shop_owner"
-              class="btn btn-outline-success"
-              >🏪 Register as Shop Owner</a
+              class="btn btn-outline-success btn-lg rounded-pill d-flex align-items-center justify-content-center gap-2"
+              ><i class="bi bi-shop"></i> Register as Shop Owner</a
             >
+            <!-- Button/Link -->
+            <a href="#" id="otherRolesToggle" class="text-center mt-2 text-muted small">
+              <span class="fw-semibold">Other Roles</span> <span id="arrow">&#9660;</span>
+            </a>
+            <!-- Hidden section -->
+            <div id="otherRolesSection" style="display:none;">
+              <a
+                href="{% url 'rider_register' %}"
+                class="btn btn-outline-secondary btn-lg rounded-pill d-flex align-items-center justify-content-center gap-2 mt-2"
+              >
+                <i class="bi bi-bicycle"></i> Register as Delivery Rider
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -225,5 +238,20 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      // Simple toggle logic
+      document.getElementById('otherRolesToggle').onclick = function(e) {
+        e.preventDefault();
+        var section = document.getElementById('otherRolesSection');
+        var arrow = document.getElementById('arrow');
+        if (section.style.display === 'none') {
+          section.style.display = 'block';
+          arrow.innerHTML = '&#9650;'; // Up arrow
+        } else {
+          section.style.display = 'none';
+          arrow.innerHTML = '&#9660;'; // Down arrow
+        }
+      };
+    </script>
   </body>
 </html>

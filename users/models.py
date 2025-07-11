@@ -4,6 +4,7 @@ from django.utils.crypto import get_random_string
 ROLE_CHOICES = (
     ('customer', 'Customer'),
     ('shop_owner', 'Shop Owner'),
+    ('rider', 'Delivery Rider'),
 )
 
 GENDER_CHOICES = (
@@ -42,12 +43,6 @@ class CustomUserManager(BaseUserManager):
             raise ValueError("Superuser must have is_superuser=True.")
         return self.create_user(email, password, **extra_fields)
 
-class PinCode(models.Model):
-    code = models.CharField(max_length=10, unique=True)
-
-    def __str__(self):
-        return self.code
-
 # ✅ Custom User Model
 class CustomUser(AbstractUser):
     username = models.CharField(max_length=150, unique=True, blank=True, null=True)
@@ -69,7 +64,8 @@ class CustomUser(AbstractUser):
     profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
 
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='customer')
-    delivery_pincodes = models.ManyToManyField('PinCode', blank=True)
+    delivery_pincodes = models.ManyToManyField('shop.PinCode', blank=True)
+    on_duty = models.BooleanField(default=False, help_text='Is the rider currently available for delivery?')
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
@@ -93,4 +89,4 @@ class CustomerProfile(models.Model):
     address = models.TextField(blank=True)
 
     def __str__(self):
-        return self.user.username
+        return self.user.email

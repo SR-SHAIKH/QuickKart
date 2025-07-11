@@ -5,18 +5,25 @@
 
 {% if orders %}
   {% for order in orders %}
-    <div class="bg-white p-4 rounded shadow mb-4">
-      <p><strong>Order ID:</strong> {{ order.id }}</p>
-      <p><strong>Date:</strong> {{ order.created_at }}</p>
-      <p><strong>Total:</strong> ₹{{ order.total_amount }}</p>
-      <ul class="ml-4 list-disc">
-        {% for item in order.items.all %}
-          <li>{{ item.product.name }} - {{ item.quantity }} pcs</li>
-        {% endfor %}
-      </ul>
-    </div>
+    <a href="{% url 'order_detail' order.id %}" class="block no-underline">
+      <div class="bg-white p-4 rounded shadow mb-4 transition hover:shadow-lg hover:bg-green-50 cursor-pointer">
+        <p><strong>Order ID:</strong> {{ order.id }}</p>
+        <p><strong>Date:</strong> {{ order.created_at }}</p>
+        <p><strong>Total:</strong> ₹{{ order.total_amount }}</p>
+        <ul class="ml-4 list-disc">
+          {% for item in order.items.all %}
+            <li>{{ item.product.name }} - {{ item.quantity }} pcs</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </a>
   {% endfor %}
 {% else %}
-  <p>You haven't placed any orders yet.</p>
+  <div class="min-h-[60vh] flex flex-col items-center justify-center text-center gap-6 mt-5">
+    <i class="bi bi-box-seam text-7xl text-gray-400 mb-2"></i>
+    <div class="text-3xl font-extrabold text-[#2e4e1b]">No orders yet!</div>
+    <div class="text-lg text-gray-600 mb-2">You haven’t placed any orders yet.</div>
+    <a href="{% url 'home' %}" class="px-8 py-4 rounded-xl bg-[#4a8c52] text-white text-2xl font-bold shadow-lg hover:bg-[#35703c] transition">Shop Now</a>
+  </div>
 {% endif %}
 {% endblock %}

@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+<style>
+.plain-link {
+    color: #000 !important;
+    font-size: 15px;
+    text-decoration: none;
+    font-weight: 500;
+    display: inline-block;
+    margin-top: 2px;
+}
+.plain-link:hover, .plain-link:focus {
+    color: #000 !important;
+    text-decoration: underline;
+}
+.order-id {
+    font-size: 13px;
+    font-weight: bold;
+    color: #555;
+    display: block;
+    margin-bottom: 2px;
+}
+.table-modern th, .table-modern td {
+    vertical-align: middle !important;
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+}
+.table-modern tr {
+    border-bottom: 1px solid #f0f0f0;
+}
+.btn-modern {
+    border-radius: 20px !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    font-size: 14px;
+    padding: 4px 18px;
+    margin-bottom: 4px;
+    width: 120px;
+    text-align: center;
+}
+.btn-modern + .btn-modern {
+    margin-left: 8px;
+}
+.btn-flex {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+    width: 100%;
+}
+</style>
+<div class="container my-5">
+  <h2 class="mb-4 text-center">🚴 Rider Dashboard</h2>
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-success">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <div class="card p-3 shadow-sm">
+        <h5 class="mb-2">Profile</h5>
+        <p><strong>Name:</strong> {{ rider.first_name }} {{ rider.last_name }}</p>
+        <p><strong>Email:</strong> {{ rider.email }}</p>
+        <p><strong>Phone:</strong> {{ rider.phone }}</p>
+        <form method="post" action="" class="d-inline">
+          {% csrf_token %}
+          <label class="form-label me-2">On Duty:</label>
+          <input type="hidden" name="on_duty_toggle" value="1">
+          <button type="submit" class="btn btn-sm {% if rider.on_duty %}btn-success{% else %}btn-outline-secondary{% endif %} rounded-pill px-3">
+            {% if rider.on_duty %}<i class="bi bi-toggle-on"></i> On Duty{% else %}<i class="bi bi-toggle-off"></i> Off Duty{% endif %}
+          </button>
+        </form>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card p-3 shadow-sm">
+        <h5 class="mb-2">Earnings & Stats</h5>
+        <ul class="list-unstyled mb-0 mt-3">
+          <li><strong>Orders:</strong> {{ total_assigned|default:0 }}</li>
+          <li><strong>Rejected:</strong> {{ total_rejected|default:0 }}</li>
+          <li><strong>Selected:</strong> {{ total_selected|default:0 }}</li>
+          <li><strong>Delivered:</strong> {{ total_delivered|default:0 }}</li>
+          <li><strong>Pending:</strong> {{ total_pending|default:0 }}</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="card p-4 shadow-sm">
+    <h4 class="mb-3">Assigned Deliveries</h4>
+    {% if assigned_deliveries %}
+      <div class="table-responsive">
+        <table class="table align-middle table-modern">
+          <thead>
+            <tr>
+              <th>Order #</th>
+              <th>Status</th>
+              <th>Address</th>
+              <th>Phone</th>
+              <th>Date</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for order in assigned_deliveries %}
+            <tr>
+              <td>
+                <span class="order-id">#{{ order.id }}</span>
+                {% with first_item=order.items.all.0 %}<a href="{% url 'rider_order_detail' order.id %}" class="plain-link">{{ first_item.product.name }}</a>{% endwith %}
+              </td>
+              <td><span class="badge bg-info">{{ order.get_status_display }}</span></td>
+              <td>{{ order.delivery_address }}</td>
+              <td>{{ order.phone }}</td>
+              <td>{{ order.order_date|date:"M d, Y H:i" }}</td>
+              <td>
+                {% if order.rider_status == 'pending' and order.status == 'shipped' %}
+                  <div class="btn-flex">
+                    <form method="post" class="d-inline w-100">
+                      {% csrf_token %}
+                      <input type="hidden" name="order_id" value="{{ order.id }}">
+                      <input type="hidden" name="action" value="accept">
+                      <button type="submit" class="btn btn-sm btn-primary btn-modern">Accept</button>
+                    </form>
+                    <form method="post" class="d-inline w-100">
+                      {% csrf_token %}
+                      <input type="hidden" name="order_id" value="{{ order.id }}">
+                      <input type="hidden" name="action" value="reject">
+                      <button type="submit" class="btn btn-sm btn-danger btn-modern">Decline</button>
+                    </form>
+                  </div>
+                {% elif order.rider_status == 'accepted' and order.status == 'out_for_delivery' %}
+                  <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="order_id" value="{{ order.id }}">
+                    <input type="hidden" name="action" value="mark_delivered">
+                    <button type="submit" class="btn btn-sm btn-success btn-modern">Mark as Delivered</button>
+                  </form>
+                {% elif order.rider_status == 'declined' %}
+                  <span class="text-danger">Declined</span>
+                {% elif order.status == 'delivered' %}
+                  <span class="text-success">Delivered</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="alert alert-info text-center mb-0">
+        No assigned deliveries yet. You will see your delivery assignments here!
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %} 

@@ -54,7 +54,7 @@
             </tr>
           </thead>
           <tbody>
-            {% for item in cart_items %}
+            {% for item in order.unique_items %}
             <tr class="border-b last:border-b-0 hover:bg-[#f6fbf8] transition">
               <td class="py-3 px-4 flex items-center gap-3">
                 {% if item.product.image %}

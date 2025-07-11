@@ -56,9 +56,32 @@ class Order(models.Model):
         ('pending', 'Pending'),
         ('confirmed', 'Confirmed'),
         ('shipped', 'Shipped'),
+        ('out_for_delivery', 'Out for Delivery'),
         ('delivered', 'Delivered'),
     ]
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+
+    RIDER_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('accepted', 'Accepted'),
+        ('declined', 'Declined'),
+    ]
+    rider_status = models.CharField(max_length=10, choices=RIDER_STATUS_CHOICES, default='pending')
+
+    delivery_rider = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True, blank=True,
+        limit_choices_to={'role': 'rider'},
+        on_delete=models.SET_NULL,
+        related_name='assigned_orders',
+    )
+
+    backup_riders = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        related_name='backup_orders',
+        blank=True,
+        limit_choices_to={'role': 'rider'}
+    )
 
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 

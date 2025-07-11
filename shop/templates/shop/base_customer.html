@@ -19,7 +19,20 @@
     <link rel="stylesheet" href="{% static 'css/style.css' %}" />
     <link rel="stylesheet" href="{% static 'css/styles.css' %}" />
 
+    <!-- Google Fonts: Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- EasyZoom CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/easyzoom@2.5.0/css/easyzoom.css" rel="stylesheet" />
+
     <style>
+      html, body {
+        font-family: 'Poppins', Inter, Arial, sans-serif !important;
+      }
+      h1, h2, h3, h4, h5, h6, .font-extrabold, .font-bold, .btn, .fw-bold {
+        font-family: 'Poppins', Inter, Arial, sans-serif !important;
+        font-weight: 600;
+      }
       .search-wrapper {
         transition: all 0.3s ease;
         width: 36px;
@@ -174,6 +187,10 @@
           <div class="d-flex flex-column gap-3">
             <a href="{% url 'register' %}?role=customer" class="btn btn-outline-primary">🧑 Register as Customer</a>
             <a href="{% url 'register' %}?role=shop_owner" class="btn btn-outline-success">🏪 Register as Shop Owner</a>
+            <div id="otherRolesToggle" class="text-center mt-2">
+              <a href="#" class="small text-muted" onclick="document.getElementById('riderOption').classList.toggle('d-none'); return false;">Other roles</a>
+            </div>
+            <a href="{% url 'rider_register' %}" id="riderOption" class="btn btn-outline-secondary d-none">🚴 Register as Delivery Rider</a>
           </div>
         </div>
       </div>
@@ -197,6 +214,22 @@
         </div>
       </div>
     </div>
+
+    <!-- ✅ GLOBAL LOADING SPINNER -->
+    <div id="global-spinner-overlay" class="fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-80">
+      <div class="spinner-border text-success" style="width: 3rem; height: 3rem;" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+    <style>
+      #global-spinner-overlay {
+        transition: opacity 0.3s;
+      }
+      #global-spinner-overlay.hide {
+        opacity: 0;
+        pointer-events: none;
+      }
+    </style>
 
     <!-- ✅ JS -->
     <script>
@@ -233,9 +266,24 @@
           }
         });
       }
+
+      // Hide global spinner when page is loaded, but keep it for at least 700ms
+      const spinnerStart = Date.now();
+      document.addEventListener('DOMContentLoaded', function() {
+        const spinner = document.getElementById('global-spinner-overlay');
+        const minTime = 700; // ms
+        const elapsed = Date.now() - spinnerStart;
+        const remaining = Math.max(0, minTime - elapsed);
+        setTimeout(() => {
+          if (spinner) spinner.classList.add('hide');
+          setTimeout(() => { if (spinner) spinner.style.display = 'none'; }, 400);
+        }, remaining);
+      });
     </script>
 
     <!-- ✅ Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- EasyZoom JS -->
+    <script src="https://cdn.jsdelivr.net/npm/easyzoom@2.5.0/dist/easyzoom.js"></script>
   </body>
 </html>

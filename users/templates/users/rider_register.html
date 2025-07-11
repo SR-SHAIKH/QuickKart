@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load widget_tweaks %}
+{% block content %}
+<div class="container max-w-lg mx-auto my-8 p-6 bg-white rounded-xl shadow">
+  <h2 class="text-2xl font-bold mb-4 text-center">Become a Delivery Rider</h2>
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-success">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+  <form method="post" enctype="multipart/form-data" class="mt-4">
+    {% csrf_token %}
+    {% if form.errors %}
+      <div class="alert alert-danger">
+        <ul class="mb-0">
+          {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+              <li><strong>{{ field|capfirst }}:</strong> {{ error }}</li>
+            {% endfor %}
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+    {{ form.non_field_errors }}
+    <div class="mb-3">
+      <label for="id_first_name" class="form-label">First Name</label>
+      {{ form.first_name|add_class:"form-control" }}
+      {{ form.first_name.errors }}
+    </div>
+    <div class="mb-3">
+      <label for="id_last_name" class="form-label">Last Name</label>
+      {{ form.last_name|add_class:"form-control" }}
+      {{ form.last_name.errors }}
+    </div>
+    <div class="mb-3">
+      <label for="id_email" class="form-label">Email</label>
+      {{ form.email|add_class:"form-control" }}
+      {{ form.email.errors }}
+    </div>
+    <div class="mb-3">
+      <label for="id_phone" class="form-label">Phone</label>
+      {{ form.phone|add_class:"form-control" }}
+      {{ form.phone.errors }}
+    </div>
+    <div class="mb-3">
+      <label for="id_alt_phone" class="form-label">Alternate Phone</label>
+      {{ form.alt_phone|add_class:"form-control" }}
+      {{ form.alt_phone.errors }}
+    </div>
+    <div class="mb-3">
+      <label for="id_password1" class="form-label">Password</label>
+      {{ form.password1|add_class:"form-control" }}
+      {{ form.password1.errors }}
+    </div>
+    <div class="mb-3">
+      <label for="id_password2" class="form-label">Confirm Password</label>
+      {{ form.password2|add_class:"form-control" }}
+      {{ form.password2.errors }}
+    </div>
+    <!-- Owner-style Custom PinCode Multi-Select Section -->
+    <div class="mb-3">
+      <label class="form-label">Delivery Pin Codes</label>
+      <input type="text" id="pincode-search" class="form-control" placeholder="Search and add pincode">
+      <div id="suggestions" class="border rounded p-2 mt-1 bg-white shadow-sm" style="display:none; max-height:200px; overflow-y:auto;"></div>
+      <div id="selected-pincodes" class="mt-2 d-flex flex-wrap gap-2"></div>
+      <div id="pincode-hidden-inputs"></div>
+      <small class="form-text text-muted">Type to search and select multiple pin codes. Click on a tag to remove.</small>
+    </div>
+    <div class="mb-3">
+      <label for="id_address" class="form-label">Address</label>
+      {{ form.address|add_class:"form-control" }}
+      {{ form.address.errors }}
+    </div>
+    <div class="mb-3">
+      <label for="id_profile_picture" class="form-label">Profile Picture</label>
+      {{ form.profile_picture|add_class:"form-control" }}
+      {{ form.profile_picture.errors }}
+    </div>
+    <div class="mb-3">
+      <label for="id_gender" class="form-label">Gender</label>
+      {{ form.gender|add_class:"form-select" }}
+      {{ form.gender.errors }}
+    </div>
+    <div class="mb-3">
+      <label for="id_date_of_birth" class="form-label">Date of Birth</label>
+      {{ form.date_of_birth|add_class:"form-control" }}
+      {{ form.date_of_birth.errors }}
+    </div>
+    <div class="mb-3">
+      <label for="id_vehicle_type" class="form-label">Vehicle Type</label>
+      {{ form.vehicle_type|add_class:"form-select" }}
+      {{ form.vehicle_type.errors }}
+    </div>
+    <div class="mb-3">
+      <label for="id_vehicle_number" class="form-label">Vehicle Number</label>
+      {{ form.vehicle_number|add_class:"form-control" }}
+      {{ form.vehicle_number.errors }}
+    </div>
+    <div class="mb-3">
+      <label for="id_id_proof" class="form-label">ID Proof</label>
+      {{ form.id_proof|add_class:"form-control" }}
+      {{ form.id_proof.errors }}
+    </div>
+    <button type="submit" class="btn btn-success w-100 py-2 mt-2">Register as Rider</button>
+  </form>
+</div>
+<script>
+  // DEBUG: all_pincodes_json = {{ all_pincodes_json|safe }}
+  const allPincodes = JSON.parse(`{{ all_pincodes_json|safe }}`);
+  const input = document.getElementById('pincode-search');
+  const suggestions = document.getElementById('suggestions');
+  const selectedDiv = document.getElementById('selected-pincodes');
+  const hiddenInputs = document.getElementById('pincode-hidden-inputs');
+  const selectedPincodes = new Map();
+
+  input.addEventListener('input', function () {
+    const value = this.value.trim().toLowerCase();
+    suggestions.innerHTML = '';
+    if (!value) {
+      suggestions.style.display = 'none';
+      return;
+    }
+    const matches = allPincodes.filter(p => ((p.code && p.code.includes(value)) || (p.area && p.area.toLowerCase().includes(value))) && !selectedPincodes.has(p.id));
+    if (matches.length === 0) {
+      const div = document.createElement('div');
+      div.textContent = 'No matching pin codes found.';
+      div.className = 'text-muted p-2';
+      suggestions.appendChild(div);
+    } else {
+      matches.forEach(p => {
+        const div = document.createElement('div');
+        div.textContent = `${p.code} - ${p.area || ''}`;
+        div.className = 'p-2 border-bottom pointer';
+        div.style.cursor = 'pointer';
+        div.onclick = () => selectPincode(p);
+        suggestions.appendChild(div);
+      });
+    }
+    suggestions.style.display = 'block';
+  });
+
+  function selectPincode(p) {
+    if (selectedPincodes.has(p.id)) return;
+    selectedPincodes.set(p.id, p);
+    // Create tag
+    const tag = document.createElement('span');
+    tag.className = 'badge rounded-pill bg-primary text-white d-flex align-items-center px-3 py-2 gap-2';
+    tag.innerHTML = `${p.code} <span style="cursor:pointer;" onclick="removePincode(${p.id}, this)">&times;</span>`;
+    selectedDiv.appendChild(tag);
+    // Create hidden input
+    const hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.name = 'delivery_pincodes';
+    hidden.value = p.id;
+    hidden.id = `hidden-pin-${p.id}`;
+    hiddenInputs.appendChild(hidden);
+    suggestions.style.display = 'none';
+    input.value = '';
+  }
+
+  function removePincode(id, element) {
+    selectedPincodes.delete(id);
+    element.parentElement.remove(); // Remove tag
+    document.getElementById(`hidden-pin-${id}`).remove(); // Remove hidden input
+  }
+</script>
+{% endblock %} 

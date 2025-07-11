@@ -35,6 +35,7 @@ urlpatterns = [
     path('checkout/', views.checkout, name='checkout'),
     path('orders/', views.my_orders, name='my_orders'),
     path('order-success/', views.order_success, name='order_success'),
+    path('orders/<int:order_id>/', views.order_detail, name='order_detail'),
 
     # 👤 Customer Profile
     path('dashboard/customer/profile/', user_views.customer_profile_view, name='customer_profile'),
@@ -56,7 +57,7 @@ urlpatterns = [
     path('products/delete/<int:product_id>/', views.delete_product, name='delete_product'),
 
     # 🚴 Rider (planned, can be uncommented when ready)
-    # path('dashboard/rider/', views.rider_dashboard, name='rider_dashboard'),
+    path('dashboard/rider/', views.rider_dashboard, name='rider_dashboard'),
     
     path('dashboard/change-password-done/', auth_views.PasswordChangeDoneView.as_view(
        template_name='users/password_change_done.html'
@@ -89,6 +90,8 @@ urlpatterns = [
     path('cart/update/', views.update_cart, name='update_cart'),
     path('cart/update-quantity/', views.update_cart_quantity_ajax, name='update_cart_quantity_ajax'),
     path('shipping-address/update/', views.shipping_address_update, name='shipping_address_update'),
+    path('rider/order/<int:order_id>/', views.rider_order_detail, name='rider_order_detail'),
+    path('buy-now-checkout/', views.buy_now_checkout, name='buy_now_checkout'),
 
 ]
 

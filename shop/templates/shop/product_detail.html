@@ -4,8 +4,12 @@
     
     <!-- Product Image -->
     <div class="flex justify-center items-start">
-      <img src="{{ product.image.url }}" alt="{{ product.name }}"
-           class="w-full max-w-sm object-contain rounded-lg shadow-md" />
+      <div class="easyzoom easyzoom--overlay">
+        <a href="{{ product.image.url }}">
+          <img src="{{ product.image.url }}" alt="{{ product.name }}"
+               class="w-full max-w-sm object-contain rounded-lg shadow-md" />
+        </a>
+      </div>
     </div>
 
     <!-- Product Details -->
@@ -110,5 +114,12 @@
         });
     });
   });
+
+  // Initialize EasyZoom
+  if (window.EasyZoom) {
+    document.querySelectorAll('.easyzoom').forEach(function(el) {
+      new EasyZoom(el);
+    });
+  }
 </script>
 {% endblock %}

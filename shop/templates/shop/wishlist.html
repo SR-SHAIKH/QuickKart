@@ -2,7 +2,6 @@
 {% load static %}
 {% block content %}
 <div class="container py-4">
-  <h2 class="text-center mb-4 text-3xl font-bold">Your Wishlist</h2>
 
   {% if wishlist_items %}
     <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
@@ -36,7 +35,12 @@
       {% endfor %}
     </div>
   {% else %}
-    <p class="text-center text-muted mt-5">Your wishlist is empty.</p>
+    <div class="min-h-[60vh] flex flex-col items-center justify-center text-center gap-6 mt-5">
+      <i class="bi bi-heart text-7xl text-gray-400 mb-2"></i>
+      <div class="text-3xl font-extrabold text-[#2e4e1b]">Your wishlist is empty!</div>
+      <div class="text-lg text-gray-600 mb-2">You haven’t added any products to your wishlist yet.</div>
+      <a href="{% url 'home' %}" class="px-8 py-4 rounded-xl bg-[#4a8c52] text-white text-2xl font-bold shadow-lg hover:bg-[#35703c] transition">Explore Products</a>
+    </div>
   {% endif %}
 </div>
 
