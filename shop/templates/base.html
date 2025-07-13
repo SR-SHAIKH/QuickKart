@@ -79,7 +79,7 @@
       <div class="container">
         <a
           class="navbar-brand fw-semibold fs-4 text-success"
-          href="{% url 'home' %}"
+          href="{% if request.user.is_authenticated %}{% if request.user.role == 'shop_owner' %}{% url 'shop_owner_dashboard' %}{% elif request.user.role == 'rider' %}{% url 'rider_dashboard' %}{% else %}{% url 'home' %}{% endif %}{% else %}{% url 'home' %}{% endif %}"
           >🛒 QuickKart</a
         >
         <button

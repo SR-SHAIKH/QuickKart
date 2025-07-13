@@ -61,9 +61,8 @@ Profile - LocalShop{% endblock %} {% block content %}
 
             <p class="mt-3 mb-0"><strong>Address:</strong></p>
             <p class="mb-0">
-              {{ user.address|default:"-" }}<br />
-              {{ user.city|default:"" }}, {{ user.state|default:"" }} - {{
-              user.pincode|default:"" }}<br />
+              {{ user.address_line1|default:"-" }} {{ user.address_line2|default:"" }}<br />
+              {{ user.city|default:"" }}, {{ user.state|default:"" }} - {{ user.pin_code|default:"" }}<br />
               {{ user.country|default:"" }}
             </p>
           </div>

@@ -117,6 +117,7 @@ AUTHENTICATION_BACKENDS = [
 
 # Redirect if login required
 LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/dashboard/shop/'  # Default redirect for shop owners
 
 # Logging
 LOG_DIR = BASE_DIR / "logs"
@@ -143,3 +144,8 @@ LOGGING = {
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Razorpay Configuration
+RAZORPAY_KEY_ID = config("RAZORPAY_KEY_ID", default="rzp_test_YOUR_TEST_KEY")
+RAZORPAY_KEY_SECRET = config("RAZORPAY_KEY_SECRET", default="YOUR_TEST_SECRET")
+RAZORPAY_CURRENCY = "INR"

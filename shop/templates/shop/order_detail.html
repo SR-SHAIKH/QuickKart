@@ -56,6 +56,20 @@
         <button type="submit" class="rider-action-btn bg-green-600 text-white hover:bg-green-700 transition">Mark as Delivered</button>
       </form>
     {% endif %}
+    
+    <!-- Invoice and Payment Actions -->
+    {% if request.user.role == 'customer' %}
+      {% if order.status == 'delivered' %}
+        <a href="{% url 'generate_invoice' order.id %}" class="px-6 py-3 rounded bg-blue-600 text-white font-semibold text-lg hover:bg-blue-700 transition">
+          📄 View Invoice
+        </a>
+      {% else %}
+        <span class="px-6 py-3 rounded bg-gray-400 text-white font-semibold text-lg cursor-not-allowed">
+          📄 Invoice (Available after delivery)
+        </span>
+      {% endif %}
+    {% endif %}
+    
     {% if request.user.role == 'rider' %}
       <a href="{% url 'rider_dashboard' %}" class="rider-action-btn bg-[#4a8c52] text-white hover:bg-[#35703c] transition">Back to Rider Dashboard</a>
     {% else %}

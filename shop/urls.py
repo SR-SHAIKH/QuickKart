@@ -41,9 +41,7 @@ urlpatterns = [
     path('dashboard/customer/profile/', user_views.customer_profile_view, name='customer_profile'),
     path('dashboard/customer/edit-profile/', user_views.customer_edit_profile, name='customer_edit_profile'),
 
-    # 🛍️ Shop Owner Profile
-    path('dashboard/shop/profile/', user_views.owner_profile_view, name='owner_profile'),
-    path('dashboard/shop/edit-profile/', user_views.owner_edit_profile, name='owner_edit_profile'),
+    # 🛍️ Shop Owner Profile - Using existing edit_shop_profile
 
     # 🔐 Optional password change
     path('dashboard/change-password/', user_views.CustomPasswordChangeView.as_view(), name='password_change'),
@@ -92,6 +90,18 @@ urlpatterns = [
     path('shipping-address/update/', views.shipping_address_update, name='shipping_address_update'),
     path('rider/order/<int:order_id>/', views.rider_order_detail, name='rider_order_detail'),
     path('buy-now-checkout/', views.buy_now_checkout, name='buy_now_checkout'),
+
+    # 📄 Invoice & Payment URLs
+    path('invoice/<int:order_id>/', views.generate_invoice, name='generate_invoice'),
+    path('invoice/<int:invoice_id>/download/', views.download_invoice_pdf, name='download_invoice_pdf'),
+    path('payment/<int:order_id>/', views.process_payment, name='process_payment'),
+    path('payment/online/', views.process_online_payment, name='process_online_payment'),
+    path('payment/success/<int:payment_id>/', views.payment_success, name='payment_success'),
+    path('payment/failed/<int:payment_id>/', views.payment_failed, name='payment_failed'),
+    path('payment/history/', views.payment_history, name='payment_history'),
+    path('owner/invoices/', views.owner_invoices, name='owner_invoices'),
+    path('webhook/razorpay/', views.razorpay_webhook, name='razorpay_webhook'),
+    path('owner/edit-personal/', views.edit_owner_profile, name='edit_owner_profile'),
 
 ]
 

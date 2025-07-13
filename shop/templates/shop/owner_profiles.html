@@ -15,7 +15,7 @@
       <p><strong>Phone:</strong> {{ user.phone }}</p>
       <p><strong>Gender:</strong> {{ user.gender|default:"-" }}</p>
       <p><strong>Date of Birth:</strong> {{ user.date_of_birth|default:"-" }}</p>
-      <a href="{% url 'owner_edit_profile' %}" class="btn btn-outline-success float-end">Update Personal</a>
+      <a href="{% url 'edit_owner_profile' %}" class="btn btn-outline-success float-end">Update Personal</a>
     </div>
   </div>
 

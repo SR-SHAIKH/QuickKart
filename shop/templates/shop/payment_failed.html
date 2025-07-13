@@ -1,0 +1,190 @@
+{% extends 'shop/base_customer.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+.failed-container {
+    max-width: 500px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    overflow: hidden;
+    text-align: center;
+}
+
+.failed-header {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+    color: white;
+    padding: 40px 30px;
+}
+
+.failed-header h2 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.failed-body {
+    padding: 40px;
+}
+
+.failed-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+}
+
+.failed-message {
+    color: #666;
+    font-size: 1.1rem;
+    margin-bottom: 30px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.btn-action {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 25px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.btn-retry {
+    background: #667eea;
+    color: white;
+}
+
+.btn-retry:hover {
+    background: #5a6fd8;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.btn-home {
+    background: #28a745;
+    color: white;
+}
+
+.btn-home:hover {
+    background: #218838;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.btn-orders {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-orders:hover {
+    background: #5a6268;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.order-details {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin: 20px 0;
+    text-align: left;
+}
+
+.order-details h4 {
+    color: #333;
+    margin-bottom: 15px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    margin: 8px 0;
+    font-size: 0.9rem;
+}
+
+.detail-row.total {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: #667eea;
+    border-top: 1px solid #dee2e6;
+    padding-top: 10px;
+    margin-top: 10px;
+}
+</style>
+
+<div class="container my-5">
+    <div class="failed-container">
+        <!-- Header -->
+        <div class="failed-header">
+            <div class="failed-icon">❌</div>
+            <h2>Payment Failed</h2>
+            <p>We couldn't process your payment</p>
+        </div>
+
+        <!-- Body -->
+        <div class="failed-body">
+            <div class="failed-message">
+                <p>Don't worry! Your order is safe and you can try again.</p>
+                <p><strong>Order #{{ order.id }}</strong> is waiting for payment.</p>
+            </div>
+
+            <!-- Order Details -->
+            <div class="order-details">
+                <h4>Order Summary</h4>
+                <div class="detail-row">
+                    <span>Order ID:</span>
+                    <span>#{{ order.id }}</span>
+                </div>
+                <div class="detail-row">
+                    <span>Items:</span>
+                    <span>{{ order.items.count }} items</span>
+                </div>
+                <div class="detail-row">
+                    <span>Payment Method:</span>
+                    <span>{{ payment.get_payment_method_display }}</span>
+                </div>
+                <div class="detail-row total">
+                    <span>Amount:</span>
+                    <span>₹{{ payment.amount|floatformat:2 }}</span>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <a href="{% url 'process_online_payment' order.id payment.id %}" class="btn-action btn-retry">
+                    🔄 Try Again
+                </a>
+                <a href="{% url 'order_detail' order.id %}" class="btn-action btn-orders">
+                    📦 View Order
+                </a>
+                <a href="{% url 'home' %}" class="btn-action btn-home">
+                    🏠 Go Home
+                </a>
+            </div>
+
+            <!-- Help Section -->
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef;">
+                <h5 style="color: #333; margin-bottom: 15px;">Need Help?</h5>
+                <p style="color: #666; font-size: 0.9rem; margin-bottom: 10px;">
+                    If you're having trouble with payment, you can:
+                </p>
+                <ul style="color: #666; font-size: 0.9rem; text-align: left; max-width: 300px; margin: 0 auto;">
+                    <li>Try a different payment method</li>
+                    <li>Check your card/bank details</li>
+                    <li>Ensure sufficient balance</li>
+                    <li>Contact our support team</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

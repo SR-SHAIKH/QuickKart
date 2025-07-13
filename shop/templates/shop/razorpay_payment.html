@@ -1,0 +1,50 @@
+{% extends 'shop/base_customer.html' %}
+{% block content %}
+<div class="container my-5">
+  <h2 class="mb-4 text-center">Processing Payment...</h2>
+</div>
+<script>
+  var csrfToken = "{{ csrf_token }}";
+</script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+  var options = {
+    "key": "{{ razorpay_key_id }}",
+    "amount": "{{ amount }}",
+    "currency": "{{ currency }}",
+    "name": "QuickKart",
+    "description": "Order #{{ order.id }}",
+    "order_id": "{{ razorpay_order_id }}",
+    "handler": function (response){
+      var form = document.createElement('form');
+      form.method = 'POST';
+      form.action = '';
+      form.innerHTML = `
+        <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+        <input type="hidden" name="razorpay_payment_id" value="${response.razorpay_payment_id}">
+        <input type="hidden" name="razorpay_order_id" value="${response.razorpay_order_id}">
+        <input type="hidden" name="razorpay_signature" value="${response.razorpay_signature}">
+      `;
+      document.body.appendChild(form);
+      form.submit();
+    },
+    "prefill": {
+      "name": "{{ customer_name }}",
+      "email": "{{ customer_email }}",
+      "contact": "{{ customer_phone }}"
+    },
+    "theme": {
+      "color": "#4a8c52"
+    },
+    "method": {
+      "upi": true,
+      "card": true,
+      "netbanking": true,
+      "wallet": true,
+      "paylater": false
+    }
+  };
+  var rzp1 = new Razorpay(options);
+  rzp1.open();
+</script>
+{% endblock %} 

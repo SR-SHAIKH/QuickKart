@@ -1,0 +1,438 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+.payment-container {
+    max-width: 600px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.payment-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    text-align: center;
+}
+
+.payment-header h2 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.payment-body {
+    padding: 40px;
+}
+
+.order-summary {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+}
+
+.order-summary h4 {
+    color: #333;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 5px;
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin: 8px 0;
+    font-size: 1.1rem;
+}
+
+.summary-row.total {
+    font-weight: 700;
+    color: #667eea;
+    font-size: 1.3rem;
+    border-top: 2px solid #dee2e6;
+    padding-top: 10px;
+    margin-top: 10px;
+}
+
+.payment-methods {
+    margin-bottom: 30px;
+}
+
+.payment-method {
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.payment-method:hover {
+    border-color: #667eea;
+    background: #f8f9fa;
+}
+
+.payment-method.selected {
+    border-color: #667eea;
+    background: #e3f2fd;
+}
+
+.payment-method input[type="radio"] {
+    margin-right: 15px;
+    transform: scale(1.2);
+}
+
+.payment-method label {
+    font-weight: 600;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.payment-method .description {
+    color: #666;
+    margin-top: 5px;
+    margin-left: 35px;
+}
+
+.payment-details {
+    margin-top: 20px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    display: none;
+}
+
+.payment-details.show {
+    display: block;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.form-control {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.btn-pay {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-pay:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-pay:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.payment-icons {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.payment-icon {
+    width: 40px;
+    height: 25px;
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .payment-body {
+        padding: 20px;
+    }
+    
+    .payment-header {
+        padding: 20px;
+    }
+    
+    .payment-header h2 {
+        font-size: 1.5rem;
+    }
+}
+</style>
+
+<div class="container my-5">
+    <div class="payment-container">
+        <!-- Payment Header -->
+        <div class="payment-header">
+            <h2>💳 Payment</h2>
+            <p>Complete your order payment</p>
+        </div>
+
+        <!-- Payment Body -->
+        <div class="payment-body">
+            <!-- Order Summary -->
+            <div class="order-summary">
+                <h4>Order Summary</h4>
+                <div class="summary-row">
+                    <span>Order ID:</span>
+                    <span>#{{ order.id }}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Subtotal:</span>
+                    <span>₹{{ invoice.subtotal }}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Tax (18% GST):</span>
+                    <span>₹{{ invoice.tax_amount }}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Shipping:</span>
+                    <span>₹{{ invoice.shipping_amount }}</span>
+                </div>
+                <div class="summary-row total">
+                    <span>Total Amount:</span>
+                    <span>₹{{ invoice.total_amount }}</span>
+                </div>
+            </div>
+
+            <form method="post" id="payment-form">
+                {% csrf_token %}
+                <input type="hidden" name="amount" value="{{ invoice.total_amount }}">
+                
+                <!-- Payment Methods -->
+                <div class="payment-methods">
+                    <h4>Select Payment Method</h4>
+                    
+                    <div class="payment-method" onclick="selectPaymentMethod('cod')">
+                        <input type="radio" name="payment_method" value="cod" id="cod" required>
+                        <label for="cod">💵 Cash on Delivery</label>
+                        <div class="description">Pay when you receive your order</div>
+                    </div>
+
+                    <div class="payment-method" onclick="selectPaymentMethod('upi')">
+                        <input type="radio" name="payment_method" value="upi" id="upi" required>
+                        <label for="upi">📱 UPI Payment</label>
+                        <div class="description">Pay using UPI apps like Google Pay, PhonePe, Paytm</div>
+                        <div class="payment-icons">
+                            <div class="payment-icon">GPay</div>
+                            <div class="payment-icon">PhonePe</div>
+                            <div class="payment-icon">Paytm</div>
+                        </div>
+                    </div>
+
+                    <div class="payment-method" onclick="selectPaymentMethod('bank_transfer')">
+                        <input type="radio" name="payment_method" value="bank_transfer" id="bank_transfer" required>
+                        <label for="bank_transfer">🏦 Bank Transfer</label>
+                        <div class="description">Direct bank transfer to shop account</div>
+                    </div>
+
+                    <div class="payment-method" onclick="selectPaymentMethod('card')">
+                        <input type="radio" name="payment_method" value="card" id="card" required>
+                        <label for="card">💳 Credit/Debit Card</label>
+                        <div class="description">Pay using your credit or debit card</div>
+                        <div class="payment-icons">
+                            <div class="payment-icon">Visa</div>
+                            <div class="payment-icon">MC</div>
+                            <div class="payment-icon">Rupay</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Details -->
+                <div class="payment-details" id="payment-details">
+                    <h4>Payment Details</h4>
+                    
+                    <!-- UPI Details -->
+                    <div id="upi-details" class="payment-details-section" style="display: none;">
+                        <div class="form-group">
+                            <label for="upi_id">UPI ID</label>
+                            <input type="text" name="upi_id" id="upi_id" class="form-control" placeholder="Enter your UPI ID">
+                        </div>
+                        <div class="form-group">
+                            <label for="upi_app">UPI App</label>
+                            <select name="upi_app" id="upi_app" class="form-control">
+                                <option value="">Select UPI App</option>
+                                <option value="gpay">Google Pay</option>
+                                <option value="phonepe">PhonePe</option>
+                                <option value="paytm">Paytm</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Bank Transfer Details -->
+                    <div id="bank-details" class="payment-details-section" style="display: none;">
+                        {% if shop %}
+                        <div class="alert alert-info">
+                            <strong>Bank Details:</strong><br>
+                            Account Holder: {{ shop.shop_name }}<br>
+                            Account Number: {{ shop.shopbankinfo.account_number }}<br>
+                            IFSC Code: {{ shop.shopbankinfo.ifsc_code }}<br>
+                            Bank: {{ shop.shopbankinfo.bank_name }}
+                        </div>
+                        {% endif %}
+                        <div class="form-group">
+                            <label for="transaction_id">Transaction ID</label>
+                            <input type="text" name="transaction_id" id="transaction_id" class="form-control" placeholder="Enter bank transaction ID">
+                        </div>
+                    </div>
+
+                    <!-- Card Details -->
+                    <div id="card-details" class="payment-details-section" style="display: none;">
+                        <div class="form-group">
+                            <label for="card_number">Card Number</label>
+                            <input type="text" name="card_number" id="card_number" class="form-control" placeholder="1234 5678 9012 3456">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="expiry">Expiry Date</label>
+                                    <input type="text" name="expiry" id="expiry" class="form-control" placeholder="MM/YY">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="cvv">CVV</label>
+                                    <input type="text" name="cvv" id="cvv" class="form-control" placeholder="123">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pay Button -->
+                <button type="submit" class="btn-pay" id="pay-button" disabled>
+                    💳 Pay ₹{{ invoice.total_amount }}
+                </button>
+            </form>
+
+            <!-- Security Notice -->
+            <div class="mt-4 p-3 bg-light rounded text-center">
+                <small class="text-muted">
+                    🔒 Your payment information is secure and encrypted
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function selectPaymentMethod(method) {
+    // Remove selected class from all methods
+    document.querySelectorAll('.payment-method').forEach(el => {
+        el.classList.remove('selected');
+    });
+    
+    // Add selected class to clicked method
+    event.currentTarget.classList.add('selected');
+    
+    // Check the radio button
+    document.getElementById(method).checked = true;
+    
+    // Show/hide payment details
+    const detailsDiv = document.getElementById('payment-details');
+    const upiDetails = document.getElementById('upi-details');
+    const bankDetails = document.getElementById('bank-details');
+    const cardDetails = document.getElementById('card-details');
+    
+    // Hide all details first
+    upiDetails.style.display = 'none';
+    bankDetails.style.display = 'none';
+    cardDetails.style.display = 'none';
+    
+    // Show relevant details
+    if (method === 'upi') {
+        detailsDiv.classList.add('show');
+        upiDetails.style.display = 'block';
+    } else if (method === 'bank_transfer') {
+        detailsDiv.classList.add('show');
+        bankDetails.style.display = 'block';
+    } else if (method === 'card') {
+        detailsDiv.classList.add('show');
+        cardDetails.style.display = 'block';
+    } else {
+        detailsDiv.classList.remove('show');
+    }
+    
+    // Enable pay button
+    document.getElementById('pay-button').disabled = false;
+}
+
+// Form validation
+document.getElementById('payment-form').addEventListener('submit', function(e) {
+    const selectedMethod = document.querySelector('input[name="payment_method"]:checked');
+    
+    if (!selectedMethod) {
+        e.preventDefault();
+        alert('Please select a payment method');
+        return;
+    }
+    
+    // Additional validation based on payment method
+    const method = selectedMethod.value;
+    
+    if (method === 'upi') {
+        const upiId = document.getElementById('upi_id').value;
+        if (!upiId) {
+            e.preventDefault();
+            alert('Please enter your UPI ID');
+            return;
+        }
+    } else if (method === 'bank_transfer') {
+        const transactionId = document.getElementById('transaction_id').value;
+        if (!transactionId) {
+            e.preventDefault();
+            alert('Please enter the transaction ID');
+            return;
+        }
+    } else if (method === 'card') {
+        const cardNumber = document.getElementById('card_number').value;
+        const expiry = document.getElementById('expiry').value;
+        const cvv = document.getElementById('cvv').value;
+        
+        if (!cardNumber || !expiry || !cvv) {
+            e.preventDefault();
+            alert('Please fill all card details');
+            return;
+        }
+    }
+});
+</script>
+{% endblock %} 

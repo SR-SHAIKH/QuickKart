@@ -66,50 +66,8 @@ def customer_edit_profile(request):
     return render(request, 'dashboard/customer_edit_profile.html', {'form': form})
 
 
-@login_required
-def owner_profile_view(request):
-    if request.user.role != 'shop_owner':
-        return redirect('home')
-    return render(request, 'dashboard/owner_profile.html', {'user': request.user})
-
-@login_required
-def customer_edit_profile(request):
-    if request.user.role != 'customer':
-        return redirect('home')
-    
-    form = CustomerProfileForm(request.POST or None, request.FILES or None, instance=request.user)
-
-    if request.method == 'POST' and form.is_valid():
-        form.save()
-        return redirect('customer_profile')
-    
-    return render(request, 'dashboard/customer_edit_profile.html', {'form': form})
 
 
-@login_required
-def owner_edit_profile(request):
-    if request.user.role != 'shop_owner':
-        return redirect('home')
-    form = ProfileUpdateForm(request.POST or None, request.FILES or None, instance=request.user)
-    if request.method == 'POST' and form.is_valid():
-        form.save()
-        return redirect('owner_profile')
-    return render(request, 'dashboard/owner_edit_profile.html', {'form': form})
-
-@login_required
-def owner_profile_view(request):
-    if request.user.role != 'shop_owner':
-        return redirect('home')
-
-    if request.method == 'POST':
-        form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user)
-        if form.is_valid():
-            form.save()
-            return redirect('owner_profile')
-    else:
-        form = ProfileUpdateForm(instance=request.user)
-
-    return render(request, 'dashboard/owner_profile.html', {'form': form})
 
 def register(request):
     role = request.GET.get('role')
@@ -166,8 +124,11 @@ def verify_customer_otp(request):
                 # Clear session
                 request.session.pop('otp')
                 request.session.pop('temp_user_data')
-                messages.success(request, 'Registration successful. Please log in.')
-                return redirect('login')
+                
+                # Auto login after successful registration
+                login(request, user)
+                messages.success(request, 'Registration successful! Welcome to QuickKart.')
+                return redirect('home')
         else:
             messages.error(request, 'Invalid OTP.')
     return render(request, 'users/verify_otp.html')
@@ -182,8 +143,11 @@ def rider_register(request):
             # Get selected pincode IDs from hidden inputs (JS)
             pincode_ids = request.POST.getlist('delivery_pincodes')
             rider.delivery_pincodes.set(pincode_ids)
-            # You can add messages, redirect, etc. here
-            return redirect('login')  # Or wherever you want
+            
+            # Auto login after successful registration
+            login(request, rider)
+            messages.success(request, 'Registration successful! Welcome to QuickKart.')
+            return redirect('rider_dashboard')
     else:
         form = RiderRegistrationForm()
     all_pincodes = PinCode.objects.all()
@@ -255,9 +219,9 @@ def login_view(request):
             if user.role == 'rider':
                 return redirect('rider_dashboard')
             elif user.role == 'shop_owner':
-                return redirect('owner_profile')  # or your shop owner dashboard
+                return redirect('shop_owner_dashboard')
             else:
-                return redirect('customer_profile')  # or your customer dashboard
+                return redirect('home')  # Customer goes to home page
         else:
             error = 'Invalid email or password.'
     return render(request, 'users/login.html', {'error': error})

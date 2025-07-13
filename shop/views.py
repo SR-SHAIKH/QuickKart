@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.conf import settings
 from django.template.loader import get_template
 from django.utils.timezone import now
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
 from shop.form_parts.owner_step1_form import OwnerPersonalForm
 from shop.form_parts.owner_step2_form import ShopForm
 from shop.form_parts.owner_step3_form import ShopBankForm
@@ -21,9 +21,10 @@ import json
 from shop.forms import ShopBankForm
 from .models import (
     Product, CartItem, Order, OrderItem,
-    Wishlist, Category, PinCode, Brand, Shop
+    Wishlist, Category, PinCode, Brand, Shop, Invoice, Payment
 )
 from users.models import CustomUser
+from django import forms
 
 import random
 
@@ -37,8 +38,16 @@ from django.shortcuts import render
 from django.db.models import Q
 from shop.models import Product, Category, Shop, PinCode, Wishlist
 
+from django.utils import timezone
+from datetime import timedelta, datetime
+from decimal import Decimal
+
 def home(request):
     print("🔥 Home view called")
+
+    # 🔄 Redirect shop owners to their dashboard
+    if request.user.is_authenticated and request.user.role == 'shop_owner':
+        return redirect('shop_owner_dashboard')
 
     # GET se pincode mila? to session me save karo
     if request.GET.get('pincode'):
@@ -210,7 +219,26 @@ def login_view(request):
 def customer_dashboard(request):
     if request.user.role != 'customer':
         return redirect('home')
-    return render(request, 'dashboard/customer_dashboard.html')
+    
+    orders = Order.objects.filter(customer=request.user).order_by('-order_date')[:5]
+    
+    # Get payment statistics
+    payments = Payment.objects.filter(order__customer=request.user)
+    total_payments = payments.count()
+    completed_payments = payments.filter(payment_status='completed').count()
+    pending_payments = payments.filter(payment_status='pending').count()
+    
+    # Get recent pending payments
+    recent_pending_payments = payments.filter(payment_status='pending').order_by('-payment_date')[:3]
+    
+    context = {
+        'orders': orders,
+        'total_payments': total_payments,
+        'completed_payments': completed_payments,
+        'pending_payments': pending_payments,
+        'recent_pending_payments': recent_pending_payments,
+    }
+    return render(request, 'dashboard/customer_dashboard.html', context)
 
 
 def is_shop_owner(user):
@@ -389,47 +417,71 @@ def checkout(request):
     total = sum(item.product.price * item.quantity for item in cart_items)
 
     if request.method == 'POST':
-        # Get the shop from the first cart item
-        first_item = cart_items.first()
-        shop = first_item.product.shop if first_item else None
-        shop_pincode = None
-        if shop and shop.delivery_pincodes.exists():
-            shop_pincode = shop.delivery_pincodes.first().code
-
-        # Build the delivery address
-        shipping_address = request.session.get('shipping_address')
-        if shipping_address:
-            # Compose address string from session dict
-            address_str = f"{shipping_address.get('address_line1', '')}, {shipping_address.get('address_line2', '')}, {shipping_address.get('city', '')}, {shipping_address.get('state', '')}, {shipping_address.get('country', '')} - {shipping_address.get('pin_code', '')}"
-        else:
-            # Fallback to user profile address
+        payment_method = request.POST.get('payment_method')
+        if not payment_method:
+            messages.error(request, "Please select a payment method.")
+            return render(request, 'shop/checkout.html', {
+                'cart_items': cart_items,
+                'total': total,
+            })
+        if payment_method == 'cod':
+            # COD: create order immediately
             address_str = f"{request.user.address_line1}, {request.user.address_line2}, {request.user.city}, {request.user.state}, {request.user.country} - {request.user.pin_code}"
-
-        # Ensure the shop's pincode is in the address
-        if shop_pincode and shop_pincode not in address_str:
-            address_str = address_str.strip() + f" - {shop_pincode}"
-
-        order = Order.objects.create(
-            customer=request.user,
-            delivery_address=address_str,
-            phone=request.user.phone,
-            total_amount=total
-        )
-
-        # Create OrderItems from CartItems
-        for item in cart_items:
-            OrderItem.objects.create(
-                order=order,
-                product=item.product,
-                quantity=item.quantity,
-                price=item.product.price
+            order = Order.objects.create(
+                customer=request.user,
+                delivery_address=address_str,
+                phone=request.user.phone,
+                total_amount=total
             )
-
-        # Clear the cart
-        cart_items.delete()
-
-        return redirect('order_success')
-
+            for item in cart_items:
+                OrderItem.objects.create(
+                    order=order,
+                    product=item.product,
+                    quantity=item.quantity,
+                    price=item.product.price
+                )
+            invoice = Invoice.objects.create(
+                order=order,
+                due_date=timezone.now() + timedelta(days=7),
+                subtotal=total,
+                tax_amount=total * Decimal('0.18'),
+                shipping_amount=Decimal('0.00'),
+                total_amount=total * Decimal('1.18'),
+                payment_status='pending'
+            )
+            payment = Payment.objects.create(
+                order=order,
+                invoice=invoice,
+                payment_method=payment_method,
+                amount=invoice.total_amount,
+                transaction_id=f"TXN{datetime.now().strftime('%Y%m%d%H%M%S')}{order.id}",
+                payment_status='completed',
+                notes=f"Payment via {payment_method}"
+            )
+            cart_items.delete()
+            update_payment_status(payment)
+            messages.success(request, "Order placed successfully! Payment will be collected on delivery.")
+            return redirect('order_success')
+        else:
+            # Online payment: pass cart info in session, create order after payment success
+            request.session['online_payment_cart'] = [
+                {
+                    'product_id': item.product.id,
+                    'quantity': item.quantity,
+                    'price': float(item.product.price)
+                } for item in cart_items
+            ]
+            request.session['online_payment_total'] = float(total)
+            request.session['online_payment_address'] = {
+                'address_line1': request.user.address_line1,
+                'address_line2': request.user.address_line2,
+                'city': request.user.city,
+                'state': request.user.state,
+                'country': request.user.country,
+                'pin_code': request.user.pin_code,
+            }
+            request.session['online_payment_method'] = payment_method
+            return redirect('process_online_payment')
     return render(request, 'shop/checkout.html', {
         'cart_items': cart_items,
         'total': total,
@@ -480,11 +532,8 @@ def buy_now_checkout(request):
     product = get_object_or_404(Product, id=product_id)
     quantity = 1
     total = product.price * quantity
-
-    # Always ensure shipping address is in session
     shipping_address = request.session.get('shipping_address')
     if not shipping_address or not shipping_address.get('address_line1') or not shipping_address.get('pin_code'):
-        # Save user profile address to session if not present
         if request.user.address_line1 and request.user.pin_code:
             request.session['shipping_address'] = {
                 'address_line1': request.user.address_line1,
@@ -498,26 +547,65 @@ def buy_now_checkout(request):
         else:
             messages.warning(request, "No shipping address set. Please add your shipping address before placing the order.")
             return redirect('shipping_address_update')
-
     address_str = f"{shipping_address.get('address_line1', '')}, {shipping_address.get('address_line2', '')}, {shipping_address.get('city', '')}, {shipping_address.get('state', '')}, {shipping_address.get('country', '')} - {shipping_address.get('pin_code', '')}"
-
     if request.method == 'POST':
-        order = Order.objects.create(
-            customer=request.user,
-            delivery_address=address_str,
-            phone=request.user.phone,
-            total_amount=total,
-            status='pending',
-        )
-        OrderItem.objects.create(
-            order=order,
-            product=product,
-            quantity=quantity,
-            price=product.price
-        )
-        request.session.pop('buy_now_product_id', None)
-        return redirect('order_success')
-
+        payment_method = request.POST.get('payment_method')
+        if not payment_method:
+            messages.error(request, "Please select a payment method.")
+            return render(request, 'shop/checkout.html', {
+                'buy_now_product': product,
+                'cart_items': None,
+                'total': total,
+                'is_buy_now': True,
+            })
+        if payment_method == 'cod':
+            order = Order.objects.create(
+                customer=request.user,
+                delivery_address=address_str,
+                phone=request.user.phone,
+                total_amount=total,
+                status='pending',
+            )
+            OrderItem.objects.create(
+                order=order,
+                product=product,
+                quantity=quantity,
+                price=product.price
+            )
+            invoice = Invoice.objects.create(
+                order=order,
+                due_date=timezone.now() + timedelta(days=7),
+                subtotal=total,
+                tax_amount=total * Decimal('0.18'),
+                shipping_amount=Decimal('0.00'),
+                total_amount=total * Decimal('1.18'),
+                payment_status='pending'
+            )
+            payment = Payment.objects.create(
+                order=order,
+                invoice=invoice,
+                payment_method=payment_method,
+                amount=invoice.total_amount,
+                transaction_id=f"TXN{datetime.now().strftime('%Y%m%d%H%M%S')}{order.id}",
+                payment_status='completed',
+                notes=f"Payment via {payment_method}"
+            )
+            request.session.pop('buy_now_product_id', None)
+            update_payment_status(payment)
+            messages.success(request, "Order placed successfully! Payment will be collected on delivery.")
+            return redirect('order_success')
+        else:
+            # Online payment: pass product info in session, create order after payment success
+            request.session['buy_now_online_payment'] = {
+                'product_id': product.id,
+                'quantity': quantity,
+                'price': float(product.price),
+                'total': float(total),
+                'address': shipping_address,
+                'payment_method': payment_method
+            }
+            request.session.pop('buy_now_product_id', None)
+            return redirect('process_online_payment')
     return render(request, 'shop/checkout.html', {
         'buy_now_product': product,
         'cart_items': None,
@@ -864,27 +952,25 @@ def edit_shop_profile(request):
 
     if request.method == 'POST':
         form = EditShopProfileForm(request.POST, instance=shop)
-
         if form.is_valid():
             form.save()
-
-            # handle pin codes
-            pincode_ids = request.POST.getlist('pincodes')
-            shop.delivery_pincodes.set(pincode_ids)  # many-to-many relation
-
+            # Correct field name for custom UI
+            pincode_ids = request.POST.getlist('delivery_pincodes')
+            shop.delivery_pincodes.set(pincode_ids)
             return redirect('shop_owner_dashboard')
-  # or wherever you want
     else:
         form = EditShopProfileForm(instance=shop)
 
     all_pincodes = PinCode.objects.all()
-    current_pincodes = shop.delivery_pincodes.all()
-
+    all_pincodes_json = json.dumps([
+        {"id": p.id, "code": p.code, "area": p.area_name} for p in all_pincodes
+    ])
+    selected_pincodes = list(shop.delivery_pincodes.values_list('id', flat=True))
 
     return render(request, 'shop/edit_shop_profile.html', {
         'form': form,
-        'all_pincodes': all_pincodes,
-        'current_pincodes': current_pincodes
+        'all_pincodes_json': all_pincodes_json,
+        'selected_pincodes': json.dumps(selected_pincodes),
     })
 
 @login_required
@@ -1137,7 +1223,22 @@ def rider_dashboard(request):
         elif action == 'mark_delivered' and order.rider_status == 'accepted' and order.status == 'out_for_delivery':
             order.status = 'delivered'
             order.save()
-            messages.success(request, f'Order #{order.id} marked as Delivered!')
+            
+            # Auto-update COD payment status after delivery
+            try:
+                payment = Payment.objects.get(order=order, payment_method='cod')
+                payment.payment_status = 'completed'
+                payment.save()
+                
+                # Update invoice status
+                if payment.invoice:
+                    payment.invoice.payment_status = 'paid'
+                    payment.invoice.save()
+                
+                messages.success(request, f'Order #{order.id} delivered! COD payment marked as completed.')
+            except Payment.DoesNotExist:
+                messages.success(request, f'Order #{order.id} marked as Delivered!')
+            
             return redirect('rider_dashboard')
     return render(request, 'users/rider_dashboard.html', {
         'assigned_deliveries': orders,
@@ -1149,3 +1250,430 @@ def rider_dashboard(request):
         'total_delivered': total_delivered,
         'total_pending': total_pending,
     })
+
+# Invoice Generation Views
+@login_required
+def generate_invoice(request, order_id):
+    """Generate invoice for an order"""
+    order = get_object_or_404(Order, id=order_id)
+    
+    # Check if user has permission to view this invoice
+    if request.user.role == 'customer' and order.customer != request.user:
+        return HttpResponseForbidden("You don't have permission to view this invoice.")
+    elif request.user.role == 'shop_owner':
+        # Check if any product in order belongs to this shop owner
+        if not order.items.filter(product__shop_owner=request.user).exists():
+            return HttpResponseForbidden("You don't have permission to view this invoice.")
+    
+    # Check if order is delivered (only then show invoice)
+    if order.status != 'delivered':
+        messages.warning(request, "Invoice will be available once your order is delivered.")
+        return redirect('order_detail', order_id=order.id)
+    
+    # Create or get existing invoice
+    invoice, created = Invoice.objects.get_or_create(
+        order=order,
+        defaults={
+            'due_date': timezone.now() + timedelta(days=7),
+            'subtotal': order.total_amount,
+            'tax_amount': order.total_amount * Decimal('0.18'),  # 18% GST
+            'shipping_amount': Decimal('0.00'),
+            'total_amount': order.total_amount * Decimal('1.18'),
+        }
+    )
+    
+    if created:
+        # Update total amount with tax
+        invoice.total_amount = invoice.subtotal + invoice.tax_amount + invoice.shipping_amount
+        invoice.save()
+    
+    context = {
+        'invoice': invoice,
+        'order': order,
+        'shop': order.items.first().product.shop if order.items.exists() else None,
+    }
+    
+    return render(request, 'shop/invoice_template.html', context)
+
+@login_required
+def download_invoice_pdf(request, invoice_id):
+    """Download invoice as PDF"""
+    from django.template.loader import render_to_string
+    from weasyprint import HTML
+    from django.conf import settings
+    import os
+    
+    invoice = get_object_or_404(Invoice, id=invoice_id)
+    order = invoice.order
+    
+    # Check permissions
+    if request.user.role == 'customer' and order.customer != request.user:
+        return HttpResponseForbidden("You don't have permission to download this invoice.")
+    elif request.user.role == 'shop_owner':
+        if not order.items.filter(product__shop_owner=request.user).exists():
+            return HttpResponseForbidden("You don't have permission to download this invoice.")
+    
+    context = {
+        'invoice': invoice,
+        'order': order,
+        'shop': order.items.first().product.shop if order.items.exists() else None,
+    }
+    
+    # Render HTML
+    html_string = render_to_string('shop/invoice_pdf_template.html', context)
+    
+    # Generate PDF
+    html = HTML(string=html_string)
+    pdf = html.write_pdf()
+    
+    # Create response
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="invoice_{invoice.invoice_number}.pdf"'
+    
+    return response
+
+# Payment Status Update Function
+def update_payment_status(payment):
+    """Update payment and invoice status based on payment method"""
+    if payment.payment_method == 'cod':
+        payment.payment_status = 'completed'
+        payment.save()
+        
+        # Update invoice status
+        if payment.invoice:
+            payment.invoice.payment_status = 'paid'
+            payment.invoice.save()
+    
+    elif payment.payment_method in ['upi', 'card', 'bank_transfer']:
+        # For online payments, simulate completion after 5 minutes
+        # In real scenario, this would be handled by payment gateway webhook
+        payment.payment_status = 'completed'
+        payment.save()
+        
+        if payment.invoice:
+            payment.invoice.payment_status = 'paid'
+            payment.invoice.save()
+
+# Razorpay Integration
+import razorpay
+from django.conf import settings
+
+# Initialize Razorpay client
+razorpay_client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
+
+# Payment Views
+@login_required
+def process_payment(request, order_id):
+    """Process payment for an order"""
+    order = get_object_or_404(Order, id=order_id)
+    
+    if request.user.role != 'customer' or order.customer != request.user:
+        return HttpResponseForbidden("You don't have permission to pay for this order.")
+    
+    # Get or create invoice
+    invoice, created = Invoice.objects.get_or_create(
+        order=order,
+        defaults={
+            'due_date': timezone.now() + timedelta(days=7),
+            'subtotal': order.total_amount,
+            'tax_amount': order.total_amount * Decimal('0.18'),
+            'shipping_amount': Decimal('0.00'),
+            'total_amount': order.total_amount * Decimal('1.18'),
+        }
+    )
+    
+    if request.method == 'POST':
+        payment_method = request.POST.get('payment_method')
+        amount = request.POST.get('amount')
+        
+        if payment_method and amount:
+            # Create payment record
+            payment = Payment.objects.create(
+                order=order,
+                invoice=invoice,
+                payment_method=payment_method,
+                amount=amount,
+                transaction_id=f"TXN{datetime.now().strftime('%Y%m%d%H%M%S')}{order.id}",
+                payment_status='completed' if payment_method == 'cod' else 'pending',
+                notes=f"Payment via {payment_method}"
+            )
+            
+            # Update invoice status
+            if payment_method == 'cod':
+                invoice.payment_status = 'paid'
+                invoice.save()
+                messages.success(request, "Payment recorded successfully!")
+            else:
+                # For online payments, you would integrate with payment gateway here
+                messages.info(request, "Payment initiated. You will be redirected to payment gateway.")
+            
+            return redirect('payment_success', payment_id=payment.id)
+    
+    context = {
+        'order': order,
+        'invoice': invoice,
+        'shop': order.items.first().product.shop if order.items.exists() else None,
+    }
+    
+    return render(request, 'shop/payment.html', context)
+
+@login_required
+def process_online_payment(request):
+    """Process online payment through Razorpay"""
+    # For GET: create Razorpay order using cart info from session
+    if request.method == 'GET':
+        cart = request.session.get('online_payment_cart')
+        buy_now = request.session.get('buy_now_online_payment')
+        if cart:
+            total = request.session.get('online_payment_total')
+            address = request.session.get('online_payment_address')
+            payment_method = request.session.get('online_payment_method')
+            amount = int(total * 1.18 * 100)
+        elif buy_now:
+            total = buy_now['total']
+            address = buy_now['address']
+            payment_method = buy_now['payment_method']
+            amount = int(total * 1.18 * 100)
+        else:
+            messages.error(request, "Session expired. Please try again.")
+            return redirect('checkout')
+        context = {
+            'razorpay_key_id': settings.RAZORPAY_KEY_ID,
+            'amount': amount,
+            'currency': settings.RAZORPAY_CURRENCY,
+            'customer_name': request.user.get_full_name() or request.user.email,
+            'customer_email': request.user.email,
+            'customer_phone': request.user.phone,
+        }
+        return render(request, 'shop/razorpay_payment.html', context)
+    # For POST: handle Razorpay payment success
+    elif request.method == 'POST':
+        cart = request.session.get('online_payment_cart')
+        buy_now = request.session.get('buy_now_online_payment')
+        if cart:
+            total = request.session.get('online_payment_total')
+            address = request.session.get('online_payment_address')
+            payment_method = request.session.get('online_payment_method')
+        elif buy_now:
+            total = buy_now['total']
+            address = buy_now['address']
+            payment_method = buy_now['payment_method']
+        else:
+            messages.error(request, "Session expired. Please try again.")
+            return redirect('checkout')
+        razorpay_payment_id = request.POST.get('razorpay_payment_id')
+        razorpay_signature = request.POST.get('razorpay_signature')
+        if not (total and address and payment_method and razorpay_payment_id and razorpay_signature):
+            messages.error(request, "Invalid payment/session data.")
+            return redirect('checkout')
+        try:
+            # Verify payment signature (pseudo, add actual verification)
+            # razorpay_client.utility.verify_payment_signature(params_dict)
+            # Create order, items, invoice, payment
+            address_str = f"{address['address_line1']}, {address['address_line2']}, {address['city']}, {address['state']}, {address['country']} - {address['pin_code']}"
+            if cart:
+                order = Order.objects.create(
+                    customer=request.user,
+                    delivery_address=address_str,
+                    phone=request.user.phone,
+                    total_amount=total,
+                    status='pending',
+                )
+                for item in cart:
+                    product = Product.objects.get(id=item['product_id'])
+                    OrderItem.objects.create(
+                        order=order,
+                        product=product,
+                        quantity=item['quantity'],
+                        price=item['price']
+                    )
+            elif buy_now:
+                order = Order.objects.create(
+                    customer=request.user,
+                    delivery_address=address_str,
+                    phone=request.user.phone,
+                    total_amount=total,
+                    status='pending',
+                )
+                product = Product.objects.get(id=buy_now['product_id'])
+                OrderItem.objects.create(
+                    order=order,
+                    product=product,
+                    quantity=buy_now['quantity'],
+                    price=buy_now['price']
+                )
+            invoice = Invoice.objects.create(
+                order=order,
+                due_date=timezone.now() + timedelta(days=7),
+                subtotal=total,
+                tax_amount=total * Decimal('0.18'),
+                shipping_amount=Decimal('0.00'),
+                total_amount=total * Decimal('1.18'),
+                payment_status='paid'
+            )
+            payment = Payment.objects.create(
+                order=order,
+                invoice=invoice,
+                payment_method=payment_method,
+                amount=invoice.total_amount,
+                transaction_id=razorpay_payment_id,
+                payment_status='completed',
+                notes=f"Payment via {payment_method}"
+            )
+            # Clear session cart
+            if cart:
+                del request.session['online_payment_cart']
+                del request.session['online_payment_total']
+                del request.session['online_payment_address']
+                del request.session['online_payment_method']
+                CartItem.objects.filter(user=request.user).delete()
+            if buy_now:
+                del request.session['buy_now_online_payment']
+            messages.success(request, "Payment successful! Your order has been placed.")
+            return redirect('payment_success', payment_id=payment.id)
+        except Exception as e:
+            messages.error(request, f"Payment processing failed: {str(e)}")
+            return redirect('payment_failed', payment_id=None)
+
+@login_required
+def payment_failed(request, payment_id):
+    """Payment failed page"""
+    payment = get_object_or_404(Payment, id=payment_id)
+    
+    if request.user.role != 'customer' or payment.order.customer != request.user:
+        return HttpResponseForbidden("You don't have permission to view this payment.")
+    
+    context = {
+        'payment': payment,
+        'order': payment.order,
+    }
+    
+    return render(request, 'shop/payment_failed.html', context)
+
+@login_required
+def razorpay_webhook(request):
+    """Handle Razorpay webhooks"""
+    if request.method == 'POST':
+        # Verify webhook signature
+        webhook_signature = request.headers.get('X-Razorpay-Signature')
+        webhook_body = request.body
+        
+        try:
+            razorpay_client.utility.verify_webhook_signature(
+                webhook_body, webhook_signature, settings.RAZORPAY_WEBHOOK_SECRET
+            )
+            
+            # Process webhook events
+            event_data = json.loads(webhook_body)
+            event_type = event_data.get('event')
+            
+            if event_type == 'payment.captured':
+                payment_id = event_data['payload']['payment']['entity']['id']
+                # Update payment status
+                try:
+                    payment = Payment.objects.get(transaction_id=payment_id)
+                    payment.payment_status = 'completed'
+                    payment.save()
+                    
+                    if payment.invoice:
+                        payment.invoice.payment_status = 'paid'
+                        payment.invoice.save()
+                except Payment.DoesNotExist:
+                    pass
+            
+            return HttpResponse(status=200)
+            
+        except Exception as e:
+            return HttpResponse(status=400)
+    
+    return HttpResponse(status=405)
+
+@login_required
+def payment_success(request, payment_id):
+    """Payment success page"""
+    payment = get_object_or_404(Payment, id=payment_id)
+    
+    if request.user.role != 'customer' or payment.order.customer != request.user:
+        return HttpResponseForbidden("You don't have permission to view this payment.")
+    
+    context = {
+        'payment': payment,
+        'order': payment.order,
+        'invoice': payment.invoice,
+    }
+    
+    return render(request, 'shop/payment_success.html', context)
+
+@login_required
+def payment_history(request):
+    """View payment history for customer"""
+    if request.user.role != 'customer':
+        return redirect('home')
+    
+    payments = Payment.objects.filter(order__customer=request.user).select_related(
+        'order', 'invoice'
+    ).order_by('-payment_date')
+    
+    # Calculate statistics
+    total_payments = payments.count()
+    completed_payments = payments.filter(payment_status='completed').count()
+    pending_payments = payments.filter(payment_status='pending').count()
+    failed_payments = payments.filter(payment_status='failed').count()
+    
+    context = {
+        'payments': payments,
+        'total_payments': total_payments,
+        'completed_payments': completed_payments,
+        'pending_payments': pending_payments,
+        'failed_payments': failed_payments,
+    }
+    
+    return render(request, 'shop/payment_history.html', context)
+
+# Owner Invoice Management
+@login_required
+@user_passes_test(lambda u: u.role == 'shop_owner')
+def owner_invoices(request):
+    """Shop owner can view all invoices for their orders"""
+    invoices = Invoice.objects.filter(
+        order__items__product__shop_owner=request.user
+    ).select_related('order', 'order__customer').distinct().order_by('-generated_date')
+    
+    # Calculate statistics
+    total_invoices = invoices.count()
+    pending_invoices = invoices.filter(payment_status='pending').count()
+    paid_invoices = invoices.filter(payment_status='paid').count()
+    overdue_invoices = invoices.filter(payment_status='overdue').count()
+    
+    context = {
+        'invoices': invoices,
+        'total_invoices': total_invoices,
+        'pending_invoices': pending_invoices,
+        'paid_invoices': paid_invoices,
+        'overdue_invoices': overdue_invoices,
+    }
+    
+    return render(request, 'shop/owner_invoices.html', context)
+
+from users.models import CustomUser
+from django import forms
+
+class OwnerPersonalForm(forms.ModelForm):
+    class Meta:
+        model = CustomUser
+        fields = ['first_name', 'last_name', 'email', 'phone', 'gender', 'date_of_birth']
+
+@login_required
+def edit_owner_profile(request):
+    if not hasattr(request.user, 'role') or request.user.role != 'shop_owner':
+        return redirect('home')
+    user = request.user
+    if request.method == 'POST':
+        form = OwnerPersonalForm(request.POST, instance=user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Personal info updated successfully!')
+            return redirect('owner_profiles')
+    else:
+        form = OwnerPersonalForm(instance=user)
+    return render(request, 'dashboard/owner_edit_profile.html', {'form': form})

@@ -1,0 +1,262 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+.success-container {
+    max-width: 600px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    overflow: hidden;
+    text-align: center;
+}
+
+.success-header {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    padding: 40px 30px;
+}
+
+.success-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+}
+
+.success-header h2 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.success-body {
+    padding: 40px;
+}
+
+.payment-details {
+    background: #f8f9fa;
+    padding: 25px;
+    border-radius: 10px;
+    margin: 30px 0;
+    text-align: left;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    margin: 12px 0;
+    padding: 8px 0;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+    font-weight: 700;
+    color: #28a745;
+    font-size: 1.1rem;
+}
+
+.detail-row:last-child span:last-child {
+    color: #28a745;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+
+.btn-action {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 25px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s ease;
+    min-width: 120px;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #218838;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.btn-outline {
+    background: transparent;
+    color: #007bff;
+    border: 2px solid #007bff;
+}
+
+.btn-outline:hover {
+    background: #007bff;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.status-badge {
+    padding: 8px 20px;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: 600;
+    display: inline-block;
+    margin: 10px 0;
+}
+
+.status-completed {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.next-steps {
+    background: #e3f2fd;
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 30px;
+    text-align: left;
+}
+
+.next-steps h4 {
+    color: #1976d2;
+    margin-bottom: 15px;
+}
+
+.next-steps ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.next-steps li {
+    margin: 8px 0;
+    color: #333;
+}
+
+@media (max-width: 768px) {
+    .success-body {
+        padding: 20px;
+    }
+    
+    .success-header {
+        padding: 30px 20px;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .btn-action {
+        width: 100%;
+        max-width: 200px;
+    }
+}
+</style>
+
+<div class="container my-5">
+    <div class="success-container">
+        <!-- Success Header -->
+        <div class="success-header">
+            <div class="success-icon">✅</div>
+            <h2>Payment Successful!</h2>
+            <p>Your payment has been processed successfully</p>
+        </div>
+
+        <!-- Success Body -->
+        <div class="success-body">
+            <div class="payment-details">
+                <h4>Payment Details</h4>
+                
+                <div class="detail-row">
+                    <span>Transaction ID:</span>
+                    <span>{{ payment.transaction_id }}</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span>Order ID:</span>
+                    <span>#{{ order.id }}</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span>Payment Method:</span>
+                    <span>{{ payment.get_payment_method_display }}</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span>Payment Status:</span>
+                    <span class="status-badge status-{{ payment.payment_status }}">
+                        {{ payment.get_payment_status_display }}
+                    </span>
+                </div>
+                
+                <div class="detail-row">
+                    <span>Amount Paid:</span>
+                    <span>₹{{ payment.amount }}</span>
+                </div>
+                
+                <div class="detail-row">
+                    <span>Payment Date:</span>
+                    <span>{{ payment.payment_date|date:"M d, Y H:i" }}</span>
+                </div>
+            </div>
+
+            <!-- Next Steps -->
+            <div class="next-steps">
+                <h4>What's Next?</h4>
+                <ul>
+                    <li>You will receive an email confirmation shortly</li>
+                    <li>Your order will be processed and shipped within 24-48 hours</li>
+                    <li>You can track your order status in your dashboard</li>
+                    <li>For any queries, please contact the shop owner</li>
+                </ul>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <a href="{% url 'generate_invoice' order.id %}" class="btn-action btn-primary">
+                    📄 View Invoice
+                </a>
+                
+                <a href="{% url 'order_detail' order.id %}" class="btn-action btn-success">
+                    📦 Track Order
+                </a>
+                
+                <a href="{% url 'home' %}" class="btn-action btn-outline">
+                    🏠 Back to Home
+                </a>
+            </div>
+
+            <!-- Additional Info -->
+            <div class="mt-4 p-3 bg-light rounded">
+                <small class="text-muted">
+                    💡 Need help? Contact us at support@localshop.com or call +91-XXXXXXXXXX
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

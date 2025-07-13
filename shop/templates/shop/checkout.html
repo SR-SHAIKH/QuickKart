@@ -29,15 +29,14 @@
     <!-- Payment Method -->
     <div class="mb-10 p-6 rounded-xl border-2 border-[#a8d5ba] bg-[#f0f8f4]">
       <h3 class="text-2xl font-bold mb-4 text-[#2e4e1b]">Payment Method</h3>
-      <div class="flex items-center gap-8 mb-4">
-        <label class="flex items-center text-xl font-semibold">
-          <input type="radio" name="payment_method" value="cod" required class="mr-2 w-6 h-6"> Cash on Delivery
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <label class="flex items-center text-xl font-semibold p-3 rounded-lg border-2 border-[#a8d5ba] hover:bg-[#e8f5e8] transition cursor-pointer">
+          <input type="radio" name="payment_method" value="cod" required class="mr-3 w-5 h-5"> 💰 Cash on Delivery
         </label>
-        <label class="flex items-center text-xl font-semibold">
-          <input type="radio" name="payment_method" value="upi" required class="mr-2 w-6 h-6"> UPI
+        <label class="flex items-center text-xl font-semibold p-3 rounded-lg border-2 border-[#a8d5ba] hover:bg-[#e8f5e8] transition cursor-pointer">
+          <input type="radio" name="payment_method" value="online" required class="mr-3 w-5 h-5"> 💳 Online Payment (Razorpay)
         </label>
       </div>
-      <input type="text" name="upi_id" id="upi_id_input" placeholder="Enter UPI ID (if selected)" class="form-input mt-2 w-full text-lg px-4 py-2 border-2 border-[#a8d5ba] rounded hidden">
     </div>
 
     <!-- Order Summary -->
@@ -94,17 +93,10 @@
   </form>
 </div>
 <script>
-  // Show UPI input only if UPI is selected
+  // Handle payment method selection
   document.querySelectorAll('input[name="payment_method"]').forEach(function(radio) {
     radio.addEventListener('change', function() {
-      var upiInput = document.getElementById('upi_id_input');
-      if (this.value === 'upi') {
-        upiInput.classList.remove('hidden');
-        upiInput.required = true;
-      } else {
-        upiInput.classList.add('hidden');
-        upiInput.required = false;
-      }
+      // No specific input fields to show/hide here as payment details are handled on Razorpay
     });
   });
 </script>

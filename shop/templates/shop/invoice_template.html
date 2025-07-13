@@ -1,0 +1,278 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load cart_filters %}
+
+{% block content %}
+<style>
+.invoice-container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: white;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.invoice-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    text-align: center;
+}
+
+.invoice-header h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+.invoice-number {
+    font-size: 1.2rem;
+    opacity: 0.9;
+    margin-top: 10px;
+}
+
+.invoice-body {
+    padding: 40px;
+}
+
+.invoice-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-bottom: 40px;
+}
+
+.info-section h3 {
+    color: #333;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 5px;
+}
+
+.info-section p {
+    margin: 8px 0;
+    color: #666;
+}
+
+.items-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 30px 0;
+}
+
+.items-table th {
+    background: #f8f9fa;
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.items-table td {
+    padding: 15px;
+    border-bottom: 1px solid #dee2e6;
+    color: #666;
+}
+
+.items-table tr:hover {
+    background: #f8f9fa;
+}
+
+.total-section {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    margin-top: 30px;
+}
+
+.total-row {
+    display: flex;
+    justify-content: space-between;
+    margin: 10px 0;
+    font-size: 1.1rem;
+}
+
+.total-row.final {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #667eea;
+    border-top: 2px solid #dee2e6;
+    padding-top: 15px;
+    margin-top: 15px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.btn-invoice {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 25px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
+.btn-download {
+    background: #28a745;
+    color: white;
+}
+
+.btn-download:hover {
+    background: #218838;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.btn-pay {
+    background: #007bff;
+    color: white;
+}
+
+.btn-pay:hover {
+    background: #0056b3;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.status-badge {
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.status-pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.status-paid {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-overdue {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+@media (max-width: 768px) {
+    .invoice-info {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .invoice-body {
+        padding: 20px;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+</style>
+
+<div class="container my-5">
+    <div class="invoice-container">
+        <!-- Invoice Header -->
+        <div class="invoice-header">
+            <h1>INVOICE</h1>
+            <div class="invoice-number">{{ invoice.invoice_number }}</div>
+        </div>
+
+        <!-- Invoice Body -->
+        <div class="invoice-body">
+            <!-- Invoice Info -->
+            <div class="invoice-info">
+                <div class="info-section">
+                    <h3>Bill To</h3>
+                    <p><strong>{{ order.customer.get_full_name|default:order.customer.email }}</strong></p>
+                    <p>{{ order.delivery_address }}</p>
+                    <p>Phone: {{ order.phone }}</p>
+                    <p>Email: {{ order.customer.email }}</p>
+                </div>
+
+                <div class="info-section">
+                    <h3>Invoice Details</h3>
+                    <p><strong>Invoice Date:</strong> {{ invoice.generated_date|date:"M d, Y" }}</p>
+                    <p><strong>Due Date:</strong> {{ invoice.due_date|date:"M d, Y" }}</p>
+                    <p><strong>Order ID:</strong> #{{ order.id }}</p>
+                    <p><strong>Status:</strong> 
+                        <span class="status-badge status-{{ invoice.payment_status }}">
+                            {{ invoice.get_payment_status_display }}
+                        </span>
+                    </p>
+                </div>
+            </div>
+
+            {% if shop %}
+            <div class="info-section">
+                <h3>From</h3>
+                <p><strong>{{ shop.shop_name }}</strong></p>
+                <p>{{ shop.shop_address }}</p>
+                <p>GST: {{ shop.gst_number }}</p>
+            </div>
+            {% endif %}
+
+            <!-- Items Table -->
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Quantity</th>
+                        <th>Unit Price</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in order.items.all %}
+                    <tr>
+                        <td>{{ item.product.name }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>₹{{ item.price }}</td>
+                        <td>₹{{ item.quantity|mul:item.price }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- Totals -->
+            <div class="total-section">
+                <div class="total-row">
+                    <span>Subtotal:</span>
+                    <span>₹{{ invoice.subtotal }}</span>
+                </div>
+                <div class="total-row">
+                    <span>Tax (18% GST):</span>
+                    <span>₹{{ invoice.tax_amount }}</span>
+                </div>
+                <div class="total-row">
+                    <span>Shipping:</span>
+                    <span>₹{{ invoice.shipping_amount }}</span>
+                </div>
+                <div class="total-row final">
+                    <span>Total Amount:</span>
+                    <span>₹{{ invoice.total_amount }}</span>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <a href="{% url 'download_invoice_pdf' invoice.id %}" class="btn-invoice btn-download">
+                    📄 Download PDF
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

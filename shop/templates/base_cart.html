@@ -23,7 +23,7 @@
   <body class="min-h-screen flex flex-col" style="background-color: #f0f8f4;">
     <!-- Navbar with Profile Dropdown -->
     <nav class="w-full bg-[#a8d5ba] py-3 px-10 flex justify-between items-center shadow relative z-10">
-      <a href="/" class="text-2xl font-bold text-[#2e4e1b]">QuickKart</a>
+      <a href="{% if request.user.is_authenticated %}{% if request.user.role == 'shop_owner' %}{% url 'shop_owner_dashboard' %}{% elif request.user.role == 'rider' %}{% url 'rider_dashboard' %}{% else %}{% url 'home' %}{% endif %}{% else %}{% url 'home' %}{% endif %}" class="text-2xl font-bold text-[#2e4e1b]">QuickKart</a>
       <div class="relative">
         {% if request.user.is_authenticated %}
           <button id="profileDropdownBtn" class="focus:outline-none">

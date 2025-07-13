@@ -1,0 +1,208 @@
+{% load cart_filters %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Invoice {{ invoice.invoice_number }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .invoice-title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin: 0;
+        }
+        .invoice-number {
+            font-size: 1.2rem;
+            color: #666;
+            margin-top: 10px;
+        }
+        .info-section {
+            margin-bottom: 30px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        .info-box h3 {
+            color: #333;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+        }
+        .info-item {
+            margin: 8px 0;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #666;
+        }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+        }
+        .items-table th {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            border-bottom: 2px solid #ddd;
+            font-weight: bold;
+        }
+        .items-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        .total-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 30px;
+        }
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            font-size: 1.1rem;
+        }
+        .total-row.final {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #667eea;
+            border-top: 2px solid #ddd;
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+        .status-badge {
+            background: #d4edda;
+            color: #155724;
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1 class="invoice-title">INVOICE</h1>
+        <div class="invoice-number">{{ invoice.invoice_number }}</div>
+    </div>
+
+    <div class="info-section">
+        <div class="info-grid">
+            <div class="info-box">
+                <h3>Bill To</h3>
+                <div class="info-item">
+                    <span class="info-label">Name:</span> {{ order.customer.get_full_name|default:order.customer.email }}
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Address:</span> {{ order.delivery_address }}
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Phone:</span> {{ order.phone }}
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Email:</span> {{ order.customer.email }}
+                </div>
+            </div>
+
+            <div class="info-box">
+                <h3>Invoice Details</h3>
+                <div class="info-item">
+                    <span class="info-label">Invoice Date:</span> {{ invoice.generated_date|date:"M d, Y" }}
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Due Date:</span> {{ invoice.due_date|date:"M d, Y" }}
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Order ID:</span> #{{ order.id }}
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Status:</span> 
+                    <span class="status-badge">{{ invoice.get_payment_status_display }}</span>
+                </div>
+            </div>
+        </div>
+
+        {% if shop %}
+        <div class="info-box" style="margin-top: 20px;">
+            <h3>From</h3>
+            <div class="info-item">
+                <span class="info-label">Shop:</span> {{ shop.shop_name }}
+            </div>
+            <div class="info-item">
+                <span class="info-label">Address:</span> {{ shop.shop_address }}
+            </div>
+            <div class="info-item">
+                <span class="info-label">GST:</span> {{ shop.gst_number }}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Quantity</th>
+                <th>Unit Price</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order.items.all %}
+            <tr>
+                <td>{{ item.product.name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>₹{{ item.price }}</td>
+                <td>₹{{ item.quantity|mul:item.price }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="total-section">
+        <div class="total-row">
+            <span>Subtotal:</span>
+            <span>₹{{ invoice.subtotal }}</span>
+        </div>
+        <div class="total-row">
+            <span>Tax (18% GST):</span>
+            <span>₹{{ invoice.tax_amount }}</span>
+        </div>
+        <div class="total-row">
+            <span>Shipping:</span>
+            <span>₹{{ invoice.shipping_amount }}</span>
+        </div>
+        <div class="total-row final">
+            <span>Total Amount:</span>
+            <span>₹{{ invoice.total_amount }}</span>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Thank you for your business!</p>
+        <p>This is a computer generated invoice. No signature required.</p>
+    </div>
+</body>
+</html> 
