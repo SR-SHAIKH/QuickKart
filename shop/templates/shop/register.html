@@ -13,19 +13,23 @@
       height: 100vh;
       font-family: Arial, sans-serif;
     }
-
     .popup {
       background: white;
       padding: 30px;
       border-radius: 12px;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
       text-align: center;
+      animation: fadeIn 0.7s;
     }
-
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: none; }
+    }
     .popup h2 {
       margin-bottom: 20px;
+      color: #198754;
+      font-weight: 600;
     }
-
     .popup a {
       display: inline-block;
       padding: 12px 25px;
@@ -36,10 +40,30 @@
       background-color: #4CAF50;
       color: white;
       text-decoration: none;
+      transition: background 0.2s, box-shadow 0.2s;
+      box-shadow: 0 2px 8px rgba(76,175,80,0.08);
     }
-
     .popup a:hover {
       background-color: #45a049;
+      box-shadow: 0 4px 16px rgba(76,175,80,0.15);
+    }
+    @media (max-width: 600px) {
+      .popup {
+        padding: 18px 6px;
+        border-radius: 8px;
+        width: 98vw;
+        min-width: unset;
+      }
+      .popup a {
+        display: block;
+        width: 100%;
+        margin: 12px 0;
+        font-size: 1.1rem;
+        padding: 14px 0;
+      }
+      .popup h2 {
+        font-size: 1.2rem;
+      }
     }
   </style>
 </head>

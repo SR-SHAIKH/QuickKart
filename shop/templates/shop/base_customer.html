@@ -111,10 +111,10 @@
       }
     </style>
     <!-- ✅ NAVBAR -->
-    <nav class="bg-green-600 py-3 shadow text-white">
+    <nav class="bg-green-600 py-3 shadow text-white position-relative">
       <div class="container d-flex justify-content-between align-items-center">
         <!-- Logo Section -->
-        <div>
+        <div class="ms-2">
           {% if request.user.is_authenticated %}
             {% if request.user.role == 'shop_owner' %}
               <a href="{% url 'shop_owner_dashboard' %}" class="text-white text-decoration-none">
@@ -135,30 +135,13 @@
             </a>
           {% endif %}
         </div>
-
         <!-- Right Section -->
-        <div class="d-flex align-items-center gap-4">
+        <div class="d-flex align-items-center gap-4 d-none d-lg-flex me-2">
           {% if request.user.is_authenticated %}
-            <!-- Cart -->
-            <a href="{% url 'cart_view' %}" class="text-white">
-              <i class="bi bi-cart-fill" style="font-size: 1.4rem"></i>
-            </a>
-
             <!-- Profile Dropdown -->
             <div class="dropdown">
-              <a
-                class="d-flex align-items-center"
-                href="#"
-                role="button"
-                id="profileDropdown"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
-              >
-                <img
-                  src="{% if request.user.profile_picture %}{{ request.user.profile_picture.url }}{% else %}{% static 'images/default_profile.png' %}{% endif %}"
-                  alt="Profile"
-                  class="profile-pic"
-                />
+              <a class="d-flex align-items-center" href="#" role="button" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                <img src="{% if request.user.profile_picture %}{{ request.user.profile_picture.url }}{% else %}{% static 'images/default_profile.png' %}{% endif %}" alt="Profile" class="profile-pic" />
               </a>
               <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
                 {% if request.user.role == 'customer' %}
@@ -172,13 +155,48 @@
               </ul>
             </div>
           {% else %}
-            <!-- Login & Register Buttons -->
             <a href="{% url 'login' %}" class="text-white me-3">Login</a>
             <a href="#" class="text-white" data-bs-toggle="modal" data-bs-target="#registerModal">Register</a>
           {% endif %}
         </div>
+        <!-- Mobile Menu Button -->
+        <div class="d-lg-none">
+          <button class="btn p-0 border-0 bg-transparent shadow-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu" aria-controls="mobileMenu" aria-label="Menu">
+            <i class="bi bi-three-dots-vertical" style="font-size: 2rem; color: #fff;"></i>
+          </button>
+        </div>
       </div>
     </nav>
+    <!-- Mobile Offcanvas Menu -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="mobileMenu" aria-labelledby="mobileMenuLabel">
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="mobileMenuLabel">Menu</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body p-0">
+        <ul class="list-group list-group-flush">
+          {% if request.user.is_authenticated %}
+            <li class="list-group-item"><a href="{% url 'cart_view' %}" class="text-dark text-decoration-none">Cart</a></li>
+            <li class="list-group-item"><a href="{% url 'customer_profile' %}" class="text-dark text-decoration-none">Profile</a></li>
+            <li class="list-group-item"><a href="{% url 'wishlist_page' %}" class="text-dark text-decoration-none">Wishlist</a></li>
+            <li class="list-group-item"><a href="#" class="text-danger text-decoration-none" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal">Logout</a></li>
+          {% else %}
+            <li class="list-group-item bg-light"><a href="{% url 'login' %}" class="text-success fw-semibold text-decoration-none">Login</a></li>
+            <li class="list-group-item bg-light"><a href="#" class="text-primary fw-semibold text-decoration-none" data-bs-toggle="modal" data-bs-target="#registerModal">Register</a></li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+    <style>
+      @media (max-width: 991px) {
+        .d-lg-none { display: block !important; }
+        .d-lg-flex { display: none !important; }
+      }
+      @media (min-width: 992px) {
+        .d-lg-none { display: none !important; }
+        .d-lg-flex { display: flex !important; }
+      }
+    </style>
 
     <!-- ✅ BODY -->
     <main class="container my-5">

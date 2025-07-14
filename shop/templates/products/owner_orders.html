@@ -3,16 +3,73 @@
 {% load form_filters %}
 
 {% block content %}
+<style>
+  @media (max-width: 991px) {
+    .owner-order-card {
+      border-radius: 0.7rem !important;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.07) !important;
+      margin-bottom: 1.2rem !important;
+    }
+    .owner-order-header {
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      gap: 0.5rem !important;
+      padding: 1rem 0.7rem !important;
+    }
+    .owner-order-header strong, .owner-order-header .badge {
+      font-size: 1.05rem !important;
+    }
+    .owner-order-actions {
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 0.5rem !important;
+      width: 100%;
+    }
+    .owner-order-actions .btn, .owner-order-actions .form-select {
+      width: 100% !important;
+      font-size: 1.05rem;
+      padding: 0.7rem 1rem;
+    }
+    .owner-order-product {
+      flex-direction: column !important;
+      align-items: flex-start !important;
+      gap: 0.5rem !important;
+    }
+    .owner-order-product img {
+      width: 90px !important;
+      height: 60px !important;
+      object-fit: contain;
+    }
+    .owner-order-product .ms-4 {
+      margin-left: 0 !important;
+    }
+    .card-body {
+      padding: 1rem 0.7rem !important;
+    }
+    .fs-5 {
+      font-size: 1.1rem !important;
+    }
+    .fw-bold, h2 {
+      font-size: 1.1rem !important;
+    }
+    .form-text, .text-muted, .small {
+      font-size: 0.98rem !important;
+    }
+    hr {
+      margin: 0.7rem 0 !important;
+    }
+  }
+</style>
 <div class="container mt-4">
   <h2 class="mb-4">Customer Orders</h2>
 
   {% for order in orders %}
-    <div class="card mb-4 shadow rounded">
-      <div class="card-header d-flex justify-content-between align-items-center bg-white" style="border-bottom: 1px solid #eee;">
+    <div class="card mb-4 shadow rounded owner-order-card">
+      <div class="card-header d-flex justify-content-between align-items-center bg-white owner-order-header" style="border-bottom: 1px solid #eee;">
         <div>
           <strong>Order #{{ order.id }}</strong> by <strong>{{ order.customer.email }}</strong>
         </div>
-        <div class="d-flex align-items-center gap-2 flex-wrap" style="min-height: 48px;">
+        <div class="d-flex align-items-center gap-2 flex-wrap owner-order-actions" style="min-height: 48px;">
           {% if order.status == 'pending' %}
             <form method="post" class="d-inline-flex align-items-center gap-2 mb-0">
               {% csrf_token %}
@@ -68,7 +125,7 @@
       </div>
       <div class="card-body" style="background: #f6fbf8;">
         {% for item in order.items.all %}
-          <div class="d-flex align-items-center mb-3">
+          <div class="d-flex align-items-center mb-3 owner-order-product">
             <div style="width: 110px;">
               <img src="{{ item.product.image.url }}" class="img-fluid rounded" alt="{{ item.product.name }}">
             </div>

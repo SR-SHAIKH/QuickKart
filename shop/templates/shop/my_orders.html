@@ -1,29 +1,171 @@
 {% extends 'shop/base_customer.html' %}
 
 {% block content %}
-<h2 class="text-xl font-bold mb-4">My Orders</h2>
-
-{% if orders %}
-  {% for order in orders %}
-    <a href="{% url 'order_detail' order.id %}" class="block no-underline">
-      <div class="bg-white p-4 rounded shadow mb-4 transition hover:shadow-lg hover:bg-green-50 cursor-pointer">
-        <p><strong>Order ID:</strong> {{ order.id }}</p>
-        <p><strong>Date:</strong> {{ order.created_at }}</p>
-        <p><strong>Total:</strong> ₹{{ order.total_amount }}</p>
-        <ul class="ml-4 list-disc">
-          {% for item in order.items.all %}
-            <li>{{ item.product.name }} - {{ item.quantity }} pcs</li>
-          {% endfor %}
-        </ul>
-      </div>
-    </a>
-  {% endfor %}
-{% else %}
-  <div class="min-h-[60vh] flex flex-col items-center justify-center text-center gap-6 mt-5">
-    <i class="bi bi-box-seam text-7xl text-gray-400 mb-2"></i>
-    <div class="text-3xl font-extrabold text-[#2e4e1b]">No orders yet!</div>
-    <div class="text-lg text-gray-600 mb-2">You haven’t placed any orders yet.</div>
-    <a href="{% url 'home' %}" class="px-8 py-4 rounded-xl bg-[#4a8c52] text-white text-2xl font-bold shadow-lg hover:bg-[#35703c] transition">Shop Now</a>
-  </div>
-{% endif %}
+<style>
+  .orders-tabs {
+    display: flex;
+    gap: 2rem;
+    border-bottom: 2px solid #eee;
+    margin-bottom: 1.5rem;
+    justify-content: center;
+  }
+  .orders-tab {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #bbb;
+    padding-bottom: 0.5rem;
+    border-bottom: 2.5px solid transparent;
+    cursor: pointer;
+    transition: color 0.2s, border 0.2s;
+  }
+  .orders-tab.active {
+    color: #e74c3c;
+    border-bottom: 2.5px solid #e74c3c;
+  }
+  .order-card {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border-radius: 1.1rem;
+    box-shadow: 0 2px 12px rgba(76,175,80,0.07);
+    padding: 1rem 1.2rem;
+    margin-bottom: 1.1rem;
+    gap: 1.1rem;
+    transition: box-shadow 0.2s, background 0.2s;
+  }
+  .order-card:hover {
+    box-shadow: 0 4px 18px rgba(76,175,80,0.13);
+    background: #f8fcfa;
+  }
+  .order-img {
+    width: 60px;
+    height: 60px;
+    border-radius: 0.7rem;
+    background: #f6f6f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .order-img img {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+    border-radius: 0.5rem;
+  }
+  .order-info {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .order-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #222;
+    margin-bottom: 0.1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .order-meta {
+    font-size: 0.93rem;
+    color: #888;
+    margin-bottom: 0.1rem;
+  }
+  .order-price {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #2e4e1b;
+    margin-bottom: 0.2rem;
+  }
+  .order-action {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+    min-width: 100px;
+  }
+  .track-btn {
+    background: #fff0f0;
+    color: #e74c3c;
+    border: 1.5px solid #e74c3c;
+    border-radius: 1.2rem;
+    font-weight: 600;
+    font-size: 0.98rem;
+    padding: 0.4rem 1.1rem;
+    transition: background 0.2s, color 0.2s;
+  }
+  .track-btn:hover {
+    background: #e74c3c;
+    color: #fff;
+  }
+  @media (max-width: 767px) {
+    .order-card {
+      flex-direction: row;
+      align-items: flex-start;
+      padding: 0.7rem 0.5rem;
+      gap: 0.7rem;
+    }
+    .order-img {
+      width: 44px;
+      height: 44px;
+    }
+    .order-img img {
+      width: 36px;
+      height: 36px;
+    }
+    .order-title {
+      font-size: 0.97rem;
+    }
+    .order-meta {
+      font-size: 0.9rem;
+    }
+    .order-price {
+      font-size: 0.98rem;
+    }
+    .order-action {
+      min-width: 80px;
+    }
+    .track-btn {
+      font-size: 0.93rem;
+      padding: 0.3rem 0.7rem;
+    }
+  }
+</style>
+<div class="container py-3">
+  <h2 class="fw-bold mb-3 text-center" style="font-size:1.3rem;">My Orders</h2>
+  {% if orders %}
+    {% for order in orders %}
+      <a href="{% url 'order_detail' order.id %}" class="text-decoration-none">
+        <div class="order-card">
+          <div class="order-img">
+            {% with item=order.items.first %}
+              {% if item and item.product.image %}
+                <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" />
+              {% else %}
+                <img src="https://via.placeholder.com/100x100?text=No+Image" alt="No Image" />
+              {% endif %}
+            {% endwith %}
+          </div>
+          <div class="order-info">
+            <div class="order-title">{{ order.items.first.product.name|default:'Order' }}</div>
+            <div class="order-meta">Qty: {{ order.items.first.quantity|default:'-' }}</div>
+            <div class="order-meta">Order ID: {{ order.id }}</div>
+            <div class="order-meta">Date: {{ order.created_at|date:'d M Y' }}</div>
+            <div class="order-price">₹{{ order.total_amount }}</div>
+          </div>
+          <div class="order-action">
+            <span class="track-btn">Track Order</span>
+          </div>
+        </div>
+      </a>
+    {% endfor %}
+  {% else %}
+    <div class="d-flex flex-column align-items-center justify-content-center text-center" style="min-height:60vh; gap:2rem;">
+      <i class="bi bi-box-seam" style="font-size:4rem; color:#c3c3c3;"></i>
+      <div class="fw-bold" style="font-size:2rem; color:#2e4e1b;">No orders yet!</div>
+      <div class="text-muted mb-2">You haven’t placed any orders yet.</div>
+      <a href="{% url 'home' %}" class="btn btn-lg btn-success px-4 py-2 fw-bold shadow-sm">Shop Now</a>
+    </div>
+  {% endif %}
+</div>
 {% endblock %}

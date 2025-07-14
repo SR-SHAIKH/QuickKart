@@ -7,8 +7,29 @@
   border-radius: 8px;
   font-weight: 600;
 }
+@media (max-width: 767px) {
+  .order-detail-card .action-btn {
+    min-height: 36px !important;
+    border-radius: 0.7rem !important;
+    letter-spacing: 0.01em !important;
+    gap: 0.5em !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.91rem !important;
+    padding: 0.28rem 0 !important;
+    width: 100% !important;
+    text-align: center !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .order-detail-card .action-btn {
+    border-radius: 1.5rem !important;
+  }
+}
 </style>
-<div class="container max-w-2xl mx-auto my-8 p-6 bg-white rounded-xl shadow">
+<div class="container max-w-2xl mx-auto my-8 p-6 bg-white rounded-xl shadow order-detail-card">
   <div class="mb-6 flex items-center justify-between">
     <h2 class="text-2xl font-bold text-[#2e4e1b]">Order #{{ order.id }}</h2>
     <span class="px-4 py-2 rounded-full text-white font-semibold text-sm bg-green-600">{{ order.get_status_display }}</span>
@@ -60,11 +81,11 @@
     <!-- Invoice and Payment Actions -->
     {% if request.user.role == 'customer' %}
       {% if order.status == 'delivered' %}
-        <a href="{% url 'generate_invoice' order.id %}" class="px-6 py-3 rounded bg-blue-600 text-white font-semibold text-lg hover:bg-blue-700 transition">
+        <a href="{% url 'generate_invoice' order.id %}" class="action-btn px-6 py-3 bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">
           📄 View Invoice
         </a>
       {% else %}
-        <span class="px-6 py-3 rounded bg-gray-400 text-white font-semibold text-lg cursor-not-allowed">
+        <span class="action-btn px-6 py-3 bg-gray-400 text-white font-semibold cursor-not-allowed">
           📄 Invoice (Available after delivery)
         </span>
       {% endif %}
@@ -73,7 +94,7 @@
     {% if request.user.role == 'rider' %}
       <a href="{% url 'rider_dashboard' %}" class="rider-action-btn bg-[#4a8c52] text-white hover:bg-[#35703c] transition">Back to Rider Dashboard</a>
     {% else %}
-      <a href="{% url 'my_orders' %}" class="px-6 py-3 rounded bg-[#4a8c52] text-white font-semibold text-lg hover:bg-[#35703c] transition">Back to My Orders</a>
+      <a href="{% url 'my_orders' %}" class="action-btn px-6 py-3 bg-[#4a8c52] text-white font-semibold hover:bg-[#35703c] transition">Back to My Orders</a>
     {% endif %}
   </div>
 </div>

@@ -1,33 +1,108 @@
 {% extends 'shop/base_customer.html' %}
 {% load static %}
 {% block content %}
+<style>
+  .wishlist-card {
+    transition: box-shadow 0.2s, transform 0.2s;
+    border-radius: 1rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    border: 1px solid #e0f0e7;
+    background: #fff;
+    height: auto;
+    min-height: unset;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+  .wishlist-card:hover {
+    box-shadow: 0 6px 24px rgba(76,175,80,0.13);
+    transform: translateY(-3px) scale(1.02);
+  }
+  .wishlist-btn {
+    background: #fff;
+    border: none;
+    border-radius: 50%;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+  }
+  .wishlist-btn:hover {
+    background: #ffeaea;
+  }
+  .wishlist-empty {
+    min-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 1.5rem;
+  }
+  .wishlist-empty .bi-heart {
+    font-size: 4rem;
+    color: #c3c3c3;
+  }
+  .wishlist-card .card-img-top {
+    height: 100px;
+    object-fit: contain;
+    padding: 10px 0 0 0;
+    margin-bottom: 0.5rem;
+  }
+  .wishlist-card .card-body {
+    padding: 0.5rem 1rem 1rem 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+  }
+  .wishlist-card .card-title {
+    font-size: 1.05rem;
+    margin-bottom: 0.3rem;
+  }
+  .wishlist-card .card-text {
+    margin-bottom: 0.2rem;
+    font-size: 0.95rem;
+  }
+  .wishlist-card .btn {
+    font-size: 0.95rem;
+    padding: 0.4rem 0.7rem;
+    margin-top: 0.5rem;
+    width: 100%;
+  }
+  @media (max-width: 767px) {
+    .wishlist-card { border-radius: 0.7rem; }
+    .wishlist-btn { width: 32px; height: 32px; }
+    .wishlist-card .card-img-top { height: 80px; }
+    .wishlist-card .card-body { padding: 0.5rem 0.7rem 0.7rem 0.7rem; }
+  }
+</style>
 <div class="container py-4">
-
   {% if wishlist_items %}
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+    <h2 class="fw-bold mb-4 text-center">My Wishlist</h2>
+    <div class="row row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
       {% for item in wishlist_items %}
-        <div class="col">
-          <div class="card h-100 position-relative group shadow-sm hover:shadow-md transition">
-
+        <div class="col wishlist-col">
+          <div class="wishlist-card card position-relative">
             <!-- Wishlist Toggle Button -->
-            <button class="wishlist-btn position-absolute top-0 end-0 m-2 btn p-1 text-danger z-3"
-                    data-product-id="{{ item.product.id }}">
-              <i class="bi bi-heart-fill text-red-600"></i>
+            <button class="wishlist-btn position-absolute top-0 end-0 m-2 z-3" data-product-id="{{ item.product.id }}" aria-label="Remove from wishlist">
+              <i class="bi bi-heart-fill text-danger"></i>
             </button>
-
             <!-- Entire Card Clickable -->
             <a href="{% url 'product_detail' item.product.id %}" class="text-decoration-none text-dark">
               {% if item.product.image %}
-                <img src="{{ item.product.image.url }}" class="card-img-top p-2" alt="{{ item.product.name }}">
+                <img src="{{ item.product.image.url }}" class="card-img-top" alt="{{ item.product.name }}">
               {% else %}
-                <img src="https://via.placeholder.com/300x200?text=No+Image" class="card-img-top p-2" alt="No Image">
+                <img src="https://via.placeholder.com/300x200?text=No+Image" class="card-img-top" alt="No Image">
               {% endif %}
-
-              <div class="card-body d-flex flex-column">
-                <h5 class="card-title fw-semibold mb-1">{{ item.product.name }}</h5>
-                <p class="card-text text-muted small mb-2">{{ item.product.description|truncatewords:10 }}</p>
-                <p class="text-primary fw-bold mb-3">₹{{ item.product.price }}</p>
-                <div class="btn btn-sm btn-outline-primary mt-auto text-center w-100">View Product</div>
+              <div class="card-body">
+                <h5 class="card-title fw-semibold">{{ item.product.name|truncatechars:30 }}</h5>
+                <p class="card-text text-muted small">{{ item.product.description|truncatewords:10 }}</p>
+                <p class="text-success fw-bold mb-2">₹{{ item.product.price }}</p>
+                <a href="{% url 'product_detail' item.product.id %}" class="btn btn-success btn-sm">View Product</a>
               </div>
             </a>
           </div>
@@ -35,26 +110,23 @@
       {% endfor %}
     </div>
   {% else %}
-    <div class="min-h-[60vh] flex flex-col items-center justify-center text-center gap-6 mt-5">
-      <i class="bi bi-heart text-7xl text-gray-400 mb-2"></i>
-      <div class="text-3xl font-extrabold text-[#2e4e1b]">Your wishlist is empty!</div>
-      <div class="text-lg text-gray-600 mb-2">You haven’t added any products to your wishlist yet.</div>
-      <a href="{% url 'home' %}" class="px-8 py-4 rounded-xl bg-[#4a8c52] text-white text-2xl font-bold shadow-lg hover:bg-[#35703c] transition">Explore Products</a>
+    <div class="wishlist-empty mt-5">
+      <i class="bi bi-heart"></i>
+      <div class="fw-bold" style="font-size:2rem; color:#2e4e1b;">Your wishlist is empty!</div>
+      <div class="text-muted mb-2">You haven’t added any products to your wishlist yet.</div>
+      <a href="{% url 'home' %}" class="btn btn-lg btn-success px-4 py-2 fw-bold shadow-sm">Explore Products</a>
     </div>
   {% endif %}
 </div>
-
 <!-- Wishlist Toggle Script -->
 <script>
   document.querySelectorAll('.wishlist-btn').forEach(button => {
     button.addEventListener('click', function (e) {
       e.preventDefault();
       e.stopPropagation(); // Prevent card redirect
-
       const productId = this.dataset.productId;
       const icon = this.querySelector('i');
-
-      fetch("{% url 'toggle_wishlist' %}", {
+      fetch("/ajax/toggle_wishlist/", {
         method: 'POST',
         headers: {
           'X-CSRFToken': '{{ csrf_token }}',
@@ -65,8 +137,11 @@
       .then(res => res.json())
       .then(data => {
         if (data.status === "removed") {
-          // Fade out or reload on remove
-          this.closest('.col').remove();
+          // Fade out card on remove
+          const col = this.closest('.wishlist-col');
+          col.style.transition = 'opacity 0.4s';
+          col.style.opacity = 0;
+          setTimeout(() => col.remove(), 400);
         }
       });
     });

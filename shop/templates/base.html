@@ -74,7 +74,7 @@
   <body class="bg-light">
     <!-- Navbar -->
     <nav
-      class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm"
+      class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm position-relative"
     >
       <div class="container">
         <a
@@ -82,56 +82,70 @@
           href="{% if request.user.is_authenticated %}{% if request.user.role == 'shop_owner' %}{% url 'shop_owner_dashboard' %}{% elif request.user.role == 'rider' %}{% url 'rider_dashboard' %}{% else %}{% url 'home' %}{% endif %}{% else %}{% url 'home' %}{% endif %}"
           >🛒 QuickKart</a
         >
-        <button
-          class="navbar-toggler"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navbarNav"
-        >
-          <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <div class="collapse navbar-collapse" id="navbarNav">
+        <!-- Desktop Menu -->
+        <div class="collapse navbar-collapse d-none d-lg-block" id="navbarNav">
           <ul class="navbar-nav ms-auto">
             {% if request.user.is_authenticated %}
-  {% if request.user.role == 'shop_owner' %}
-    <li class="nav-item">
-      <a class="nav-link" href="{% url 'shop_owner_dashboard' %}">Dashboard</a>
-    </li>
-
-    <li class="nav-item">
-      <a class="nav-link" href="{% url 'owner_profiles' %}">Profiles</a>
-    </li>
-  {% endif %}
-
-  <li class="nav-item">
-    <a
-      class="nav-link text-danger"
-      href="#"
-      data-bs-toggle="modal"
-      data-bs-target="#logoutConfirmModal"
-      >Logout</a
-    >
-  </li>
-{% else %}
-  <li class="nav-item">
-    <a class="nav-link" href="{% url 'login' %}">Login</a>
-  </li>
-  <li class="nav-item">
-    <a
-      class="nav-link"
-      href="#"
-      data-bs-toggle="modal"
-      data-bs-target="#registerModal"
-      >Register</a
-    >
-  </li>
-{% endif %}
-
+              {% if request.user.role == 'shop_owner' %}
+                <li class="nav-item">
+                  <a class="nav-link" href="{% url 'shop_owner_dashboard' %}">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" href="{% url 'owner_profiles' %}">Profiles</a>
+                </li>
+              {% endif %}
+              <li class="nav-item">
+                <a class="nav-link text-danger" href="#" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal">Logout</a>
+              </li>
+            {% else %}
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'login' %}">Login</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#registerModal">Register</a>
+              </li>
+            {% endif %}
           </ul>
+        </div>
+        <!-- Mobile Menu Button -->
+        <div class="d-lg-none">
+          <button class="btn p-0 border-0 bg-transparent shadow-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu" aria-controls="mobileMenu" aria-label="Menu">
+            <i class="bi bi-three-dots-vertical" style="font-size: 2rem; color: #198754;"></i>
+          </button>
         </div>
       </div>
     </nav>
+    <!-- Mobile Offcanvas Menu -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="mobileMenu" aria-labelledby="mobileMenuLabel">
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="mobileMenuLabel">Menu</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body p-0">
+        <ul class="list-group list-group-flush">
+          {% if request.user.is_authenticated %}
+            {% if request.user.role == 'shop_owner' %}
+              <li class="list-group-item"><a href="{% url 'shop_owner_dashboard' %}" class="text-dark text-decoration-none">Dashboard</a></li>
+              <li class="list-group-item"><a href="{% url 'owner_profiles' %}" class="text-dark text-decoration-none">Profiles</a></li>
+            {% endif %}
+            <li class="list-group-item"><a href="#" class="text-danger text-decoration-none" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal">Logout</a></li>
+          {% else %}
+            <li class="list-group-item bg-light"><a href="{% url 'login' %}" class="text-success fw-semibold text-decoration-none">Login</a></li>
+            <li class="list-group-item bg-light"><a href="#" class="text-primary fw-semibold text-decoration-none" data-bs-toggle="modal" data-bs-target="#registerModal">Register</a></li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+    <style>
+      @media (max-width: 991px) {
+        .d-lg-none { display: block !important; }
+        .d-lg-block { display: none !important; }
+      }
+      @media (min-width: 992px) {
+        .d-lg-none { display: none !important; }
+        .d-lg-block { display: block !important; }
+      }
+    </style>
 
     <!-- Register Choice Modal -->
     <div

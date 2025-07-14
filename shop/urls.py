@@ -48,7 +48,6 @@ urlpatterns = [
 
     # 🛍️ Shop Owner
     path('dashboard/shop/', views.shop_owner_dashboard, name='shop_owner_dashboard'),
-    path('dashboard/shop/products/', views.shop_owner_products, name='shop_owner_products'),
     path('dashboard/shop/orders/', views.shop_owner_orders, name='shop_owner_orders'),
     path('products/create/', views.create_product, name='create_product'),
     path('products/edit/<int:product_id>/', views.edit_product, name='edit_product'),
@@ -102,6 +101,8 @@ urlpatterns = [
     path('owner/invoices/', views.owner_invoices, name='owner_invoices'),
     path('webhook/razorpay/', views.razorpay_webhook, name='razorpay_webhook'),
     path('owner/edit-personal/', views.edit_owner_profile, name='edit_owner_profile'),
+    # Shop detail page for public
+    path('shop/<int:shop_id>/', views.shop_detail, name='shop_detail'),
 
 ]
 

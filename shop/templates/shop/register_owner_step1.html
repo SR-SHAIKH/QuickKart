@@ -1,18 +1,78 @@
 {% extends "base.html" %}
 {% load static %}
+{% load form_tags %}
 
 {% block title %}Register as Shop Owner - Step 1{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
+<style>
+  @media (max-width: 600px) {
+    .owner-form-container {
+      max-width: 98vw;
+      margin: 30px auto;
+      padding: 18px 8px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+    .owner-form-card {
+      border-radius: 8px !important;
+      animation: fadeIn 0.7s;
+    }
+    h3, h4 {
+      font-size: 1.3rem;
+    }
+    .btn, .btn-primary, .btn-success {
+      font-size: 1.1rem;
+      padding: 0.7rem 1.2rem;
+      width: 100%;
+    }
+    .form-label, .form-control {
+      font-size: 1rem;
+    }
+    .mt-5, .mb-4, .mb-3, .mt-3 {
+      margin-top: 1rem !important;
+      margin-bottom: 1rem !important;
+    }
+    .card-body {
+      padding: 1.2rem 0.5rem;
+    }
+    .mb-3 {
+      margin-bottom: 0.9rem !important;
+    }
+    .form-control {
+      padding: 0.7rem 1rem;
+      border-radius: 0.5rem;
+    }
+    .d-grid.gap-2 {
+      gap: 0.7rem !important;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: none; }
+    }
+  }
+</style>
+<div class="container mt-5 owner-form-container">
   <div class="row justify-content-center">
     <div class="col-md-8 col-lg-6">
-      <div class="card shadow-sm">
+      <div class="card shadow-sm owner-form-card">
         <div class="card-body">
-          <h3 class="text-center mb-4">👤 Personal Information</h3>
+          <h3 class="text-center mb-4">
+            <i class="bi bi-person-circle text-primary me-2"></i>
+            <span class="fw-bold">Personal Information</span>
+          </h3>
           <form method="post" novalidate>
             {% csrf_token %}
             {% for field in form %}
+              {% if field.name == 'email' %}
+                {# Insert username field just before email if not already rendered #}
+                {% if not form.username %}
+                  <div class="mb-3">
+                    <label for="id_username" class="form-label">Username <span class="text-danger">*</span></label>
+                    <input type="text" name="username" maxlength="150" class="form-control" required id="id_username">
+                  </div>
+                {% endif %}
+              {% endif %}
               <div class="mb-3">
                 <label for="{{ field.id_for_label }}" class="form-label">
                   {{ field.label }}
@@ -20,7 +80,11 @@
                     <span class="text-danger">*</span>
                   {% endif %}
                 </label>
-                {{ field }}
+                {% if field.name == "date_of_birth" %}
+                  <input type="date" name="date_of_birth" class="form-control" id="{{ field.id_for_label }}" required>
+                {% else %}
+                  {{ field|add_class:"form-control" }}
+                {% endif %}
                 {% if field.errors %}
                   <div class="text-danger small mt-1">
                     {{ field.errors|striptags }}
@@ -36,7 +100,7 @@
             {% endif %}
 
             <div class="d-grid gap-2">
-              <button type="submit" class="btn btn-primary">
+              <button type="submit" class="btn btn-success btn-lg">
                 Continue to Shop Details →
               </button>
             </div>

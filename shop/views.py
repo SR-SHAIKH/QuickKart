@@ -256,13 +256,6 @@ def shop_owner_dashboard(request):
 
 @login_required
 @user_passes_test(is_shop_owner)
-def shop_owner_products(request):
-    products = Product.objects.filter(shop_owner=request.user)
-    return render(request, 'products/owner_products.html', {'products': products})
-
-
-@login_required
-@user_passes_test(lambda u: u.role == 'shop_owner')
 def shop_owner_orders(request):
     orders = Order.objects.filter(
         items__product__shop_owner=request.user
@@ -332,7 +325,7 @@ def create_product(request):
             product.shop = request.user.shop  # make sure `OneToOneField` is set in Shop model
             product.shop_owner = request.user
             product.save()
-            return redirect('shop_owner_products')
+            return redirect('shop_owner_dashboard')
     else:
         form = ProductForm()
     return render(request, 'shop/create_product.html', {'form': form})
@@ -355,7 +348,7 @@ def delete_product(request, product_id):
     product = get_object_or_404(Product, id=product_id)
 
     # 🔐 Ensure only the owner can delete
-    if product.shop.shop_owner != request.user:
+    if product.shop.owner != request.user:
         return HttpResponseForbidden("You are not authorized to delete this product.")
 
     if request.method == 'POST':
@@ -627,14 +620,24 @@ def wishlist_page(request):
 
 from django.http import HttpResponseForbidden
 
+@login_required
 def product_detail(request, pk):
-    # Block shop owners
-    if request.user.is_authenticated and hasattr(request.user, 'shop'):
-        return HttpResponseForbidden("Access Denied. Shop owners cannot view this page.")
+    product = get_object_or_404(Product, id=pk)
 
-    product = get_object_or_404(Product, pk=pk)
-    suggested_products = Product.objects.exclude(pk=pk)[:5]
+    # Pincode filtering for suggested products
+    selected_pincode = request.session.get('selected_pincode')
+    suggested_products = Product.objects.none()
+    if selected_pincode:
+        try:
+            pin_obj = PinCode.objects.get(code=selected_pincode)
+            shops_in_area = Shop.objects.filter(delivery_pincodes=pin_obj).distinct()
+            suggested_products = Product.objects.filter(shop__in=shops_in_area, is_active=True).exclude(id=product.id)[:8]
+        except PinCode.DoesNotExist:
+            suggested_products = Product.objects.exclude(id=product.id)[:8]
+    else:
+        suggested_products = Product.objects.exclude(id=product.id)[:8]
 
+    # Wishlist logic
     is_wishlisted = False
     if request.user.is_authenticated:
         is_wishlisted = Wishlist.objects.filter(user=request.user, product=product).exists()
@@ -642,7 +645,7 @@ def product_detail(request, pk):
     return render(request, 'shop/product_detail.html', {
         'product': product,
         'suggested_products': suggested_products,
-        'is_wishlisted': is_wishlisted
+        'is_wishlisted': is_wishlisted,
     })
 
 
@@ -751,13 +754,11 @@ def register_owner_step1(request):
 
             # Save user data and OTP in session
             request.session['owner_user_data'] = {
-                'first_name': form.cleaned_data['first_name'],
-                'last_name': form.cleaned_data['last_name'],
-                'username': form.cleaned_data['username'],
+                'first_name': form.cleaned_data.get('first_name', ''),
+                'last_name': form.cleaned_data.get('last_name', ''),
+                'username': form.cleaned_data.get('username', ''),
                 'email': email,
-                'password': make_password(form.cleaned_data['password']),
-                'gender': form.cleaned_data.get('gender', ''),
-                'date_of_birth': str(form.cleaned_data.get('date_of_birth'))  # convert to string to store in session
+                'password': form.cleaned_data.get('password'),
             }
 
             request.session['otp'] = str(otp)
@@ -864,11 +865,13 @@ def register_owner_step3(request):
                         last_name=user_data['last_name'],
                         username=user_data['username'],
                         email=user_data['email'],
-                        password=user_data['password'],
                         gender=user_data.get('gender', ''),
                         date_of_birth=user_data.get('date_of_birth'),
-                        role='shop_owner'
+                        role='shop_owner',
+                        password=''  # Do not set password directly
                     )
+                    user.set_password(user_data['password'])  # Properly hash and set password
+                    user.save()
 
                     # ✅ Step 2: Prepare shop data
                     shop_data = request.session['owner_shop_data']
@@ -1677,3 +1680,16 @@ def edit_owner_profile(request):
     else:
         form = OwnerPersonalForm(instance=user)
     return render(request, 'dashboard/owner_edit_profile.html', {'form': form})
+
+def shop_detail(request, shop_id):
+    shop = get_object_or_404(Shop, id=shop_id)
+    products = Product.objects.filter(shop=shop, is_active=True)
+    wishlist_products = []
+    if request.user.is_authenticated and getattr(request.user, 'role', None) == 'customer':
+        from shop.models import Wishlist
+        wishlist_products = Wishlist.objects.filter(user=request.user).values_list('product_id', flat=True)
+    return render(request, 'shop/shop_detail.html', {
+        'shop': shop,
+        'products': products,
+        'wishlist_products': wishlist_products,
+    })

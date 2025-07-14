@@ -3,84 +3,325 @@
 {% load cart_filters %}
 
 {% block content %}
+<style>
+  .cart-section {
+    background: #fff;
+    border-radius: 1.2rem;
+    box-shadow: 0 2px 16px rgba(76,175,80,0.07);
+    padding: 2rem 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .cart-item-card {
+    border-radius: 1rem;
+    box-shadow: 0 1px 8px rgba(76,175,80,0.08);
+    background: #f8fcfa;
+    padding: 1.2rem 1rem;
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    flex-wrap: wrap;
+  }
+  .cart-item-img {
+    width: 70px;
+    height: 70px;
+    border-radius: 0.7rem;
+    background: #a8d5ba;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .cart-item-img img {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    border-radius: 0.5rem;
+  }
+  .cart-item-info {
+    flex: 1 1 120px;
+    min-width: 0;
+  }
+  .cart-item-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2e4e1b;
+    margin-bottom: 0.2rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cart-item-desc {
+    font-size: 0.97rem;
+    color: #4a5c3f;
+    margin-bottom: 0.2rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .cart-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: 0.5rem;
+  }
+  .cart-qty-input {
+    width: 48px !important;
+    font-size: 1rem;
+    padding: 0.3rem 0.2rem;
+    border-radius: 0.5rem;
+    border: 1.5px solid #6ca775;
+    text-align: center;
+    background: #fff;
+    margin-right: 0.2rem;
+  }
+  .cart-remove-btn {
+    padding: 0.3rem 0.9rem;
+    font-size: 0.97rem;
+    border-radius: 0.5rem;
+    background: #e74c3c;
+    color: #fff;
+    border: none;
+    font-weight: 600;
+    transition: background 0.2s;
+  }
+  .cart-remove-btn:hover {
+    background: #c0392b;
+  }
+  .cart-item-total {
+    font-weight: 700;
+    color: #2e4e1b;
+    font-size: 1.1rem;
+    margin-left: 1.2rem;
+    min-width: 70px;
+    text-align: right;
+  }
+  .cart-summary-section {
+    background: #fff;
+    border-radius: 1.2rem;
+    box-shadow: 0 2px 16px rgba(76,175,80,0.07);
+    padding: 1.5rem 1.2rem;
+    margin-bottom: 2rem;
+  }
+  .cart-checkout-btn {
+    font-size: 1.2rem;
+    padding: 0.9rem 2.5rem;
+    border-radius: 0.7rem;
+    font-weight: 700;
+    background: #4a8c52;
+    color: #fff;
+    border: none;
+    transition: background 0.2s;
+  }
+  .cart-checkout-btn:hover {
+    background: #35703c;
+  }
+  @media (max-width: 991px) {
+    .cart-section, .cart-summary-section {
+      padding: 1.2rem 0.5rem;
+    }
+    .cart-item-card {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 0.7rem;
+      padding: 0.7rem 0.3rem;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      box-shadow: none;
+      border-radius: 0.8rem;
+      margin-bottom: 0.7rem;
+    }
+    .cart-item-img {
+      margin: 0;
+      width: 48px;
+      height: 48px;
+      background: #f6f6f6;
+      border-radius: 0.6rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .cart-item-img img {
+      width: 40px;
+      height: 40px;
+    }
+    .cart-item-info {
+      flex: 1 1 0;
+      min-width: 0;
+      text-align: left;
+      margin-bottom: 0;
+      padding: 0 0.2rem;
+    }
+    .cart-item-title {
+      font-size: 0.93rem;
+      font-weight: 600;
+      margin-bottom: 0.08rem;
+      color: #222;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .cart-item-desc {
+      display: none;
+    }
+    .cart-item-info .text-success.fw-bold {
+      font-size: 0.95rem;
+      margin-top: 0.15rem;
+    }
+    .cart-item-actions {
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.2rem;
+      margin-left: 0;
+      margin-bottom: 0;
+    }
+    .cart-qty-input {
+      width: 32px !important;
+      font-size: 1rem;
+      padding: 0.2rem 0.1rem;
+      border-radius: 0.5rem;
+      border: 1px solid #b2b2b2;
+      margin: 0 0.2rem;
+      background: #f9f9f9;
+    }
+    .qty-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1px solid #4a8c52;
+      background: #fff;
+      color: #4a8c52;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      transition: background 0.2s, color 0.2s;
+    }
+    .qty-btn:active, .qty-btn:focus {
+      background: #eaf7ed;
+      color: #35703c;
+    }
+    .cart-remove-btn {
+      background: none;
+      border: none;
+      color: #4a8c52;
+      font-size: 1.2rem;
+      padding: 0 0.2rem;
+      margin-left: 0.2rem;
+      border-radius: 50%;
+      transition: background 0.2s, color 0.2s;
+    }
+    .cart-remove-btn:hover {
+      background: #eaf7ed;
+      color: #e74c3c;
+    }
+    .cart-item-total {
+      display: none;
+    }
+    .cart-summary-section {
+      padding: 1rem 0.5rem;
+      margin-bottom: 1.2rem;
+      border-radius: 1rem;
+      box-shadow: 0 1px 8px rgba(76,175,80,0.08);
+      background: #fff;
+    }
+    .cart-checkout-btn {
+      width: 100%;
+      padding: 1rem 0;
+      font-size: 1.1rem;
+      margin-top: 1rem;
+      border-radius: 0.7rem;
+    }
+    .cart-offers {
+      background: #f8fcfa;
+      border-radius: 0.7rem;
+      padding: 0.7rem 1rem;
+      margin-bottom: 1rem;
+      font-size: 1rem;
+      color: #2e4e1b;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .cart-offers .bi-chevron-down {
+      font-size: 1.2rem;
+      color: #4a8c52;
+    }
+  }
+</style>
 {% if not cart_items %}
-  <div class="min-h-[70vh] flex flex-col items-center justify-center text-center gap-6">
-    <i class="bi bi-cart-x text-7xl text-gray-400 mb-2"></i>
-    <div class="text-3xl font-extrabold text-[#2e4e1b]">Your cart is empty!</div>
-    <div class="text-lg text-gray-600 mb-2">Looks like you haven’t added anything yet.</div>
-    <a href="{% url 'home' %}" class="px-8 py-4 rounded-xl bg-[#4a8c52] text-white text-2xl font-bold shadow-lg hover:bg-[#35703c] transition">Explore Shops & Products</a>
+  <div class="d-flex flex-column align-items-center justify-content-center text-center" style="min-height:70vh; gap:2rem;">
+    <i class="bi bi-cart-x" style="font-size:4rem; color:#c3c3c3;"></i>
+    <div class="fw-bold" style="font-size:2rem; color:#2e4e1b;">Your cart is empty!</div>
+    <div class="text-muted mb-2">Looks like you haven’t added anything yet.</div>
+    <a href="{% url 'home' %}" class="btn btn-lg btn-success px-4 py-2 fw-bold shadow-sm">Explore Shops & Products</a>
   </div>
 {% else %}
-<div class="min-h-[80vh] w-full flex justify-center items-start">
-  <div class="w-11/12 mx-auto px-24 py-24">
-    <!-- Cart Title -->
-    <div class="text-4xl font-extrabold mb-4 text-[#2e4e1b]">Cart</div>
-    <div class="border-t-2 border-black my-12"></div>
+<div class="container py-4">
+  <div class="cart-section mx-auto mb-4" style="max-width:900px;">
+    <h2 class="fw-bold mb-3 text-center" style="color:#2e4e1b;">My Cart</h2>
     <!-- Address Section -->
-    <div class="flex items-center justify-between mb-0">
-      <div>
-        <div class="text-xl font-bold mb-1 text-[#2e4e1b]">Address</div>
-        <div class="text-lg font-semibold mb-2 text-[#2e4e1b]">
-          {{ user.address_line1 }}, {{ user.address_line2 }}<br>
-          {{ user.city }}, {{ user.state }}, {{ user.country }} - {{ user.pin_code }}
+    <div class="cart-section mb-4 p-3" style="box-shadow:none; background:#f8fcfa;">
+      <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
+        <div>
+          <div class="fw-bold mb-1" style="font-size:1.1rem; color:#2e4e1b;">Address</div>
+          <div class="mb-2" style="font-size:1rem; color:#2e4e1b;">
+            {{ user.address_line1 }}, {{ user.address_line2 }}<br>
+            {{ user.city }}, {{ user.state }}, {{ user.country }} - {{ user.pin_code }}
+          </div>
         </div>
+        <a href="{% url 'shipping_address_update' %}" class="btn btn-outline-success fw-semibold">Edit Address</a>
       </div>
-      <a href="{% url 'shipping_address_update' %}" class="ml-4 px-6 py-3 rounded bg-[#4a8c52] text-white font-semibold text-lg hover:bg-[#35703c] transition">Edit Address</a>
     </div>
-    <div class="border-t-2 border-black my-12"></div>
-
     <!-- Cart Items -->
     {% for item in cart_items %}
-    <div class="flex items-center gap-6 mb-12">
-      <!-- Small Image/Icon -->
-      <div class="flex-shrink-0 w-20 h-20 rounded-xl flex items-center justify-center text-xl font-bold bg-[#a8d5ba] text-[#2e4e1b]">
-        {% if item.product.image %}
-          <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="w-16 h-16 object-contain rounded" />
-        {% else %}
-          <span>IMG</span>
-        {% endif %}
+      <div class="cart-item-card">
+        <div class="cart-item-img">
+          {% if item.product.image %}
+            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" />
+          {% else %}
+            <span>IMG</span>
+          {% endif %}
+        </div>
+        <div class="cart-item-info">
+          <div class="cart-item-title">{{ item.product.name }}</div>
+          <div class="cart-item-desc">{{ item.product.description }}</div>
+          <div class="text-success fw-bold mt-1">₹{{ item.product.price }}</div>
+        </div>
+        <div class="cart-item-actions">
+          <form method="post" action="{% url 'update_cart_quantity_ajax' %}" class="d-flex align-items-center">
+            {% csrf_token %}
+            <input type="hidden" name="item_id" value="{{ item.id }}">
+            <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="10"
+              class="cart-qty-input" data-price="{{ item.product.price }}" data-item-id="{{ item.id }}" />
+          </form>
+          <form method="post" action="{% url 'remove_from_cart' item.id %}">
+            {% csrf_token %}
+            <button type="submit" class="cart-remove-btn" aria-label="Remove"><i class="bi bi-trash"></i></button>
+          </form>
+        </div>
       </div>
-      <!-- Title + Description -->
-      <div class="flex flex-col min-w-0 flex-1 justify-center">
-        <div class="text-2xl font-bold truncate text-[#2e4e1b]">{{ item.product.name }}</div>
-        <div class="text-base text-gray-700 truncate">{{ item.product.description }}</div>
-      </div>
-      <!-- Quantity + Remove (side by side) -->
-      <div class="flex items-center gap-4 ml-6">
-        <form method="post" action="{% url 'update_cart_quantity_ajax' %}" class="flex items-center">
-          {% csrf_token %}
-          <input type="hidden" name="item_id" value="{{ item.id }}">
-          <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="10"
-            class="w-16 text-lg py-2 border-2 border-black rounded bg-transparent text-center cart-qty-input" data-price="{{ item.product.price }}" data-item-id="{{ item.id }}" />
-        </form>
-        <form method="post" action="{% url 'remove_from_cart' item.id %}">
-          {% csrf_token %}
-          <button type="submit" class="px-6 py-2 rounded font-bold bg-[#6ca775] text-white text-lg">Remove</button>
-        </form>
-      </div>
-      <!-- Item Total (live update) -->
-      <div class="ml-8 font-bold text-[#2e4e1b] text-2xl">
-        ₹<span id="item-total-{{ item.id }}">{{ item.quantity|mul:item.product.price }}</span>
-      </div>
-    </div>
     {% endfor %}
-
-    <div class="border-t-2 border-black my-12"></div>
-
-    <!-- Summary Section (only shipping and total) -->
-    <div class="flex flex-col gap-0 mb-2">
-      <div class="flex justify-between items-center py-4">
-        <span class="font-bold text-xl text-[#2e4e1b]">Shipping charge</span>
-        <span class="font-bold text-xl text-right text-[#4a8c52] min-w-[80px]">Free</span>
-      </div>
-      <div class="flex justify-between items-center py-4">
-        <span class="font-bold text-xl text-[#2e4e1b]">Total</span>
-        <span class="font-bold text-xl text-right text-[#4a8c52] min-w-[80px]" id="cart-grand-total">₹{{ total }}</span>
-      </div>
+    <!-- Summary Section -->
+    <div class="cart-offers mb-2">
+      Avail Offers/ Coupons
+      <i class="bi bi-chevron-down"></i>
     </div>
-    <div class="border-t-2 border-black my-12"></div>
-    <div class="flex justify-end">
-      <a href="{% url 'checkout' %}" class="px-12 py-4 rounded font-bold text-2xl transition bg-[#4a8c52] text-white">Check out</a>
+    <div class="cart-summary-section mt-4">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="fw-bold" style="font-size:1.1rem; color:#2e4e1b;">Shipping charge</span>
+        <span class="fw-bold text-success" style="font-size:1.1rem;">Free</span>
+      </div>
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="fw-bold" style="font-size:1.1rem; color:#2e4e1b;">Total</span>
+        <span class="fw-bold text-success" style="font-size:1.1rem;" id="cart-grand-total">₹{{ total }}</span>
+      </div>
+      <div class="d-flex justify-content-end mt-4">
+        <a href="{% url 'checkout' %}" class="cart-checkout-btn w-100 w-md-auto">Check out</a>
+      </div>
     </div>
   </div>
 </div>

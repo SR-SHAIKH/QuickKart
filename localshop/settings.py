@@ -11,7 +11,7 @@ DEBUG = config("DEBUG", default=True, cast=bool)
 ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 RENDER_EXTERNAL_HOSTNAME = config("RENDER_EXTERNAL_HOSTNAME", default=None)
 if RENDER_EXTERNAL_HOSTNAME:
-    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+    ALLOWED_HOSTS.append(str(RENDER_EXTERNAL_HOSTNAME))
 
 # Custom User Model
 AUTH_USER_MODEL = 'users.CustomUser'
@@ -145,7 +145,7 @@ LOGGING = {
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# Razorpay Configuration
-RAZORPAY_KEY_ID = config("RAZORPAY_KEY_ID", default="rzp_test_YOUR_TEST_KEY")
-RAZORPAY_KEY_SECRET = config("RAZORPAY_KEY_SECRET", default="YOUR_TEST_SECRET")
+# Razorpay Settings
+RAZORPAY_KEY_ID = config("RAZORPAY_KEY_ID")
+RAZORPAY_KEY_SECRET = config("RAZORPAY_KEY_SECRET")
 RAZORPAY_CURRENCY = "INR"

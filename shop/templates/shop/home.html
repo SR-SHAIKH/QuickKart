@@ -7,30 +7,25 @@
     --accent: #4a8c52;
     --text: #2e4e1b;
   }
-
   body {
     background-color: var(--background);
   }
-
   header.hero {
     background-color: var(--primary);
     color: var(--text);
     padding: 3rem 1rem;
     text-align: center;
   }
-
   .search-bar {
     max-width: 600px;
     margin: 1rem auto;
   }
-
   .card {
     position: relative;
     border: 1px solid #cce5d3;
     border-radius: 0.5rem;
     height: 100%;
   }
-
   .wishlist-icon {
     position: absolute;
     top: 10px;
@@ -43,34 +38,28 @@
     outline: none;
     box-shadow: none;
   }
-
   .card-img-top {
     height: 200px;
     object-fit: contain;
     padding: 10px;
   }
-
   .card-title {
     color: var(--text);
     font-weight: bold;
   }
-
   .card-text {
     color: #4a5c3f;
   }
-
   .btn-success,
   .btn-primary {
     width: 48%;
     font-size: 0.9rem;
   }
-
   footer {
     background-color: var(--secondary);
     color: white;
     padding: 2rem 0;
   }
-
   .category-circle {
     width: 85px;
     height: 85px;
@@ -78,89 +67,247 @@
     border-radius: 50%;
     border: 2px solid #ccc;
   }
-
   .shop-card img {
     height: 80px;
     object-fit: cover;
     border-radius: 0.75rem;
   }
-
-  @media (min-width: 1400px) {
-    .col-xxl-2 {
-      flex: 0 0 auto;
-      width: 20%;
-    }
-
-    .col-xxl-6 {
-      flex: 0 0 auto;
-      width: 16.66%;
-    }
-  }
-
+  /* --- CATEGORY SLIDER RESTORE --- */
   .category-slider-wrapper {
     overflow-x: auto;
     position: relative;
     cursor: grab;
     scrollbar-width: thin;
     scrollbar-color: #bbb transparent;
+    width: 100%;
   }
-
   .category-slider-wrapper::-webkit-scrollbar {
     height: 2px;
   }
-
   .category-slider-wrapper::-webkit-scrollbar-thumb {
     background-color: #bbb;
     border-radius: 10px;
   }
-
   .category-slider-wrapper::-webkit-scrollbar-track {
     background: transparent;
   }
-
   .category-slider {
     display: flex;
     gap: 1.5rem;
     padding: 1rem;
     width: max-content;
   }
-
   .category-slider>a {
     flex-shrink: 0;
     text-align: center;
     width: 100px;
   }
-
   .category-slider .text-wrap {
     word-wrap: break-word;
     white-space: normal;
   }
+  /* --- PRODUCT & SHOP ROWS ONLY --- */
+  .product-row .col-6 { flex: 0 0 50%; max-width: 50%; }
+  .product-row .col-md-4 { flex: 0 0 33.3333%; max-width: 33.3333%; }
+  .product-row .col-lg-3 { flex: 0 0 25%; max-width: 25%; }
+  .product-row .col-xl-2 { flex: 0 0 20%; max-width: 20%; }
+  .shop-row .col-6 { flex: 0 0 50%; max-width: 50%; }
+  .shop-row .col-md-4 { flex: 0 0 33.3333%; max-width: 33.3333%; }
+  .shop-row .col-lg-2, .shop-row .col-xl-2 { flex: 0 0 20%; max-width: 20%; }
+  @media (max-width: 991px) {
+    header.hero {
+      padding: 1rem 0.5rem 0.7rem 0.5rem;
+      font-size: 1.05rem;
+    }
+    .hero-inner {
+      padding: 1rem 0.5rem !important;
+    }
+    .search-bar {
+      max-width: 100%;
+      margin: 0.5rem 0;
+    }
+    .search-bar input[type="text"], .search-bar .form-control {
+      padding-left: 2.2rem !important;
+      font-size: 1rem;
+    }
+    .search-bar .search-icon {
+      left: 12px !important;
+      top: 50% !important;
+      transform: translateY(-50%) !important;
+      font-size: 1.1rem !important;
+    }
+    .category-slider {
+      gap: 0.7rem;
+      padding: 0.5rem;
+    }
+    .category-circle {
+      width: 60px;
+      height: 60px;
+    }
+    .card-img-top {
+      height: 120px;
+      padding: 5px;
+    }
+    .card-title {
+      font-size: 1rem;
+    }
+    .card-text {
+      font-size: 0.95rem;
+    }
+    .btn-success, .btn-primary {
+      width: 100%;
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    .row {
+      --bs-gutter-x: 0.5rem;
+      --bs-gutter-y: 0.5rem;
+    }
+    .container, .container-fluid {
+      padding-left: 0.5rem !important;
+      padding-right: 0.5rem !important;
+    }
+    .accordion-button {
+      font-size: 1rem;
+      padding: 0.75rem 1rem;
+    }
+    .accordion-body {
+      font-size: 0.98rem;
+    }
+    .mb-4, .my-5, .mt-5, .mb-3, .py-10, .py-5, .py-4, .py-6, .py-8 {
+      margin-bottom: 1rem !important;
+      margin-top: 1rem !important;
+      padding-top: 1rem !important;
+      padding-bottom: 1rem !important;
+    }
+    .rounded, .rounded-2xl, .rounded-xl, .rounded-lg, .rounded-4 {
+      border-radius: 0.7rem !important;
+    }
+    .shadow, .shadow-sm, .shadow-lg {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+    }
+    .text-3xl, .text-2xl, .fw-bold, .fw-semibold {
+      font-size: 1.2rem !important;
+    }
+    .text-center {
+      text-align: center !important;
+    }
+    .mx-4, .mx-auto {
+      margin-left: 0.5rem !important;
+      margin-right: 0.5rem !important;
+    }
+    .px-6, .px-10, .px-4, .px-5 {
+      padding-left: 0.7rem !important;
+      padding-right: 0.7rem !important;
+    }
+    .py-2, .py-3 {
+      padding-top: 0.7rem !important;
+      padding-bottom: 0.7rem !important;
+    }
+    .btn-lg {
+      font-size: 1.1rem;
+      padding: 0.7rem 1.2rem;
+    }
+    .mb-3 {
+      margin-bottom: 0.7rem !important;
+    }
+    .mt-6, .mt-5 {
+      margin-top: 1rem !important;
+    }
+    .mb-0 {
+      margin-bottom: 0 !important;
+    }
+    .py-10 {
+      padding-top: 1.2rem !important;
+      padding-bottom: 1.2rem !important;
+    }
+    .rounded-xl, .rounded-2xl {
+      border-radius: 0.7rem !important;
+    }
+    .shadow-lg {
+      box-shadow: 0 2px 12px rgba(0,0,0,0.10) !important;
+    }
+    .faq-section .accordion-item {
+      margin-bottom: 0.7rem;
+    }
+    .product-row .col-6, .shop-row .col-6 {
+      flex: 0 0 50%;
+      max-width: 50%;
+    }
+    .product-row .col-md-4, .shop-row .col-md-4 {
+      flex: 0 0 33.3333%;
+      max-width: 33.3333%;
+    }
+    .product-row .col-lg-3, .shop-row .col-lg-2, .shop-row .col-xl-2 {
+      flex: 0 0 50%;
+      max-width: 50%;
+    }
+  }
+  /* --- SHOPS & PRODUCTS HORIZONTAL SCROLL --- */
+  /* Remove horizontal scroll for shops and products */
+  .shop-scroll-row, .product-scroll-row {
+    display: flex;
+    flex-wrap: wrap;
+    overflow-x: unset;
+    gap: unset;
+    padding-bottom: unset;
+    scrollbar-width: unset;
+    scrollbar-color: unset;
+  }
+  .shop-card, .product-card {
+    min-width: unset;
+    max-width: unset;
+    flex: unset;
+  }
+  .shop-scroll-row::-webkit-scrollbar, .product-scroll-row::-webkit-scrollbar {
+    height: 6px;
+  }
+  .shop-scroll-row::-webkit-scrollbar-thumb, .product-scroll-row::-webkit-scrollbar-thumb {
+    background: #bbb;
+    border-radius: 10px;
+  }
+  .shop-scroll-row .shop-card {
+    min-width: 160px;
+    max-width: 180px;
+    flex: 0 0 18%;
+  }
+  .product-scroll-row .product-card {
+    min-width: 210px;
+    max-width: 240px;
+    flex: 0 0 24%;
+  }
+  @media (max-width: 991px) {
+    .shop-scroll-row .shop-card { min-width: 140px; max-width: 160px; }
+    .product-scroll-row .product-card { min-width: 180px; max-width: 210px; }
+  }
+  @media (max-width: 600px) {
+    .shop-scroll-row .shop-card { min-width: 120px; max-width: 140px; }
+    .product-scroll-row .product-card { min-width: 150px; max-width: 180px; }
+  }
 </style>
 
 {% if user.is_authenticated %}
-
 <header class="hero">
-  <div class="max-w-4xl mx-auto bg-[#dcf5e9] py-10 px-6 rounded-2xl shadow-lg mt-6 text-center">
+  <div class="hero-inner mx-auto bg-white rounded-2xl shadow-lg mt-4 text-center p-4 p-md-5">
     <h1 class="text-3xl font-bold text-gray-800 mb-2">
       Find Products in Your Area
     </h1>
     <p class="text-gray-600 mb-6 text-sm">
       Search groceries, fashion & more — all near your location.
     </p>
-    <form method="GET" action="{% url 'home' %}" class="flex items-center justify-center gap-4 flex-col sm:flex-row">
-      <div class="relative w-full sm:w-[60%]">
+    <form method="GET" action="{% url 'home' %}" class="d-flex flex-column flex-sm-row align-items-center justify-content-center gap-3 search-bar">
+      <div class="position-relative w-100 w-sm-60">
         <input type="text" name="q" value="{{ query }}" placeholder="Search products..."
-          class="w-full px-10 py-2 pl-50 rounded-lg border border-gray-300 bg-white shadow-sm focus:ring-2 focus:ring-green-500" />
-        <span class="absolute left-5 top-2.5 text-gray-400"><i class="bi bi-search"></i></span>
+          class="form-control ps-5 py-2" style="border-radius:0.75rem;" />
+        <span class="search-icon position-absolute" style="left:16px; top:50%; transform:translateY(-50%); color:#aaa; pointer-events:none; font-size:1.2rem;"><i class="bi bi-search"></i></span>
       </div>
       <button type="button" onclick="openLocationModal()"
-        class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+        class="btn btn-success px-4 py-2">
         📍 Select Location
       </button>
     </form>
   </div>
 </header>
-
 <section class="container mt-5">
   <h2 class="mb-4 text-center">Explore Categories</h2>
   <div class="category-slider-wrapper">
@@ -176,75 +323,64 @@
     </div>
   </div>
 </section>
-
 <section class="container my-5 border rounded p-4">
   <h2 class="mb-4 text-center">Shops in Your Area</h2>
-  <div class="row">
-    {% for shop in shops_in_area|slice:":12" %}
-      <div class="col-6 col-md-2 mb-4">
-        <div class="card h-100 text-center shadow-sm border-success">
-
-          {% if shop.shop_logo %}
-            <img src="{{ shop.shop_logo.url }}" alt="{{ shop.shop_name }}" class="card-img-top p-3"
-              style="height: 100px; object-fit: contain;">
-          {% else %}
-            <img src="{% static 'images/default-shop-logo.png' %}" alt="No Logo" class="card-img-top p-3"
-              style="height: 100px; object-fit: contain;">
-          {% endif %}
-
-          <h6 class="card-title">{{ shop.shop_name }}</h6>
-          <p class="card-text small text-muted mb-0">{{ shop.address|truncatechars:40 }}</p>
-        </div>
-      </div>
-    {% endfor %}
-  </div>
-</section>
-
-
-
-
-{% endif %} {% if user.is_authenticated %}
-<section class="container">
-  <h2 class="mb-4 text-center">Featured Products</h2>
-  <div class="row">
-    {% endif %} {% for product in products %}
-    <div class="col-6 col-md-4 col-lg-2 col-xxl-2 mb-4">
-      <div class="card h-100 shadow-sm">
-        <button class="wishlist-btn wishlist-icon"
-        data-product="{{ product.id }}"
-        {% if not user.is_authenticated or user.role != "customer" %}disabled{% endif %}>
-
-          <i
-            class="bi {% if user.is_authenticated and product in wishlist_products %}bi-heart-fill text-danger{% else %}bi-heart{% endif %}"></i>
-        </button>
-        <a href="{% url 'product_detail' product.id %}" class="text-decoration-none text-reset">
-          {% if product.image %}
-          <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" />
-          {% else %}
-          <img src="https://via.placeholder.com/300x200?text=No+Image" class="card-img-top" alt="No image" />
-          {% endif %}
-          <div class="card-body">
-            <h5 class="card-title">{{ product.name }}</h5>
-            <p class="card-text text-truncate">{{ product.description }}</p>
-            <h6 class="text-primary fw-bold">₹{{ product.price }}</h6>
+  <div class="row shop-scroll-row">
+    {% for shop in shops_in_area|slice:":5" %}
+      <div class="col-6 col-md-3 col-lg-2 mb-4">
+        <a href="{% url 'shop_detail' shop.id %}" class="text-decoration-none text-dark">
+          <div class="shop-card card h-100 text-center shadow-sm border-success">
+            {% if shop.shop_logo %}
+              <img src="{{ shop.shop_logo.url }}" alt="{{ shop.shop_name }}" class="card-img-top p-3" style="height: 100px; object-fit: contain;">
+            {% else %}
+              <img src="{% static 'images/default-shop-logo.png' %}" alt="No Logo" class="card-img-top p-3" style="height: 100px; object-fit: contain;">
+            {% endif %}
+            <h6 class="card-title">{{ shop.shop_name }}</h6>
+            <p class="card-text small text-muted mb-0">{{ shop.address|truncatechars:40 }}</p>
           </div>
         </a>
-        {% if user.is_authenticated and user.role == 'customer' %}
-        <div class="d-flex justify-content-between px-3 pb-3">
-          <a href="{% url 'add_to_cart' product.id %}" class="btn btn-success">Add to Cart</a>
-          <a href="{% url 'buy_now' product.id %}" class="btn btn-primary">Buy Now</a>
-        </div>
-        {% else %}
-        <div class="px-3 pb-3">
-          <a href="{% url 'login' %}" class="btn btn-success w-100">Login to Buy</a>
-        </div>
-        {% endif %}
       </div>
-    </div>
     {% endfor %}
   </div>
 </section>
+{% endif %}
 
+<!-- 🛒 Products in Area (for all users) -->
+{% if products.exists %}
+<section class="container my-5">
+  <h2 class="mb-4 text-center">Products in Your Area</h2>
+  <div class="row product-scroll-row">
+    {% for product in products|slice:":5" %}
+      <div class="col-6 col-md-4 col-lg-3 col-xl-2 mb-4">
+        <div class="product-card card h-100 shadow-sm position-relative">
+          {% if user.is_authenticated and user.role == 'customer' %}
+            <button class="wishlist-btn wishlist-icon position-absolute" data-product="{{ product.id }}" style="top:10px; right:10px; z-index:2; background:transparent; border:none;" aria-label="Add to wishlist">
+              <i class="bi {% if product.id in wishlist_products %}bi-heart-fill text-danger{% else %}bi-heart{% endif %}"></i>
+            </button>
+          {% endif %}
+          <a href="{% url 'product_detail' product.id %}" class="text-decoration-none text-dark">
+            {% if product.image %}
+              <img src="{{ product.image.url }}" alt="{{ product.name }}" class="card-img-top p-3" style="height: 120px; object-fit: contain;">
+            {% else %}
+              <img src="https://via.placeholder.com/300x200?text=No+Image" alt="No Image" class="card-img-top p-3" style="height: 120px; object-fit: contain;">
+            {% endif %}
+            <div class="card-body">
+              <h5 class="card-title">{{ product.name|truncatechars:30 }}</h5>
+              <p class="card-text text-success fw-bold mb-1">₹{{ product.price }}</p>
+              <span class="btn btn-success btn-sm w-100">View Product</span>
+            </div>
+          </a>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% elif products is not None %}
+<section class="container my-5">
+  <h2 class="mb-4 text-center">Products in Your Area</h2>
+  <div class="alert alert-warning text-center">No products found for this area.</div>
+</section>
+{% endif %}
 {% if not user.is_authenticated %}
 <section class="text-center py-10 bg-green-50 rounded-xl shadow mt-5 mx-4">
   <h2 class="text-3xl font-bold text-green-700">Welcome to QuickKart</h2>
@@ -256,52 +392,48 @@
     Login / Register to Explore
   </a>
 </section>
-
-{# Public/Guest sections #}
 <section class="container my-5">
   <h2 class="text-center mb-4">Why Choose QuickKart?</h2>
-  <div class="row text-center">
-    <div class="col-md-3">
+  <div class="row text-center quickkart-features">
+    <div class="col-6 mb-4">
       <i class="bi bi-truck fs-1 text-success"></i>
       <h5 class="mt-2">Quick Delivery</h5>
     </div>
-    <div class="col-md-3">
+    <div class="col-6 mb-4">
       <i class="bi bi-shop fs-1 text-success"></i>
       <h5 class="mt-2">Support Local Shops</h5>
     </div>
-    <div class="col-md-3">
+    <div class="col-6 mb-4">
       <i class="bi bi-star fs-1 text-success"></i>
       <h5 class="mt-2">Top Quality Products</h5>
     </div>
-    <div class="col-md-3">
+    <div class="col-6 mb-4">
       <i class="bi bi-lock fs-1 text-success"></i>
       <h5 class="mt-2">Secure Payments</h5>
     </div>
   </div>
 </section>
-
 <section class="container my-5">
   <h2 class="text-center mb-4">How It Works</h2>
-  <div class="row text-center">
-    <div class="col-md-3">
+  <div class="row text-center quickkart-howworks">
+    <div class="col-6 mb-4">
       <span class="fs-1 text-success">1️</span>
       <p class="mt-2">Select your location</p>
     </div>
-    <div class="col-md-3">
+    <div class="col-6 mb-4">
       <span class="fs-1 text-success">2️</span>
       <p class="mt-2">Browse products near you</p>
     </div>
-    <div class="col-md-3">
+    <div class="col-6 mb-4">
       <span class="fs-1 text-success">3️</span>
       <p class="mt-2">Add to cart</p>
     </div>
-    <div class="col-md-3">
+    <div class="col-6 mb-4">
       <span class="fs-1 text-success">4️</span>
       <p class="mt-2">Enjoy fast delivery!</p>
     </div>
   </div>
 </section>
-
 <section class="container my-5">
   <h2 class="text-center mb-4">Popular Products (Demo)</h2>
   <div class="row justify-content-center">
@@ -320,12 +452,10 @@
     {% endfor %}
   </div>
 </section>
-
 <div class="text-center my-5">
   <h3 class="mb-3 text-green-700">Ready to get started?</h3>
   <a href="{% url 'login' %}" class="btn btn-lg btn-primary">Login / Register</a>
 </div>
-
 <section class="container my-5">
   <h2 class="text-center mb-4">Frequently Asked Questions</h2>
   <div class="accordion" id="faqAccordion">
@@ -375,9 +505,7 @@
     <p class="mb-0">&copy; 2025 QuickKart. All rights reserved.</p>
   </div>
 </footer>
-
 <!-- Modal HTML -->
-
 <div id="locationModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
   <div class="bg-white rounded-xl shadow-lg p-6 w-11/12 max-w-md text-center">
     <h2 class="text-xl font-bold mb-4">Choose Location Option</h2>
@@ -393,7 +521,6 @@
     <p id="locationStatus" class="text-sm text-gray-600 mt-4 hidden"></p>
   </div>
 </div>
-
 <script>
   function openLocationModal() {
     document.getElementById("locationModal").classList.remove("hidden");
@@ -405,22 +532,34 @@
     const status = document.getElementById("locationStatus");
     status.innerText = "Detecting location...";
     status.classList.remove("hidden");
-
     navigator.geolocation.getCurrentPosition(
       function (position) {
         const lat = position.coords.latitude;
         const lon = position.coords.longitude;
-        fetch(
-          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`
-        )
-          .then((res) => res.json())
-          .then((data) => {
-            const pin = data.postcode;
+        console.log('Lat:', lat, 'Lon:', lon);
+        // OpenCage API call
+        fetch(`https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=YOUR_OPENCAGE_API_KEY`)
+          .then(res => res.json())
+          .then(data => {
+            console.log('OpenCage API response:', data);
+            let pin = '';
+            if (data.results && data.results.length) {
+              // Try to get postcode from components
+              if (data.results[0].components && data.results[0].components.postcode) {
+                pin = data.results[0].components.postcode;
+              }
+            }
+            alert('Live location se mila pincode: ' + pin);
             status.innerText = `✅ Found ${pin}. Searching for shops...`;
-            window.location.href = `/?pincode=${pin}`;
+            if (pin) {
+              window.location.href = `/?pincode=${pin}`;
+            } else {
+              status.innerText = "❌ Could not detect pincode from your location. Please enter manually.";
+            }
           });
       },
-      function () {
+      function (err) {
+        console.log('Geolocation error:', err);
         status.innerText = "❌ Could not detect your location.";
       }
     );
@@ -438,5 +577,31 @@
     window.location.href = `/?pincode=${pin}`;
   }
 </script>
-
+<script>
+  document.querySelectorAll('.wishlist-btn').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault();
+      var productId = this.getAttribute('data-product');
+      var icon = this.querySelector('i');
+      fetch('/ajax/toggle_wishlist/', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': '{{ csrf_token }}',
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({ product_id: productId })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'added') {
+          icon.classList.remove('bi-heart');
+          icon.classList.add('bi-heart-fill', 'text-danger');
+        } else if (data.status === 'removed') {
+          icon.classList.remove('bi-heart-fill', 'text-danger');
+          icon.classList.add('bi-heart');
+        }
+      });
+    });
+  });
+</script>
 {% endblock %}
