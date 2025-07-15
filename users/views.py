@@ -5,7 +5,7 @@ from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from .forms import ProfileUpdateForm
 from .forms import CustomerProfileForm 
-from shop.models import Order  
+from shop.models import Order, Payment
 from shop.models import Wishlist  
 from shop.models import CartItem
 
@@ -22,6 +22,8 @@ import json
 
 from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
+from django.urls import reverse
+from django.http import HttpResponseRedirect
 
 # from cart.models import Cart  
 
@@ -159,28 +161,51 @@ def rider_register(request):
         'all_pincodes_json': all_pincodes_json,
     })
 
+@login_required
 def rider_dashboard(request):
-    if not request.user.is_authenticated or request.user.role != 'rider':
-        return redirect('login')
-    # Handle On Duty toggle
-    if request.method == 'POST' and 'on_duty_toggle' in request.POST:
+    
+    if request.user.role != 'rider':
+        return redirect('home')
+
+    # --- Filter & Sort Logic ---
+    status_filter = request.GET.get('status_filter', 'all')
+    sort_order = request.GET.get('sort_order', 'newest')
+    params = f'?status_filter={status_filter}&sort_order={sort_order}'
+
+    # Handle POST for toggling duty status
+    if request.method == 'POST' and 'toggle_duty' in request.POST:
         request.user.on_duty = not request.user.on_duty
         request.user.save()
-        messages.success(request, f"You are now {'On Duty' if request.user.on_duty else 'Off Duty'}.")
-        return redirect('rider_dashboard')
+        messages.info(request, f'You are now {"On Duty" if request.user.on_duty else "Off Duty"}.')
+        return HttpResponseRedirect(reverse('rider_dashboard') + params)
 
-    # Handle Accept/Decline/Delivered actions
+    orders = Order.objects.filter(delivery_rider=request.user).prefetch_related('items__product', 'customer')
+    if status_filter != 'all':
+        if status_filter == 'declined':
+            orders = orders.filter(rider_status='declined')
+        elif status_filter == 'delivered':
+            orders = orders.filter(status='delivered')
+        elif status_filter == 'pending':
+            orders = orders.filter(rider_status='accepted').exclude(status='delivered')
+    if sort_order == 'newest':
+        orders = orders.order_by('-order_date')
+    else:
+        orders = orders.order_by('order_date')
+
+    # Stats for Earnings & Stats
+    all_assigned_orders = Order.objects.filter(delivery_rider=request.user)
+    total_assigned = all_assigned_orders.count()
+    total_rejected = all_assigned_orders.filter(rider_status='declined').count()
+    total_selected = all_assigned_orders.filter(rider_status='accepted').count()
+    total_delivered = all_assigned_orders.filter(status='delivered').count()
+    total_pending = all_assigned_orders.filter(rider_status='accepted', status='out_for_delivery').count()
+
+    # Handle POST for status update or rejection
     if request.method == 'POST' and 'order_id' in request.POST:
         order_id = request.POST.get('order_id')
         action = request.POST.get('action')
         order = Order.objects.get(id=order_id, delivery_rider=request.user)
-        if action == 'accept' and order.rider_status == 'pending' and order.status == 'shipped':
-            order.rider_status = 'accepted'
-            order.status = 'out_for_delivery'
-            order.save()
-            messages.success(request, f'Order #{order.id} accepted and marked as Out for Delivery.')
-            return redirect('rider_dashboard')
-        elif action == 'reject' and order.rider_status == 'pending' and order.status == 'shipped':
+        if action == 'reject':
             order.rider_status = 'declined'
             backups = list(order.backup_riders.all())
             if backups:
@@ -195,17 +220,38 @@ def rider_dashboard(request):
                 order.status = 'confirmed'
                 order.save()
                 messages.warning(request, f'All backup riders rejected Order #{order.id}. Please reassign.')
-            return redirect('rider_dashboard')
+            return HttpResponseRedirect(reverse('rider_dashboard') + params)
+        elif action == 'accept' and order.rider_status == 'pending' and order.status == 'shipped':
+            order.rider_status = 'accepted'
+            order.status = 'out_for_delivery'
+            order.save()
+            messages.success(request, f'Order #{order.id} accepted and marked as Out for Delivery.')
+            return HttpResponseRedirect(reverse('rider_dashboard') + params)
         elif action == 'mark_delivered' and order.rider_status == 'accepted' and order.status == 'out_for_delivery':
             order.status = 'delivered'
             order.save()
-            messages.success(request, f'Order #{order.id} marked as Delivered!')
-            return redirect('rider_dashboard')
-
-    assigned_deliveries = Order.objects.filter(delivery_rider=request.user).order_by('-order_date')
+            try:
+                payment = Payment.objects.get(order=order, payment_method='cod')
+                payment.payment_status = 'completed'
+                payment.save()
+                if payment.invoice:
+                    payment.invoice.payment_status = 'paid'
+                    payment.invoice.save()
+                messages.success(request, f'Order #{order.id} delivered! COD payment marked as completed.')
+            except Payment.DoesNotExist:
+                messages.success(request, f'Order #{order.id} marked as Delivered!')
+            return HttpResponseRedirect(reverse('rider_dashboard') + params)
     return render(request, 'users/rider_dashboard.html', {
-        'assigned_deliveries': assigned_deliveries,
+        'assigned_deliveries': orders,
         'rider': request.user,
+        'on_duty': request.user.on_duty,
+        'total_assigned': total_assigned,
+        'total_rejected': total_rejected,
+        'total_selected': total_selected,
+        'total_delivered': total_delivered,
+        'total_pending': total_pending,
+        'status_filter': status_filter,
+        'sort_order': sort_order,
     })
 
 def login_view(request):
@@ -225,3 +271,19 @@ def login_view(request):
         else:
             error = 'Invalid email or password.'
     return render(request, 'users/login.html', {'error': error})
+
+from .forms import RiderEditProfileForm
+
+@login_required
+def rider_edit_profile(request):
+    if request.user.role != 'rider':
+        return redirect('home')
+    if request.method == 'POST':
+        form = RiderEditProfileForm(request.POST, request.FILES, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Profile updated successfully!')
+            return redirect('rider_dashboard')
+    else:
+        form = RiderEditProfileForm(instance=request.user)
+    return render(request, 'users/rider_edit_profile.html', {'form': form})

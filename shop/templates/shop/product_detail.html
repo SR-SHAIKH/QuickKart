@@ -34,10 +34,10 @@
 
       <!-- Buttons -->
       <div class="flex space-x-4">
-        <a href="{% url 'add_to_cart' product.id %}" 
-           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
-          Add to Cart
-        </a>
+        <form method="post" class="add-to-cart-form-global" data-product-id="{{ product.id }}">
+          {% csrf_token %}
+          <button type="button" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded add-to-cart-btn-global">Add to Cart</button>
+        </form>
         <a href="{% url 'buy_now' product.id %}" 
            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
           Buy Now

@@ -69,7 +69,8 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('wishlist/', views.wishlist_page, name='wishlist_page'),
     path('search/', views.search_view, name='search'),
-    path('orders/history/', views.order_history, name='order_history'),
+    # path('orders/history/', views.order_history, name='order_history'),
+    path('orders/history/', views.order_history_redirect, name='order_history'),
     path('category/<int:category_id>/', views.products_by_category, name='products_by_category'),
     path('register/owner/step1/', views.register_owner_step1, name='register_owner_step1'),
     path('register/owner/step2/', views.register_owner_step2, name='register_owner_step2'),
@@ -103,6 +104,7 @@ urlpatterns = [
     path('owner/edit-personal/', views.edit_owner_profile, name='edit_owner_profile'),
     # Shop detail page for public
     path('shop/<int:shop_id>/', views.shop_detail, name='shop_detail'),
+    path('ajax/add_to_cart/', views.add_to_cart_ajax, name='add_to_cart_ajax'),
 
 ]
 

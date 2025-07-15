@@ -369,7 +369,7 @@ def delete_product(request, product_id):
 def cart_view(request):
     if request.user.role != 'customer':
         return redirect('home')
-    cart_items = CartItem.objects.filter(user=request.user).select_related('product')
+    cart_items = CartItem.objects.filter(user=request.user).select_related('product').order_by('-id')
     for item in cart_items:
         item.total_price = item.product.price * item.quantity
     total = sum(item.total_price for item in cart_items)
@@ -483,11 +483,34 @@ def checkout(request):
 
 @login_required
 def my_orders(request):
+    print("MY ORDERS VIEW CALLED")
+    print("DEBUG CUSTOMER ORDERS: GET params:", dict(request.GET))
     if request.user.role != 'customer':
         return redirect('home')
 
+    status_filter = request.GET.get('status_filter', 'all')
+    sort_order = request.GET.get('sort_order', 'newest')
+
     orders = Order.objects.filter(customer=request.user).prefetch_related('items__product')
-    return render(request, 'shop/my_orders.html', {'orders': orders})
+    if status_filter != 'all':
+        if status_filter == 'delivered':
+            orders = orders.filter(status='delivered')
+        elif status_filter == 'cancelled':
+            orders = orders.filter(status='cancelled')
+        elif status_filter == 'pending':
+            orders = orders.filter(status='pending')
+        elif status_filter == 'out_for_delivery':
+            orders = orders.filter(status='out_for_delivery')
+    if sort_order == 'newest':
+        orders = orders.order_by('-order_date')
+    else:
+        orders = orders.order_by('order_date')
+
+    return render(request, 'shop/my_orders.html', {
+        'orders': orders,
+        'status_filter': status_filter,
+        'sort_order': sort_order,
+    })
     
 
 # --------------------- PROFILE ---------------------
@@ -615,7 +638,7 @@ def add_to_wishlist(request, product_id):
 
 @login_required
 def wishlist_page(request):
-    wishlist_items = Wishlist.objects.filter(user=request.user).select_related('product')
+    wishlist_items = Wishlist.objects.filter(user=request.user).select_related('product').order_by('-id')
     return render(request, 'shop/wishlist.html', {'wishlist_items': wishlist_items})
 
 from django.http import HttpResponseForbidden
@@ -714,10 +737,10 @@ def search_view(request):
     results = Product.objects.filter(name__icontains=query)
     return render(request, 'shop/search_results.html', {'results': results, 'query': query})
 
-@login_required
-def order_history(request):
-    orders = Order.objects.filter(customer=request.user)
-    return render(request, 'shop/my_orders.html', {'orders': orders})
+# @login_required
+# def order_history(request):
+#     # This view is now deprecated in favor of my_orders
+#     pass
 def products_by_category(request, category_id):
     selected_pincode = request.session.get('selected_pincode')
     categories = Category.objects.all()
@@ -1137,6 +1160,23 @@ def shipping_address_update(request):
         'pin_code': getattr(request.user, 'pin_code', ''),
     })
     return render(request, 'shop/shipping_address_update.html', {'shipping_address': shipping_address})
+
+@login_required
+def add_to_cart_ajax(request):
+    if request.method == 'POST':
+        product_id = request.POST.get('product_id')
+        if not product_id:
+            return JsonResponse({'error': 'No product_id'}, status=400)
+        try:
+            product = Product.objects.get(id=product_id)
+        except Product.DoesNotExist:
+            return JsonResponse({'error': 'Product not found'}, status=404)
+        cart_item, created = CartItem.objects.get_or_create(user=request.user, product=product)
+        if not created:
+            cart_item.quantity += 1
+            cart_item.save()
+        return JsonResponse({'status': 'added'})
+    return JsonResponse({'error': 'Invalid request'}, status=400)
 
 @login_required
 def order_detail(request, order_id):
@@ -1693,3 +1733,6 @@ def shop_detail(request, shop_id):
         'products': products,
         'wishlist_products': wishlist_products,
     })
+
+def order_history_redirect(request):
+    return redirect('my_orders')

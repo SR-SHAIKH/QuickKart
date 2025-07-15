@@ -130,9 +130,60 @@
       padding: 0.3rem 0.7rem;
     }
   }
+  .customer-filter-bar .filter-sort-row {
+    display: flex;
+    gap: 10px;
+  }
+  .customer-filter-bar .filter-col {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .customer-filter-bar .form-label {
+    font-size: 1rem;
+  }
+  @media (max-width: 600px) {
+    .customer-filter-bar {
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 6px !important;
+    }
+    .customer-filter-bar .form-label {
+      margin-bottom: 1px;
+      font-size: 0.92rem;
+      font-weight: 500;
+      text-align: left;
+      margin-right: 0 !important;
+      margin-left: 0 !important;
+    }
+    .customer-filter-bar select {
+      width: 100% !important;
+      min-width: 0;
+      font-size: 0.97rem;
+      padding: 4px 8px;
+      height: 32px;
+    }
+  }
 </style>
 <div class="container py-3">
   <h2 class="fw-bold mb-3 text-center" style="font-size:1.3rem;">My Orders</h2>
+  <div class="mb-3">
+    <form method="get" class="d-flex flex-wrap gap-2 align-items-center justify-content-end customer-filter-bar">
+      <label class="form-label mb-0 me-2">Filter:</label>
+      <select name="status_filter" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
+        <option value="delivered" {% if status_filter == 'delivered' %}selected{% endif %}>Delivered</option>
+        <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+        <option value="out_for_delivery" {% if status_filter == 'out_for_delivery' %}selected{% endif %}>Out for Delivery</option>
+      </select>
+      <label class="form-label mb-0 ms-3 me-2">Sort:</label>
+      <select name="sort_order" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+        <option value="newest" {% if sort_order == 'newest' %}selected{% endif %}>Newest First</option>
+        <option value="oldest" {% if sort_order == 'oldest' %}selected{% endif %}>Oldest First</option>
+      </select>
+    </form>
+  </div>
   {% if orders %}
     {% for order in orders %}
       <a href="{% url 'order_detail' order.id %}" class="text-decoration-none">

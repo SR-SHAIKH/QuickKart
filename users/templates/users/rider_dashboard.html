@@ -2,54 +2,57 @@
 {% load static %}
 {% block content %}
 <style>
-.plain-link {
-    color: #000 !important;
-    font-size: 15px;
-    text-decoration: none;
-    font-weight: 500;
-    display: inline-block;
-    margin-top: 2px;
+@media (max-width: 600px) {
+  .rider-desktop { display: none !important; }
+  .rider-mobile { display: block !important; }
 }
-.plain-link:hover, .plain-link:focus {
-    color: #000 !important;
-    text-decoration: underline;
+@media (min-width: 601px) {
+  .rider-desktop { display: block !important; }
+  .rider-mobile { display: none !important; }
 }
-.order-id {
-    font-size: 13px;
-    font-weight: bold;
-    color: #555;
-    display: block;
-    margin-bottom: 2px;
+.table th { color: #000 !important; }
+/* Desktop only: Product name link black */
+.plain-link { color: #000 !important; font-weight: 500; text-decoration: none; }
+.plain-link:hover, .plain-link:focus { text-decoration: underline; }
+/* Desktop only: Accept/Decline buttons side by side */
+.btn-flex { display: flex; flex-direction: row; gap: 8px; }
+
+.rider-filter-bar .filter-sort-row {
+  display: flex;
+  gap: 10px;
 }
-.table-modern th, .table-modern td {
-    vertical-align: middle !important;
-    padding-top: 12px !important;
-    padding-bottom: 12px !important;
+.rider-filter-bar .filter-col {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
 }
-.table-modern tr {
-    border-bottom: 1px solid #f0f0f0;
-}
-.btn-modern {
-    border-radius: 20px !important;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-    font-size: 14px;
-    padding: 4px 18px;
-    margin-bottom: 4px;
-    width: 120px;
-    text-align: center;
-}
-.btn-modern + .btn-modern {
-    margin-left: 8px;
-}
-.btn-flex {
-    display: flex;
+@media (max-width: 600px) {
+  .rider-filter-bar .filter-sort-row {
     flex-direction: column;
-    gap: 10px;
+    gap: 6px;
     align-items: flex-start;
+  }
+  .rider-filter-bar .filter-col {
     width: 100%;
+    align-items: flex-start;
+  }
+  .rider-filter-bar .filter-col label {
+    font-size: 0.92rem;
+    margin-bottom: 1px;
+    font-weight: 500;
+    text-align: left;
+  }
+  .rider-filter-bar .form-select {
+    width: 100%;
+    min-width: 0;
+    font-size: 0.97rem;
+    padding: 4px 8px;
+    height: 32px;
+  }
 }
 </style>
-<div class="container my-5">
+<!-- Desktop/PC/Laptop UI (Original Table-based) -->
+<div class="rider-desktop">
   <h2 class="mb-4 text-center">🚴 Rider Dashboard</h2>
   {% if messages %}
     {% for message in messages %}
@@ -65,12 +68,13 @@
         <p><strong>Phone:</strong> {{ rider.phone }}</p>
         <form method="post" action="" class="d-inline">
           {% csrf_token %}
+          <input type="hidden" name="toggle_duty" value="1">
           <label class="form-label me-2">On Duty:</label>
-          <input type="hidden" name="on_duty_toggle" value="1">
           <button type="submit" class="btn btn-sm {% if rider.on_duty %}btn-success{% else %}btn-outline-secondary{% endif %} rounded-pill px-3">
             {% if rider.on_duty %}<i class="bi bi-toggle-on"></i> On Duty{% else %}<i class="bi bi-toggle-off"></i> Off Duty{% endif %}
           </button>
         </form>
+        <a href="{% url 'rider_edit_profile' %}" class="btn btn-outline-primary btn-sm mt-3">Edit Profile</a>
       </div>
     </div>
     <div class="col-md-6">
@@ -88,6 +92,23 @@
   </div>
   <div class="card p-4 shadow-sm">
     <h4 class="mb-3">Assigned Deliveries</h4>
+    <!-- Filter/Sort Bar (Both Desktop & Mobile) -->
+    <div class="mb-3">
+      <form method="get" class="d-flex flex-wrap gap-2 align-items-center justify-content-end">
+        <label class="form-label mb-0 me-2">Filter:</label>
+        <select name="status_filter" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+          <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
+          <option value="delivered" {% if status_filter == 'delivered' %}selected{% endif %}>Delivered</option>
+          <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+          <option value="declined" {% if status_filter == 'declined' %}selected{% endif %}>Declined</option>
+        </select>
+        <label class="form-label mb-0 ms-3 me-2">Sort:</label>
+        <select name="sort_order" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+          <option value="newest" {% if sort_order == 'newest' %}selected{% endif %}>Newest First</option>
+          <option value="oldest" {% if sort_order == 'oldest' %}selected{% endif %}>Oldest First</option>
+        </select>
+      </form>
+    </div>
     {% if assigned_deliveries %}
       <div class="table-responsive">
         <table class="table align-middle table-modern">
@@ -119,12 +140,16 @@
                       {% csrf_token %}
                       <input type="hidden" name="order_id" value="{{ order.id }}">
                       <input type="hidden" name="action" value="accept">
+                      <input type="hidden" name="status_filter" value="{{ status_filter }}">
+                      <input type="hidden" name="sort_order" value="{{ sort_order }}">
                       <button type="submit" class="btn btn-sm btn-primary btn-modern">Accept</button>
                     </form>
                     <form method="post" class="d-inline w-100">
                       {% csrf_token %}
                       <input type="hidden" name="order_id" value="{{ order.id }}">
                       <input type="hidden" name="action" value="reject">
+                      <input type="hidden" name="status_filter" value="{{ status_filter }}">
+                      <input type="hidden" name="sort_order" value="{{ sort_order }}">
                       <button type="submit" class="btn btn-sm btn-danger btn-modern">Decline</button>
                     </form>
                   </div>
@@ -133,6 +158,8 @@
                     {% csrf_token %}
                     <input type="hidden" name="order_id" value="{{ order.id }}">
                     <input type="hidden" name="action" value="mark_delivered">
+                    <input type="hidden" name="status_filter" value="{{ status_filter }}">
+                    <input type="hidden" name="sort_order" value="{{ sort_order }}">
                     <button type="submit" class="btn btn-sm btn-success btn-modern">Mark as Delivered</button>
                   </form>
                 {% elif order.rider_status == 'declined' %}
@@ -150,6 +177,135 @@
       <div class="alert alert-info text-center mb-0">
         No assigned deliveries yet. You will see your delivery assignments here!
       </div>
+    {% endif %}
+  </div>
+</div>
+<!-- Mobile UI (Modern, Responsive) -->
+<div class="rider-mobile" style="display:none;">
+  <div class="container py-3 px-1" style="max-width: 480px;">
+    <!-- Profile Card -->
+    <div class="bg-white rounded-3 shadow-sm p-4 d-flex flex-column align-items-center gap-2 mb-4 profile-card" style="position:relative;">
+      <div class="d-flex flex-column align-items-center mb-2">
+        <img
+          src="{% if rider.profile_picture %}{{ rider.profile_picture.url }}{% else %}{% static 'images/default-profile.png' %}{% endif %}"
+          alt="Profile Picture"
+          class="rounded-circle shadow"
+          style="width: 90px; height: 90px; object-fit: cover; border: 3px solid #e8f5e9;"
+        />
+      </div>
+      <div class="text-center w-100 mb-2">
+        <div class="fw-bold fs-5 text-dark">{{ rider.get_full_name|default:rider.email }}</div>
+        <div class="text-muted small">{{ rider.email }}</div>
+        <div class="text-muted small">{{ rider.phone }}</div>
+      </div>
+      <form method="post" class="w-100 mb-2">
+        {% csrf_token %}
+        <input type="hidden" name="toggle_duty" value="1">
+        <button type="submit" class="btn btn-sm rounded-pill px-3 w-100 {% if rider.on_duty %}btn-success{% else %}btn-outline-secondary{% endif %}">
+          {% if rider.on_duty %}<i class="bi bi-toggle-on"></i> On Duty{% else %}<i class="bi bi-toggle-off"></i> Off Duty{% endif %}
+        </button>
+      </form>
+      <a href="{% url 'rider_edit_profile' %}" class="btn btn-outline-primary btn-sm w-100">Edit Profile</a>
+    </div>
+    <!-- Stats Cards -->
+    <div class="d-grid gap-3 mb-4 dashboard-stats" style="grid-template-columns:1fr 1fr 1fr;">
+      <div class="bg-danger bg-opacity-10 rounded-3 text-center py-3">
+        <div class="text-muted small">Due Amount</div>
+        <div class="fw-bold text-danger">₹{{ due_amount|default:'0.00' }}</div>
+      </div>
+      <div class="bg-success bg-opacity-10 rounded-3 text-center py-3">
+        <div class="text-muted small">Orders Delivered</div>
+        <div class="fw-bold text-success">{{ total_delivered|default:'0' }}</div>
+      </div>
+      <div class="bg-warning bg-opacity-10 rounded-3 text-center py-3">
+        <div class="text-muted small">Total Earning</div>
+        <div class="fw-bold text-warning">₹{{ total_earning|default:'0.00' }}</div>
+      </div>
+    </div>
+    <!-- Filter/Sort Bar (Both Desktop & Mobile) -->
+    <div class="mb-3">
+      <form method="get" class="rider-filter-bar">
+        <div class="filter-sort-row">
+          <div class="filter-col">
+            <label class="form-label mb-1">Filter</label>
+            <select name="status_filter" class="form-select form-select-sm" onchange="this.form.submit()">
+              <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
+              <option value="delivered" {% if status_filter == 'delivered' %}selected{% endif %}>Delivered</option>
+              <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+              <option value="declined" {% if status_filter == 'declined' %}selected{% endif %}>Declined</option>
+            </select>
+          </div>
+          <div class="filter-col">
+            <label class="form-label mb-1">Sort</label>
+            <select name="sort_order" class="form-select form-select-sm" onchange="this.form.submit()">
+              <option value="newest" {% if sort_order == 'newest' %}selected{% endif %}>Newest First</option>
+              <option value="oldest" {% if sort_order == 'oldest' %}selected{% endif %}>Oldest First</option>
+            </select>
+          </div>
+        </div>
+      </form>
+    </div>
+    <!-- Orders List -->
+    <h5 class="fw-bold mb-3">Assigned Orders</h5>
+    {% if assigned_deliveries %}
+      <div class="d-flex flex-column gap-3">
+        {% for order in assigned_deliveries %}
+          <div class="bg-white rounded-3 shadow-sm p-3 order-card">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div class="fw-bold">Order #{{ order.id }}</div>
+              <span class="badge {% if order.status == 'delivered' %}bg-success{% else %}bg-primary{% endif %}">{{ order.get_status_display }}</span>
+            </div>
+            <div class="mb-2 text-muted small">
+              <div><span class="fw-semibold">Customer:</span> {{ order.customer.get_full_name|default:order.customer.email }}</div>
+              <div><span class="fw-semibold">Phone:</span> {{ order.phone }}</div>
+              <div><span class="fw-semibold">Address:</span> {{ order.delivery_address }}</div>
+            </div>
+            <div class="mb-2">
+              <div class="fw-semibold small mb-1">Items:</div>
+              <ul class="ps-3 mb-0 small">
+                {% for item in order.items.all %}
+                  <li>{{ item.product.name }} (x{{ item.quantity }}) - ₹{{ item.price }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+            <div class="fw-bold text-success mb-2 small">Total: ₹{{ order.total_amount }}</div>
+            <div class="d-flex flex-column gap-2">
+              {% if order.rider_status == 'pending' and order.status == 'shipped' %}
+                <form method="post">
+                  {% csrf_token %}
+                  <input type="hidden" name="order_id" value="{{ order.id }}">
+                  <input type="hidden" name="action" value="accept">
+                  <input type="hidden" name="status_filter" value="{{ status_filter }}">
+                  <input type="hidden" name="sort_order" value="{{ sort_order }}">
+                  <button type="submit" class="btn btn-primary btn-sm w-100">Accept</button>
+                </form>
+                <form method="post">
+                  {% csrf_token %}
+                  <input type="hidden" name="order_id" value="{{ order.id }}">
+                  <input type="hidden" name="action" value="reject">
+                  <input type="hidden" name="status_filter" value="{{ status_filter }}">
+                  <input type="hidden" name="sort_order" value="{{ sort_order }}">
+                  <button type="submit" class="btn btn-danger btn-sm w-100">Decline</button>
+                </form>
+              {% elif order.rider_status == 'accepted' and order.status == 'out_for_delivery' %}
+                <form method="post">
+                  {% csrf_token %}
+                  <input type="hidden" name="order_id" value="{{ order.id }}">
+                  <input type="hidden" name="action" value="mark_delivered">
+                  <input type="hidden" name="status_filter" value="{{ status_filter }}">
+                  <input type="hidden" name="sort_order" value="{{ sort_order }}">
+                  <button type="submit" class="btn btn-success btn-sm w-100">Mark as Delivered</button>
+                </form>
+              {% elif order.rider_status == 'declined' %}
+                <span class="badge bg-danger">You declined this order.</span>
+              {% endif %}
+              <a href="{% url 'rider_order_detail' order.id %}" class="btn btn-outline-primary btn-sm w-100">View Full Details</a>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="text-center text-muted mt-5">No assigned deliveries yet. You will see your delivery assignments here!</div>
     {% endif %}
   </div>
 </div>

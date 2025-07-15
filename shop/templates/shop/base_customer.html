@@ -84,21 +84,15 @@
     {% endif %}
     <script>
       function showToast(msg, type) {
-        const colors = {
-          success: 'bg-green-700',
-          error: 'bg-red-600',
-          warning: 'bg-yellow-400 text-black',
-          info: 'bg-blue-700',
-        };
-        const color = colors[type] || 'bg-green-900';
+        const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
-        toast.className = `min-w-[220px] max-w-xs px-5 py-3 rounded-lg shadow-lg text-white font-semibold flex items-center gap-2 ${color} animate-fade-in`;
+        toast.className = type === 'success' ? 'toast-success' : 'toast-success';
         toast.innerHTML = `<span>${msg}</span>`;
-        document.getElementById('toast-container').appendChild(toast);
+        container.appendChild(toast);
         setTimeout(() => {
           toast.classList.add('opacity-0');
           setTimeout(() => toast.remove(), 400);
-        }, 3000);
+        }, 2200);
       }
     </script>
     <style>
@@ -108,6 +102,51 @@
       }
       .animate-fade-in {
         animation: fade-in 0.3s;
+      }
+      #toast-container {
+        position: fixed;
+        top: 4.2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 0.7rem;
+        align-items: center;
+        width: 100%;
+        pointer-events: none;
+      }
+      .toast-success {
+        background: #e6f4ea;
+        color: #388e3c;
+        border-radius: 0.7rem;
+        padding: 1rem 2.2rem;
+        font-weight: 600;
+        box-shadow: 0 4px 24px rgba(67,160,71,0.10);
+        font-size: 1.1rem;
+        min-width: 180px;
+        text-align: center;
+        animation: fade-in 0.3s;
+        border: 1.5px solid #b2dfdb;
+        pointer-events: auto;
+      }
+      @media (max-width: 600px) {
+        #toast-container {
+          top: 3.2rem;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 100%;
+          align-items: center;
+        }
+        .toast-success {
+          min-width: 120px;
+          font-size: 1rem;
+          padding: 0.7rem 1.1rem;
+        }
+      }
+      @keyframes fade-in {
+        from { opacity: 0; transform: translateY(-20px);}
+        to { opacity: 1; transform: translateY(0);}
       }
     </style>
     <!-- ✅ NAVBAR -->
@@ -309,5 +348,35 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <!-- EasyZoom JS -->
     <script src="https://cdn.jsdelivr.net/npm/easyzoom@2.5.0/dist/easyzoom.js"></script>
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.add-to-cart-form-global').forEach(form => {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+    });
+  });
+  document.querySelectorAll('.add-to-cart-btn-global').forEach(button => {
+    button.addEventListener('click', function (e) {
+      e.preventDefault();
+      const form = this.closest('.add-to-cart-form-global');
+      const productId = form.dataset.productId;
+      fetch("/ajax/add_to_cart/", {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({ product_id: productId })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === "added") {
+          showToast("Added to cart!", "success");
+        }
+      });
+    });
+  });
+});
+</script>
   </body>
 </html>
