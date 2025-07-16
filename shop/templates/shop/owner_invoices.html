@@ -309,29 +309,41 @@
             </div>
 
             <!-- Filters -->
-            <div class="filters">
+            <form method="get" class="filters mb-4">
                 <h4>Filters</h4>
                 <div class="filter-row">
                     <div class="filter-group">
-                        <label>Payment Status</label>
-                        <select id="status-filter">
-                            <option value="">All Status</option>
-                            <option value="pending">Pending</option>
-                            <option value="paid">Paid</option>
-                            <option value="overdue">Overdue</option>
-                            <option value="cancelled">Cancelled</option>
+                        <label for="status">Status</label>
+                        <select id="status" name="status">
+                            <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
+                            <option value="cod" {% if status_filter == 'cod' %}selected{% endif %}>Cash on Delivery</option>
+                            <option value="paid" {% if status_filter == 'paid' %}selected{% endif %}>Paid (Online)</option>
+                            <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
                         </select>
                     </div>
                     <div class="filter-group">
-                        <label>Date Range</label>
-                        <input type="date" id="date-filter">
+                        <label for="date">By Date</label>
+                        <select id="date" name="date">
+                            <option value="all" {% if date_filter == 'all' %}selected{% endif %}>All</option>
+                            <option value="today" {% if date_filter == 'today' %}selected{% endif %}>Today</option>
+                            <option value="week" {% if date_filter == 'week' %}selected{% endif %}>This Week</option>
+                            <option value="month" {% if date_filter == 'month' %}selected{% endif %}>This Month</option>
+                            <option value="year" {% if date_filter == 'year' %}selected{% endif %}>This Year</option>
+                        </select>
                     </div>
                     <div class="filter-group">
-                        <label>Search Customer</label>
-                        <input type="text" id="customer-filter" placeholder="Customer name or email">
+                        <label for="sort">Sort</label>
+                        <select id="sort" name="sort">
+                            <option value="newest" {% if sort_order == 'newest' %}selected{% endif %}>Newest First</option>
+                            <option value="oldest" {% if sort_order == 'oldest' %}selected{% endif %}>Oldest First</option>
+                        </select>
+                    </div>
+                    <div class="filter-group align-self-end" style="min-width:100px;">
+                        <label style="opacity:0;">Apply</label>
+                        <button type="submit" class="btn btn-success w-100" style="min-width:90px;">Apply</button>
                     </div>
                 </div>
-            </div>
+            </form>
 
             <!-- Invoices List -->
             {% if invoices %}

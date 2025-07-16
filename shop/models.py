@@ -53,11 +53,13 @@ class Order(models.Model):
     order_date = models.DateTimeField(auto_now_add=True)
 
     STATUS_CHOICES = [
+        ('unshipped', 'Unshipped'),
+        ('unassigned', 'Unassigned'),
         ('pending', 'Pending'),
-        ('confirmed', 'Confirmed'),
-        ('shipped', 'Shipped'),
+        ('declined', 'Declined'),
         ('out_for_delivery', 'Out for Delivery'),
         ('delivered', 'Delivered'),
+        ('cancelled', 'Cancelled'),
     ]
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
 

@@ -5,9 +5,7 @@ from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from .forms import ProfileUpdateForm
 from .forms import CustomerProfileForm 
-from shop.models import Order, Payment
-from shop.models import Wishlist  
-from shop.models import CartItem
+from shop.models import Order, Payment, Wishlist, CartItem, PinCode
 
 from django.contrib import messages
 from django.core.mail import send_mail
@@ -17,13 +15,13 @@ from users.models import CustomUser
 import random
 
 from .forms import RiderRegistrationForm
-from shop.models import PinCode
 import json
 
 from django.contrib.auth import authenticate, login
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.http import HttpResponseRedirect
+from django.db.models import Q
 
 # from cart.models import Cart  
 
@@ -179,10 +177,11 @@ def rider_dashboard(request):
         messages.info(request, f'You are now {"On Duty" if request.user.on_duty else "Off Duty"}.')
         return HttpResponseRedirect(reverse('rider_dashboard') + params)
 
+    # Show all orders where this rider was ever assigned, including declined
     orders = Order.objects.filter(delivery_rider=request.user).prefetch_related('items__product', 'customer')
     if status_filter != 'all':
         if status_filter == 'declined':
-            orders = orders.filter(rider_status='declined')
+            orders = orders.filter(rider_status='declined', status='declined')
         elif status_filter == 'delivered':
             orders = orders.filter(status='delivered')
         elif status_filter == 'pending':
@@ -195,7 +194,7 @@ def rider_dashboard(request):
     # Stats for Earnings & Stats
     all_assigned_orders = Order.objects.filter(delivery_rider=request.user)
     total_assigned = all_assigned_orders.count()
-    total_rejected = all_assigned_orders.filter(rider_status='declined').count()
+    total_rejected = all_assigned_orders.filter(rider_status='declined', status='declined').count()
     total_selected = all_assigned_orders.filter(rider_status='accepted').count()
     total_delivered = all_assigned_orders.filter(status='delivered').count()
     total_pending = all_assigned_orders.filter(rider_status='accepted', status='out_for_delivery').count()
@@ -217,11 +216,12 @@ def rider_dashboard(request):
                 messages.info(request, f'Order #{order.id} assigned to next backup rider.')
             else:
                 order.delivery_rider = None
-                order.status = 'confirmed'
+                order.status = 'declined'
+                order.rider_status = 'declined'
                 order.save()
-                messages.warning(request, f'All backup riders rejected Order #{order.id}. Please reassign.')
+                messages.warning(request, f'Rejected by rider. No backup rider available for Order #{order.id}.')
             return HttpResponseRedirect(reverse('rider_dashboard') + params)
-        elif action == 'accept' and order.rider_status == 'pending' and order.status == 'shipped':
+        elif action == 'accept' and order.rider_status == 'pending' and order.status == 'pending':
             order.rider_status = 'accepted'
             order.status = 'out_for_delivery'
             order.save()

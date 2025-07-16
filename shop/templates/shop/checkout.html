@@ -3,6 +3,14 @@
 {% load cart_filters %}
 
 {% block content %}
+<style>
+@media (max-width: 767px) {
+  .back-btn-desktop { display: none !important; }
+}
+</style>
+<a href="{{ request.META.HTTP_REFERER|default:'/' }}" class="back-btn-desktop btn p-0 border-0 shadow-none mb-3" style="background:transparent;">
+  <i class="bi bi-arrow-left" style="font-size:2rem; color:#7ed957;"></i>
+</a>
 <div class="w-full min-h-[80vh] flex justify-center items-start">
   <form method="POST" class="w-2/3 mx-auto bg-white rounded-2xl shadow-lg p-12 py-16">
     {% csrf_token %}

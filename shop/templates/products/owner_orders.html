@@ -59,71 +59,245 @@
       margin: 0.7rem 0 !important;
     }
   }
+  .select2-container--default .select2-selection--multiple {
+    min-height: 38px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    background: #fff;
+    box-sizing: border-box;
+  }
+  .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+    display: flex;
+    align-items: center;
+    min-height: 38px;
+    padding: 0 8px;
+    width: 100%;
+  }
+  .select2-container--default .select2-selection--multiple .select2-selection__choice {
+    margin-right: 4px;
+    margin-left: 0;
+  }
+  .select2-container--default .select2-selection--multiple .select2-search--inline {
+    flex: 1 1 auto;
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+  }
+  .select2-container--default .select2-selection--multiple .select2-search__field {
+    min-width: 60px;
+    margin-left: 0;
+    text-align: right;
+    width: 100%;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+  }
 </style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  $('.select2-multi').select2({
+    theme: 'default',
+    placeholder: 'Select',
+    allowClear: true,
+    width: '180px',
+    dropdownAutoWidth: true
+  });
+});
+</script>
 <div class="container mt-4">
   <h2 class="mb-4">Customer Orders</h2>
 
+  <!-- Filter & Sort Bar -->
+  <form method="get" class="row g-2 align-items-center mb-4">
+    <div class="col-auto">
+      <label for="status" class="form-label mb-0 me-2">Status:</label>
+      <select name="status" id="status" class="form-select">
+        <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All</option>
+        <option value="unshipped" {% if status_filter == 'unshipped' %}selected{% endif %}>Unshipped</option>
+        <option value="unassigned" {% if status_filter == 'unassigned' %}selected{% endif %}>Unassigned</option>
+        <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+        <option value="declined" {% if status_filter == 'declined' %}selected{% endif %}>Declined</option>
+        <option value="out_for_delivery" {% if status_filter == 'out_for_delivery' %}selected{% endif %}>Out for Delivery</option>
+        <option value="delivered" {% if status_filter == 'delivered' %}selected{% endif %}>Delivered</option>
+        <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelled</option>
+      </select>
+    </div>
+    <div class="col-auto">
+      <label for="date" class="form-label mb-0 me-2">By Date:</label>
+      <select name="date" id="date" class="form-select">
+        <option value="all" {% if date_filter == 'all' %}selected{% endif %}>All</option>
+        <option value="today" {% if date_filter == 'today' %}selected{% endif %}>Today</option>
+        <option value="week" {% if date_filter == 'week' %}selected{% endif %}>This Week</option>
+        <option value="month" {% if date_filter == 'month' %}selected{% endif %}>This Month</option>
+        <option value="year" {% if date_filter == 'year' %}selected{% endif %}>This Year</option>
+      </select>
+    </div>
+    <div class="col-auto">
+      <label for="sort" class="form-label mb-0 me-2">Sort:</label>
+      <select name="sort" id="sort" class="form-select">
+        <option value="newest" {% if sort_order == 'newest' %}selected{% endif %}>Newest First</option>
+        <option value="oldest" {% if sort_order == 'oldest' %}selected{% endif %}>Oldest First</option>
+      </select>
+    </div>
+    <div class="col-auto align-self-end" style="padding-bottom:0;">
+      <button type="submit" class="btn btn-success w-100" style="min-width:90px;">Apply</button>
+    </div>
+  </form>
+  <style>
+    @media (max-width: 991px) {
+      form.row .col-auto.align-self-end { margin-top: 0.5rem; width: 100%; }
+      form.row .col-auto.align-self-end button { width: 100%; }
+    }
+  </style>
+
+  <!-- Cancel Order Confirmation Modal -->
+  <div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-labelledby="cancelOrderModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content p-3 rounded-3">
+        <div class="modal-header">
+          <h5 class="modal-title" id="cancelOrderModalLabel">Cancel Order</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          Are you sure you want to cancel this order?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No, Go Back</button>
+          <button type="button" class="btn btn-danger" id="confirmCancelOrderBtn">Yes, Cancel Order</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Activate Select2 for modern multi-select
+      $('.select2-multi').select2({
+        theme: 'default',
+        placeholder: 'Select',
+        allowClear: true,
+        width: '160px',
+        dropdownAutoWidth: true
+      });
+      // Center placeholder when no tags are selected
+      function centerSelect2Placeholder() {
+        $('.select2-multi').each(function() {
+          var $container = $(this).next('.select2-container');
+          var $rendered = $container.find('.select2-selection__rendered');
+          var $search = $rendered.find('.select2-search__field');
+          if ($rendered.children().length === 1 && $search.length) {
+            $search.css({'text-align': 'center', 'width': '100%'});
+          } else {
+            $search.css({'text-align': 'left', 'width': ''});
+          }
+        });
+      }
+      $('.select2-multi').on('change', centerSelect2Placeholder);
+      centerSelect2Placeholder();
+      let cancelOrderFormToSubmit = null;
+      document.querySelectorAll('.cancel-order-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          cancelOrderFormToSubmit = this.closest('form');
+          const modal = new bootstrap.Modal(document.getElementById('cancelOrderModal'));
+          modal.show();
+        });
+      });
+      document.getElementById('confirmCancelOrderBtn').addEventListener('click', function() {
+        if (cancelOrderFormToSubmit) {
+          cancelOrderFormToSubmit.submit();
+        }
+      });
+    });
+  </script>
+  <style>
+    .select2-container--bootstrap4 .select2-selection--multiple:focus {
+      border-color: #198754 !important;
+      box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25) !important;
+    }
+    .select2-container--bootstrap4 .select2-selection--multiple {
+      border-radius: 0.375rem !important;
+      border: 1px solid #ced4da !important;
+      min-height: 48px !important;
+      padding-top: 0.5rem !important;
+      padding-bottom: 0.5rem !important;
+    }
+    .select2-container {
+      width: 220px !important;
+    }
+    /* Center placeholder when no tags are selected */
+    .select2-container--bootstrap4 .select2-selection--multiple .select2-search__field:only-child {
+      text-align: center !important;
+      justify-content: center !important;
+    }
+  </style>
+
+  {# Orders loop starts here, outside the filter form #}
   {% for order in orders %}
     <div class="card mb-4 shadow rounded owner-order-card">
-      <div class="card-header d-flex justify-content-between align-items-center bg-white owner-order-header" style="border-bottom: 1px solid #eee;">
-        <div>
-          <strong>Order #{{ order.id }}</strong> by <strong>{{ order.customer.email }}</strong>
+      <div class="d-flex justify-content-between align-items-center flex-wrap owner-order-header" style="padding: 0.5rem 1rem; width: 100%; overflow: hidden;">
+        <div class="d-flex align-items-center gap-2 flex-shrink-1" style="min-width:0;">
+          <strong>Order #{{ order.id }} by {{ order.customer.email }}</strong>
+          {% if order.status == 'unshipped' %}
+            <span class="badge bg-warning text-dark ms-2">Unshipped</span>
+          {% elif order.status == 'unassigned' %}
+            <span class="badge bg-secondary ms-2">Unassigned</span>
+          {% elif order.status == 'pending' %}
+            <span class="badge bg-info text-dark ms-2">Pending</span>
+          {% elif order.status == 'out_for_delivery' %}
+            <span class="badge bg-primary ms-2">Out for Delivery</span>
+          {% elif order.status == 'delivered' %}
+            <span class="badge bg-success ms-2">Delivered</span>
+          {% elif order.status == 'cancelled' %}
+            <span class="badge bg-dark ms-2">Cancelled</span>
+          {% elif order.status == 'declined' %}
+            <span class="badge bg-danger ms-2">Declined</span>
+          {% endif %}
         </div>
-        <div class="d-flex align-items-center gap-2 flex-wrap owner-order-actions" style="min-height: 48px;">
-          {% if order.status == 'pending' %}
-            <form method="post" class="d-inline-flex align-items-center gap-2 mb-0">
+        <div class="d-flex align-items-center gap-2 flex-shrink-1" style="min-width:0; max-width:60%; width:100%;">
+          {% if order.status == 'unshipped' %}
+            <form method="post" style="margin:0;">
               {% csrf_token %}
               <input type="hidden" name="order_id" value="{{ order.id }}">
               <input type="hidden" name="action" value="confirm">
-              <button type="submit" class="btn btn-primary btn-lg">Confirm Order</button>
+              <button type="submit" class="btn btn-success btn-sm">Confirm</button>
             </form>
-          {% elif order.status == 'confirmed' %}
-            {% with eligible_riders=eligible_riders_map|get_item:order.id %}
-              {% if eligible_riders %}
-                <form method="post" class="d-inline-flex align-items-center gap-2 mb-0">
-                  {% csrf_token %}
-                  <input type="hidden" name="order_id" value="{{ order.id }}">
-                  <input type="hidden" name="action" value="assign_rider">
-                  <select name="rider_ids" class="form-select d-inline-block w-auto h-100 py-2" multiple required size="{{ eligible_riders|length|default:5 }}" style="min-width: 180px;">
-                    {% for rider in eligible_riders %}
-                      <option value="{{ rider.id }}">{{ rider.get_full_name|default:rider.email }} ({{ rider.phone }})</option>
-                    {% endfor %}
-                  </select>
-                  <button type="submit" class="btn btn-success btn-sm h-100 py-2">Assign Riders</button>
-                </form>
-                <div class="form-text ms-2">Select 1–5 riders in order of priority (first is primary).</div>
-              {% else %}
-                <div class="alert alert-warning mb-0 py-2 px-3 d-flex align-items-center h-100" style="min-height: 40px;">No delivery riders are currently available for this area.</div>
-                <form method="post" class="d-inline-flex align-items-center gap-2 ms-3 mb-0">
-                  {% csrf_token %}
-                  <input type="hidden" name="order_id" value="{{ order.id }}">
-                  <select name="manual_status" class="form-select d-inline-block w-auto h-100 py-2" required>
-                    <option value="" disabled selected>Update Status</option>
-                    {% for value, label in manual_status_choices %}
-                      <option value="{{ value }}">{{ label }}</option>
-                    {% endfor %}
-                  </select>
-                  <button type="submit" class="btn btn-secondary btn-sm h-100 py-2">Update</button>
-                </form>
-              {% endif %}
-            {% endwith %}
-          {% else %}
-            <span class="badge bg-secondary">{{ order.get_status_display }}</span>
-            {% if order.delivery_rider %}
-              <span class="ms-2">Rider: {{ order.delivery_rider.get_full_name|default:order.delivery_rider.email }}</span>
-            {% endif %}
-            {% if order.status == 'shipped' or order.status == 'out_for_delivery' %}
-              <form method="post" class="d-inline-flex align-items-center gap-2 mb-0 ms-3">
-                {% csrf_token %}
-                <input type="hidden" name="order_id" value="{{ order.id }}">
-                <input type="hidden" name="action" value="mark_delivered">
-                <button type="submit" class="btn btn-success btn-sm h-100 py-2">Mark as Delivered</button>
-              </form>
-            {% endif %}
+            <form method="post" style="margin-left: 5px;">
+              {% csrf_token %}
+              <input type="hidden" name="order_id" value="{{ order.id }}">
+              <input type="hidden" name="action" value="cancel">
+              <button type="submit" class="btn btn-danger btn-sm">Cancel</button>
+            </form>
+          {% elif order.status == 'unassigned' %}
+            <form method="post" class="d-flex align-items-center flex-wrap" style="margin:0; min-width:0; width:100%;">
+              {% csrf_token %}
+              <input type="hidden" name="order_id" value="{{ order.id }}">
+              <input type="hidden" name="action" value="assign_rider">
+              <select name="rider_ids" class="select2-multi" multiple required style="width: 100%; min-width: 120px; max-width: 220px;">
+                {% for rider in eligible_riders_map|get_item:order.id %}
+                  <option value="{{ rider.id }}"
+                    {% if rider.id == order.delivery_rider_id or rider in order.backup_riders.all %}selected{% endif %}
+                  >{{ rider.get_full_name }} ({{ rider.phone }})</option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="btn btn-success btn-sm ms-2" style="height:38px; white-space:nowrap; flex-shrink:0;">Assign Riders</button>
+              <span class="text-muted ms-2" style="font-size:0.85em; white-space:nowrap; flex-shrink:1; min-width:0;">
+                Select 1-5 riders in order of priority (first is primary).
+              </span>
+            </form>
+          {% elif order.status == 'declined' %}
+            <form id="mark-delivered-form-{{ order.id }}" method="post" style="display:inline-block; margin-left: 10px;">
+              {% csrf_token %}
+              <input type="hidden" name="order_id" value="{{ order.id }}">
+              <input type="hidden" name="action" value="mark_delivered">
+              <button type="submit" class="btn btn-success btn-lg">Mark as Delivered</button>
+            </form>
           {% endif %}
         </div>
       </div>
       <div class="card-body" style="background: #f6fbf8;">
+        {% if order.status == 'declined' %}
+          <div class="alert alert-danger mb-3">No rider available, please deliver yourself or reassign a rider.</div>
+        {% endif %}
         {% for item in order.items.all %}
           <div class="d-flex align-items-center mb-3 owner-order-product">
             <div style="width: 110px;">

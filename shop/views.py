@@ -247,7 +247,7 @@ def is_shop_owner(user):
 @login_required
 @user_passes_test(lambda u: u.role == 'shop_owner')
 def shop_owner_dashboard(request):
-    products = Product.objects.filter(shop_owner=request.user)
+    products = Product.objects.filter(shop_owner=request.user).order_by('-id')
     return render(request, 'dashboard/shop_owner_dashboard.html', {
         'products': products,
         # Include extra context if needed like total_orders, monthly_revenue, etc.
@@ -257,9 +257,51 @@ def shop_owner_dashboard(request):
 @login_required
 @user_passes_test(is_shop_owner)
 def shop_owner_orders(request):
+    status_filter = request.GET.get('status', 'all')
+    sort_order = request.GET.get('sort', 'newest')
+    date_filter = request.GET.get('date', 'all')
+
     orders = Order.objects.filter(
         items__product__shop_owner=request.user
     ).prefetch_related('items__product', 'customer').distinct()
+
+    # Status Filtering
+    if status_filter == 'unshipped':
+        orders = orders.filter(status='unshipped')
+    elif status_filter == 'unassigned':
+        orders = orders.filter(status='unassigned')
+    elif status_filter == 'pending':
+        orders = orders.filter(status='pending')
+    elif status_filter == 'declined':
+        orders = orders.filter(status='declined')
+    elif status_filter == 'out_for_delivery':
+        orders = orders.filter(status='out_for_delivery')
+    elif status_filter == 'delivered':
+        orders = orders.filter(status='delivered')
+    elif status_filter == 'cancelled':
+        orders = orders.filter(status='cancelled')
+    # 'all' means no filter
+
+    # Date Filtering
+    from django.utils import timezone
+    from datetime import timedelta
+    now = timezone.now()
+    if date_filter == 'today':
+        orders = orders.filter(order_date__date=now.date())
+    elif date_filter == 'week':
+        week_start = now - timedelta(days=now.weekday())
+        orders = orders.filter(order_date__date__gte=week_start.date())
+    elif date_filter == 'month':
+        orders = orders.filter(order_date__year=now.year, order_date__month=now.month)
+    elif date_filter == 'year':
+        orders = orders.filter(order_date__year=now.year)
+    # 'all' means no filter
+
+    # Sorting
+    if sort_order == 'newest':
+        orders = orders.order_by('-order_date')
+    else:
+        orders = orders.order_by('order_date')
 
     # For each order, find eligible riders (by pin code)
     eligible_riders_map = {}
@@ -267,10 +309,8 @@ def shop_owner_orders(request):
         import re
         match = re.search(r'(\d{6})', order.delivery_address)
         pin_code = match.group(1) if match else None
-        print(f"Order {order.id} delivery_address: {order.delivery_address}, extracted pin_code: {pin_code}")
         if pin_code:
             eligible_riders = CustomUser.objects.filter(role='rider', on_duty=True, delivery_pincodes__code=pin_code).distinct()
-            print(f"Eligible riders for pincode {pin_code}: {[r.email for r in eligible_riders]}")
         else:
             eligible_riders = CustomUser.objects.none()
         eligible_riders_map[order.id] = eligible_riders
@@ -284,34 +324,48 @@ def shop_owner_orders(request):
     if request.method == 'POST':
         order_id = request.POST.get('order_id')
         action = request.POST.get('action')
-        rider_ids = request.POST.getlist('rider_ids')
+        rider_ids = request.POST.getlist('rider_ids')  # restore multi-select
         manual_status = request.POST.get('manual_status')
         order = Order.objects.get(id=order_id)
-        if action == 'confirm' and order.status == 'pending' and order.items.first().product.shop_owner == request.user:
-            order.status = 'confirmed'
+        if action == 'confirm' and order.status == 'unshipped' and order.items.first().product.shop_owner == request.user:
+            order.status = 'unassigned'
             order.save()
             messages.success(request, f'Order #{order.id} confirmed!')
             return redirect('shop_owner_orders')
-        if order.status == 'confirmed' and order.items.first().product.shop_owner == request.user:
+        if action == 'cancel' and order.status == 'unshipped' and order.items.first().product.shop_owner == request.user:
+            order.status = 'cancelled'
+            order.save()
+            messages.success(request, f'Order #{order.id} cancelled!')
+            return redirect('shop_owner_orders')
+        if order.status in ['unassigned', 'declined'] and order.items.first().product.shop_owner == request.user:
             if rider_ids:
                 order.delivery_rider_id = rider_ids[0]
-                order.status = 'shipped'
+                order.status = 'pending'
+                order.rider_status = 'pending'
                 order.save()
                 order.backup_riders.set(rider_ids[1:])
                 messages.success(request, f'Order #{order.id} assigned to rider(s) successfully!')
             elif manual_status:
                 order.status = manual_status
                 order.save()
-                messages.info(request, f'Order #{order.id} status updated to {order.get_status_display()}.')
+                messages.info(request, f'Order #{order.id} status updated to {order.get_status_display()}')
             return redirect('shop_owner_orders')
-        if action == 'mark_delivered' and order.status in ['shipped', 'out_for_delivery']:
+        # Handle mark as delivered for declined orders
+        if action == 'mark_delivered' and order.status == 'declined' and order.items.first().product.shop_owner == request.user:
+            print("DEBUG: Mark as Delivered called for order", order.id)
             order.status = 'delivered'
             order.save()
-            messages.success(request, f'Order #{order.id} marked as delivered!')
+            messages.success(request, f'Order #{order.id} marked as Delivered!')
             return redirect('shop_owner_orders')
-        return redirect('shop_owner_orders')
 
-    return render(request, 'products/owner_orders.html', {'orders': orders, 'eligible_riders_map': eligible_riders_map, 'manual_status_choices': manual_status_choices})
+    return render(request, 'products/owner_orders.html', {
+        'orders': orders,
+        'eligible_riders_map': eligible_riders_map,
+        'manual_status_choices': manual_status_choices,
+        'status_filter': status_filter,
+        'sort_order': sort_order,
+        'date_filter': date_filter,
+    })
 
 # --------------------- SHOP OWNER FEATURES ---------------------
 @login_required
@@ -580,7 +634,7 @@ def buy_now_checkout(request):
                 delivery_address=address_str,
                 phone=request.user.phone,
                 total_amount=total,
-                status='pending',
+                status='unshipped',
             )
             OrderItem.objects.create(
                 order=order,
@@ -1182,6 +1236,12 @@ def add_to_cart_ajax(request):
 def order_detail(request, order_id):
     order = get_object_or_404(Order, id=order_id, customer=request.user)
     items = order.items.select_related('product')
+    if request.method == 'POST' and request.user == order.customer:
+        if request.POST.get('action') == 'cancel_order' and order.status in ['unshipped', 'unassigned']:
+            order.status = 'cancelled'
+            order.save()
+            messages.success(request, "Order cancelled successfully.")
+            return redirect('order_detail', order_id=order.id)
     return render(request, 'shop/order_detail.html', {
         'order': order,
         'items': items,
@@ -1241,8 +1301,6 @@ def rider_dashboard(request):
         action = request.POST.get('action')
         order = Order.objects.get(id=order_id, delivery_rider=request.user)
         if action == 'reject':
-            order.rider_status = 'declined'
-            # Assign next backup rider if available
             backups = list(order.backup_riders.all())
             if backups:
                 next_rider = backups[0]
@@ -1253,11 +1311,12 @@ def rider_dashboard(request):
                 messages.info(request, f'Order #{order.id} assigned to next backup rider.')
             else:
                 order.delivery_rider = None
-                order.status = 'confirmed'  # Or another status to indicate needs reassignment
+                order.status = 'declined'
+                order.rider_status = 'declined'
                 order.save()
-                messages.warning(request, f'All backup riders rejected Order #{order.id}. Please reassign.')
+                messages.warning(request, f'Rejected by rider. No backup rider available for Order #{order.id}.')
             return redirect('rider_dashboard')
-        elif action == 'accept' and order.rider_status == 'pending' and order.status == 'shipped':
+        elif action == 'accept' and order.rider_status == 'pending' and order.status == 'pending':
             order.rider_status = 'accepted'
             order.status = 'out_for_delivery'
             order.save()
@@ -1520,7 +1579,7 @@ def process_online_payment(request):
                     delivery_address=address_str,
                     phone=request.user.phone,
                     total_amount=total,
-                    status='pending',
+                    status='unshipped',
                 )
                 for item in cart:
                     product = Product.objects.get(id=item['product_id'])
@@ -1536,7 +1595,7 @@ def process_online_payment(request):
                     delivery_address=address_str,
                     phone=request.user.phone,
                     total_amount=total,
-                    status='pending',
+                    status='unshipped',
                 )
                 product = Product.objects.get(id=buy_now['product_id'])
                 OrderItem.objects.create(
@@ -1678,24 +1737,64 @@ def payment_history(request):
 @user_passes_test(lambda u: u.role == 'shop_owner')
 def owner_invoices(request):
     """Shop owner can view all invoices for their orders"""
+    status_filter = request.GET.get('status', 'all')
+    date_filter = request.GET.get('date', 'all')
+    sort_order = request.GET.get('sort', 'newest')
+
     invoices = Invoice.objects.filter(
         order__items__product__shop_owner=request.user
-    ).select_related('order', 'order__customer').distinct().order_by('-generated_date')
-    
+    ).select_related('order', 'order__customer').distinct()
+
+    # Custom Status filter
+    if status_filter != 'all' and status_filter:
+        if status_filter == 'cod':
+            # COD: invoice not cancelled, and has a payment with method 'cod'
+            invoices = invoices.filter(payment_status__in=['pending', 'paid', 'overdue']).filter(payments__payment_method='cod').distinct()
+        elif status_filter == 'paid':
+            # Paid: online payment (not cod), and paid
+            invoices = invoices.filter(payment_status='paid', payments__payment_method__in=['upi', 'bank_transfer', 'card', 'wallet']).distinct()
+        elif status_filter == 'cancelled':
+            # Cancelled: invoice or order cancelled
+            invoices = invoices.filter(models.Q(payment_status='cancelled') | models.Q(order__status='cancelled')).distinct()
+
+    # Date filter
+    from django.utils import timezone
+    from datetime import timedelta
+    now = timezone.now()
+    if date_filter == 'today':
+        invoices = invoices.filter(generated_date__date=now.date())
+    elif date_filter == 'week':
+        week_start = now - timedelta(days=now.weekday())
+        invoices = invoices.filter(generated_date__date__gte=week_start.date())
+    elif date_filter == 'month':
+        invoices = invoices.filter(generated_date__year=now.year, generated_date__month=now.month)
+    elif date_filter == 'year':
+        invoices = invoices.filter(generated_date__year=now.year)
+    # 'all' means no filter
+
+    # Sorting
+    if sort_order == 'newest':
+        invoices = invoices.order_by('-generated_date')
+    else:
+        invoices = invoices.order_by('generated_date')
+
     # Calculate statistics
     total_invoices = invoices.count()
     pending_invoices = invoices.filter(payment_status='pending').count()
     paid_invoices = invoices.filter(payment_status='paid').count()
     overdue_invoices = invoices.filter(payment_status='overdue').count()
-    
+
     context = {
         'invoices': invoices,
         'total_invoices': total_invoices,
         'pending_invoices': pending_invoices,
         'paid_invoices': paid_invoices,
         'overdue_invoices': overdue_invoices,
+        'status_filter': status_filter,
+        'date_filter': date_filter,
+        'sort_order': sort_order,
     }
-    
+
     return render(request, 'shop/owner_invoices.html', context)
 
 from users.models import CustomUser

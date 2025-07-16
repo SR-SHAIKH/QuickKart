@@ -1,5 +1,14 @@
 {% extends "shop/base_customer.html" %} {% block content %}
 <div class="container mx-auto px-6 py-8">
+  {% if request.META.HTTP_REFERER %}
+    <a href="{{ request.META.HTTP_REFERER }}" class="btn btn-outline-secondary mb-3">
+      <i class="bi bi-arrow-left"></i> Back
+    </a>
+  {% else %}
+    <a href="{% url 'home' %}" class="btn btn-outline-secondary mb-3">
+      <i class="bi bi-arrow-left"></i> Back to Products
+    </a>
+  {% endif %}
   <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
     
     <!-- Product Image -->
@@ -127,6 +136,9 @@
 {% endblock %}
 
 <style>
+@media (max-width: 767px) {
+  .back-btn-desktop { display: none !important; }
+}
   .wishlist-btn.wishlist-unfilled {
     border: 2px solid #222;
     border-radius: 50%;

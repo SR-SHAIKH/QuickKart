@@ -284,6 +284,51 @@
     .shop-scroll-row .shop-card { min-width: 120px; max-width: 140px; }
     .product-scroll-row .product-card { min-width: 150px; max-width: 180px; }
   }
+  @media (max-width: 600px) {
+    .row.product-scroll-row {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+    .row.product-scroll-row > [class^='col-'] {
+      max-width: 100%;
+      flex: 0 0 100%;
+      margin-bottom: 0 !important;
+    }
+    .product-card.card {
+      margin-bottom: 0.5rem;
+      border-radius: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .card-body .d-flex.gap-2.w-100 {
+      flex-direction: column !important;
+      gap: 0.5rem !important;
+    }
+    .card-body .btn {
+      width: 100% !important;
+      min-width: 0 !important;
+      font-size: 1.1rem;
+      padding: 0.8rem 0;
+    }
+  }
+  @media (max-width: 600px) {
+    .row.product-scroll-row > div[class*='col-'] {
+      width: 100vw !important;
+      max-width: 400px !important;
+      display: block !important;
+      margin: 0 auto 1rem auto !important;
+      padding: 0 !important;
+      float: none !important;
+      box-sizing: border-box !important;
+    }
+    .product-card.card {
+      width: 100% !important;
+      max-width: 400px !important;
+      margin: 0 auto 0.7rem auto !important;
+      border-radius: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+  }
 </style>
 
 {% if user.is_authenticated %}
@@ -347,10 +392,10 @@
 
 <!-- 🛒 Products in Area (for all users) -->
 {% if products.exists %}
-<section class="container my-5">
+<section class="my-5">
   <h2 class="mb-4 text-center">Products in Your Area</h2>
   <div class="row product-scroll-row">
-    {% for product in products|slice:":5" %}
+    {% for product in products %}
       <div class="col-6 col-md-4 col-lg-3 col-xl-2 mb-4">
         <div class="product-card card h-100 shadow-sm position-relative">
           {% if user.is_authenticated and user.role == 'customer' %}
@@ -367,7 +412,14 @@
             <div class="card-body">
               <h5 class="card-title">{{ product.name|truncatechars:30 }}</h5>
               <p class="card-text text-success fw-bold mb-1">₹{{ product.price }}</p>
-              <span class="btn btn-success btn-sm w-100">View Product</span>
+              <div class="d-flex gap-2 w-100">
+                <form method="post" action="{% url 'buy_now' product.id %}" class="flex-fill">{% csrf_token %}
+                  <button type="submit" class="btn btn-primary btn-sm w-100 py-2" style="font-size:1rem; min-height:38px;">Buy</button>
+                </form>
+                <form method="post" action="{% url 'add_to_cart' product.id %}" class="flex-fill add-to-cart-form-global" data-product-id="{{ product.id }}">{% csrf_token %}
+                  <button type="button" class="btn btn-success btn-sm w-100 py-2 add-to-cart-btn-global" style="font-size:1rem; min-height:38px;">Add to Cart</button>
+                </form>
+              </div>
             </div>
           </a>
         </div>
