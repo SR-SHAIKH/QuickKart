@@ -1,56 +1,119 @@
 {% extends 'shop/base_customer.html' %}
-{% load static %}
+{% load static %} 
 {% load cart_filters %}
-
 {% block content %}
 <style>
-@media (max-width: 767px) {
-  .back-btn-desktop { display: none !important; }
-}
+  @media (max-width: 767px) {
+    .back-btn-desktop {
+      display: none !important;
+    }
+    .checkout-form-mobile {
+      width: 100% !important;
+      max-width: 100vw !important;
+      padding: 1rem !important;
+    }
+    .checkout-card-mobile {
+      padding: 1rem !important;
+      margin-bottom: 1.2rem !important;
+      border-radius: 0.7rem !important;
+    }
+    .checkout-table-mobile {
+      font-size: 0.98rem !important;
+    }
+    .checkout-btn-mobile {
+      font-size: 1.1rem !important;
+      padding: 0.9rem 0.5rem !important;
+      border-radius: 0.7rem !important;
+    }
+  }
+  .swal2-compact-popup {
+    padding: 1.2em 0.5em !important;
+  }
+  .swal2-compact-title {
+    font-size: 1.1rem !important;
+    margin-bottom: 0.5em !important;
+  }
+  .swal2-compact-content {
+    font-size: 0.98rem !important;
+  }
+  .swal2-compact-btn {
+    font-size: 1rem !important;
+    padding: 0.5em 1.2em !important;
+    border-radius: 0.6em !important;
+  }
 </style>
-<a href="{{ request.META.HTTP_REFERER|default:'/' }}" class="back-btn-desktop btn p-0 border-0 shadow-none mb-3" style="background:transparent;">
-  <i class="bi bi-arrow-left" style="font-size:2rem; color:#7ed957;"></i>
-</a>
+<!-- <a
+  href="{{ request.META.HTTP_REFERER|default:'/' }}"
+  class="back-btn-desktop btn p-0 border-0 shadow-none mb-3"
+  style="background: transparent"
+>
+  <i class="bi bi-arrow-left" style="font-size: 2rem; color: #7ed957"></i>
+</a> -->
 <div class="w-full min-h-[80vh] flex justify-center items-start">
-  <form method="POST" class="w-2/3 mx-auto bg-white rounded-2xl shadow-lg p-12 py-16">
+  <form
+    id="checkout-form"
+    method="POST"
+    class="w-2/3 mx-auto bg-white rounded-2xl shadow-lg p-12 py-16 checkout-form-mobile"
+  >
     {% csrf_token %}
-    <h2 class="text-4xl font-extrabold mb-10 text-[#2e4e1b] text-center">Checkout</h2>
+    <h2 class="text-4xl font-extrabold mb-10 text-[#2e4e1b] text-center">
+      Checkout
+    </h2>
 
     <!-- Shipping Address -->
-    <div class="mb-10 p-6 rounded-xl border-2 border-[#a8d5ba] bg-[#f0f8f4] flex justify-between items-center">
+    <div class="mb-10 p-6 rounded-xl border-2 border-[#a8d5ba] bg-[#f0f8f4] flex justify-between items-center checkout-card-mobile">
       <div>
         <h3 class="text-2xl font-bold mb-2 text-[#2e4e1b]">Shipping Address</h3>
-        {% if request.session.shipping_address or user.address_line1 %}
+        {% with addr=shipping_address %}
           <p class="text-lg text-[#2e4e1b]">
-            {% with addr=request.session.shipping_address %}
-              {{ addr.address_line1|default:user.address_line1 }}, {{ addr.address_line2|default:user.address_line2 }}<br>
-              {{ addr.city|default:user.city }}, {{ addr.state|default:user.state }}, {{ addr.country|default:user.country }} - {{ addr.pin_code|default:user.pin_code }}
-            {% endwith %}
+            {{ addr.address_line1|default:user.address_line1 }},
+            {{ addr.address_line2|default:user.address_line2 }},
+            {{ addr.city|default:user.city }},
+            {{ addr.state|default:user.state }}, India - {{ addr.pin_code|default:user.pin_code }}
           </p>
-        {% else %}
-          <p class="text-lg text-red-600">No shipping address set. Please add your shipping address.</p>
-        {% endif %}
+        {% endwith %}
       </div>
-      <a href="{% url 'shipping_address_update' %}" class="ml-6 px-6 py-3 rounded bg-[#4a8c52] text-white font-semibold text-lg hover:bg-[#35703c] transition">Edit Address</a>
+      <a
+        href="{% url 'shipping_address_update' %}"
+        class="ml-6 px-6 py-3 rounded bg-[#4a8c52] text-white font-semibold text-lg hover:bg-[#35703c] transition"
+      >Edit Address</a>
     </div>
 
     <!-- Payment Method -->
-    <div class="mb-10 p-6 rounded-xl border-2 border-[#a8d5ba] bg-[#f0f8f4]">
+    <div class="mb-10 p-6 rounded-xl border-2 border-[#a8d5ba] bg-[#f0f8f4] checkout-card-mobile">
       <h3 class="text-2xl font-bold mb-4 text-[#2e4e1b]">Payment Method</h3>
       <div class="grid grid-cols-2 gap-4 mb-4">
-        <label class="flex items-center text-xl font-semibold p-3 rounded-lg border-2 border-[#a8d5ba] hover:bg-[#e8f5e8] transition cursor-pointer">
-          <input type="radio" name="payment_method" value="cod" required class="mr-3 w-5 h-5"> 💰 Cash on Delivery
+        <label
+          class="flex items-center text-xl font-semibold p-3 rounded-lg border-2 border-[#a8d5ba] hover:bg-[#e8f5e8] transition cursor-pointer"
+        >
+          <input
+            type="radio"
+            name="payment_method"
+            value="cod"
+            required
+            class="mr-3 w-5 h-5"
+          />
+          💰 Cash on Delivery
         </label>
-        <label class="flex items-center text-xl font-semibold p-3 rounded-lg border-2 border-[#a8d5ba] hover:bg-[#e8f5e8] transition cursor-pointer">
-          <input type="radio" name="payment_method" value="online" required class="mr-3 w-5 h-5"> 💳 Online Payment (Razorpay)
+        <label
+          class="flex items-center text-xl font-semibold p-3 rounded-lg border-2 border-[#a8d5ba] hover:bg-[#e8f5e8] transition cursor-pointer"
+        >
+          <input
+            type="radio"
+            name="payment_method"
+            value="online"
+            required
+            class="mr-3 w-5 h-5"
+          />
+          💳 Online Payment (Razorpay)
         </label>
       </div>
     </div>
 
     <!-- Order Summary -->
-    <div class="mb-10 p-6 rounded-2xl shadow bg-white border border-[#e0e0e0]">
+    <div class="mb-10 p-6 rounded-2xl shadow bg-white border border-[#e0e0e0] checkout-card-mobile">
       <h3 class="text-2xl font-bold mb-6 text-[#2e4e1b]">Order Summary</h3>
-      <div class="overflow-x-auto">
+      <div class="overflow-x-auto checkout-table-mobile">
         <table class="w-full text-lg rounded-xl overflow-hidden">
           <thead>
             <tr class="bg-[#eaf6ee] text-[#4a8c52]">
@@ -65,22 +128,34 @@
             <tr class="border-b last:border-b-0 hover:bg-[#f6fbf8] transition">
               <td class="py-3 px-4 flex items-center gap-3">
                 {% if item.product.image %}
-                  <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="w-10 h-10 object-cover rounded" />
+                <img
+                  src="{{ item.product.image.url }}"
+                  alt="{{ item.product.name }}"
+                  class="w-10 h-10 object-cover rounded"
+                />
                 {% else %}
-                  <div class="w-10 h-10 bg-gray-200 rounded flex items-center justify-center text-gray-400 text-xl">🛒</div>
+                <div
+                  class="w-10 h-10 bg-gray-200 rounded flex items-center justify-center text-gray-400 text-xl"
+                >
+                  🛒
+                </div>
                 {% endif %}
                 <span class="font-medium">{{ item.product.name }}</span>
               </td>
               <td class="py-3 px-4 text-center">{{ item.quantity }}</td>
               <td class="py-3 px-4 text-right">₹{{ item.product.price }}</td>
-              <td class="py-3 px-4 text-right font-bold">₹{{ item.quantity|mul:item.product.price }}</td>
+              <td class="py-3 px-4 text-right font-bold">
+                ₹{{ item.quantity|mul:item.product.price }}
+              </td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
       </div>
       <div class="mt-8 flex flex-col items-end gap-2">
-        <div class="w-full sm:w-1/2 bg-[#f0f8f4] rounded-xl p-4 flex flex-col gap-2">
+        <div
+          class="w-full sm:w-1/2 bg-[#f0f8f4] rounded-xl p-4 flex flex-col gap-2"
+        >
           <div class="flex justify-between text-base">
             <span class="text-gray-600">Subtotal</span>
             <span class="font-semibold">₹{{ total }}</span>
@@ -89,7 +164,9 @@
             <span class="text-gray-600">Shipping</span>
             <span class="text-[#4a8c52] font-semibold">Free</span>
           </div>
-          <div class="flex justify-between text-xl font-extrabold border-t pt-2 mt-2">
+          <div
+            class="flex justify-between text-xl font-extrabold border-t pt-2 mt-2"
+          >
             <span>Total</span>
             <span class="text-[#4a8c52]">₹{{ total }}</span>
           </div>
@@ -97,15 +174,72 @@
       </div>
     </div>
 
-    <button type="submit" class="w-full bg-[#4a8c52] text-white text-2xl font-bold py-4 rounded-xl hover:bg-[#35703c] transition">Place Order</button>
+    <button
+      type="submit"
+      class="w-full bg-[#4a8c52] text-white text-2xl font-bold py-4 rounded-xl hover:bg-[#35703c] transition checkout-btn-mobile"
+    >
+      Place Order
+    </button>
   </form>
 </div>
+<script src="{% static 'js/cashfree_payment.js' %}"></script>
 <script>
-  // Handle payment method selection
-  document.querySelectorAll('input[name="payment_method"]').forEach(function(radio) {
+  // Handle payment method selection (existing)
+  document.querySelectorAll('input[name="payment_method"]')?.forEach(function(radio) {
     radio.addEventListener('change', function() {
       // No specific input fields to show/hide here as payment details are handled on Razorpay
     });
+  });
+
+  // Intercept form submit for online payment
+  document.getElementById('checkout-form')?.addEventListener('submit', async function(e) {
+    var paymentMethod = document.querySelector('input[name="payment_method"]:checked')?.value;
+    if (paymentMethod === 'online') {
+      e.preventDefault();
+      // Prepare orderData (replace with actual values from your context)
+      const orderData = {
+        order_id: '{{ order.id|default:"order_"|add:user.id|stringformat:"s" }}',
+        order_amount: {{ total|default:0 }},
+        customer_name: '{{ user.get_full_name|default:user.email }}',
+        customer_email: '{{ user.email }}',
+        customer_phone: '{{ user.phone|default:"" }}'
+      };
+      await initiateCashfreePayment(orderData);
+    }
+    // For COD, let the form submit as usual
+  });
+</script>
+<!-- SweetAlert2 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const onlineRadio = document.querySelector(
+      'input[name="payment_method"][value="online"]'
+    );
+    const codRadio = document.querySelector(
+      'input[name="payment_method"][value="cod"]'
+    );
+    if (onlineRadio && codRadio) {
+      onlineRadio.addEventListener("change", function () {
+        if (this.checked) {
+          Swal.fire({
+            title: "Online Payment Temporarily Unavailable",
+            text: "Online payment option is temporarily disabled as per policy and is currently being integrated.",
+            confirmButtonText: "OK",
+            iconHtml: '<div style="display:flex;justify-content:center;align-items:center;"><span style="display:inline-block;width:60px;height:60px;border-radius:50%;background:#e74c3c;color:#fff;font-size:2.5rem;line-height:60px;text-align:center;border:4px solid #222;">i</span></div>',
+            customClass: {
+              popup: "swal2-compact-popup",
+              title: "swal2-compact-title",
+              htmlContainer: "swal2-compact-content",
+              confirmButton: "swal2-compact-btn",
+            },
+            width: "95%",
+            maxWidth: "300px",
+          });
+          codRadio.checked = true;
+        }
+      });
+    }
   });
 </script>
 {% endblock %}

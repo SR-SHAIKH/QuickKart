@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django import forms
 from users.models import CustomUser
-from .models import Product, Category, PinCode, Invoice, Payment
+from .models import Product, Category, PinCode, Invoice, Payment, Order, OrderItem
 admin.site.register(Category)
 
 # Custom form to filter only shop_owner users
@@ -56,3 +56,14 @@ class PaymentAdmin(admin.ModelAdmin):
         updated = queryset.update(payment_status='failed')
         self.message_user(request, f'{updated} payments marked as failed.')
     mark_as_failed.short_description = "Mark selected payments as failed"
+
+@admin.register(Order)
+class OrderAdmin(admin.ModelAdmin):
+    list_display = ['id', 'customer', 'status', 'order_date']
+    search_fields = ['id', 'customer__email']
+    list_filter = ['status', 'order_date']
+
+@admin.register(OrderItem)
+class OrderItemAdmin(admin.ModelAdmin):
+    list_display = ['id', 'order', 'product', 'quantity', 'price']
+    search_fields = ['order__id', 'product__name']

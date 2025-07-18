@@ -154,14 +154,7 @@
                 {% elif order.rider_status == 'declined' and order.status == 'declined' %}
                   <span class="text-danger">Declined</span>
                 {% elif order.rider_status == 'accepted' and order.status == 'out_for_delivery' %}
-                  <form method="post" class="d-inline">
-                    {% csrf_token %}
-                    <input type="hidden" name="order_id" value="{{ order.id }}">
-                    <input type="hidden" name="action" value="mark_delivered">
-                    <input type="hidden" name="status_filter" value="{{ status_filter }}">
-                    <input type="hidden" name="sort_order" value="{{ sort_order }}">
-                    <button type="submit" class="btn btn-sm btn-success btn-modern">Mark as Delivered</button>
-                  </form>
+                  <a href="{% url 'rider_order_detail' order.id %}" class="btn btn-sm btn-success btn-modern">VIEW</a>
                 {% elif order.status == 'delivered' %}
                   <span class="text-success">Delivered</span>
                 {% endif %}
@@ -285,14 +278,7 @@
                   <button type="submit" class="btn btn-danger btn-sm w-100">Decline</button>
                 </form>
               {% elif order.rider_status == 'accepted' and order.status == 'out_for_delivery' %}
-                <form method="post">
-                  {% csrf_token %}
-                  <input type="hidden" name="order_id" value="{{ order.id }}">
-                  <input type="hidden" name="action" value="mark_delivered">
-                  <input type="hidden" name="status_filter" value="{{ status_filter }}">
-                  <input type="hidden" name="sort_order" value="{{ sort_order }}">
-                  <button type="submit" class="btn btn-success btn-sm w-100">Mark as Delivered</button>
-                </form>
+                {# <a href="{% url 'rider_order_detail' order.id %}" class="btn btn-success btn-sm w-100">VIEW</a> #}
               {% elif order.rider_status == 'declined' %}
                 <span class="badge bg-danger">You declined this order.</span>
               {% endif %}

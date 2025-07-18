@@ -1,0 +1,200 @@
+{% extends 'shop/base_customer.html' %}
+{% block content %}
+<style>
+.rider-action-btn {
+  padding: 8px 24px;
+  font-size: 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+}
+@media (max-width: 767px) {
+  .order-detail-card .action-btn {
+    min-height: 36px !important;
+    border-radius: 0.7rem !important;
+    letter-spacing: 0.01em !important;
+    gap: 0.5em !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.91rem !important;
+    padding: 0.28rem 0 !important;
+    width: 100% !important;
+    text-align: center !important;
+  }
+}
+@media (min-width: 768px) {
+  .order-detail-card .action-btn {
+    border-radius: 1.5rem !important;
+  }
+}
+@media (max-width: 767px) {
+  .back-btn-desktop { display: none !important; }
+}
+.order-action-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  align-items: stretch;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+  width: 100%;
+}
+.order-action-btns > * {
+  width: 100%;
+  margin: 0;
+}
+.order-action-btns .btn {
+  width: 100%;
+  min-width: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 0.7rem;
+  padding: 0.8rem 0.7rem;
+  box-shadow: 0 2px 8px rgba(76,175,80,0.07);
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  white-space: nowrap;
+}
+.order-btn-cancel {
+  background: #e74c3c;
+  color: #fff;
+  border: none;
+}
+.order-btn-cancel:hover, .order-btn-cancel:focus {
+  background: #c0392b;
+  color: #fff;
+}
+.order-btn-invoice {
+  background: #6c757d;
+  color: #fff;
+  border: none;
+}
+.order-btn-invoice:hover, .order-btn-invoice:focus {
+  background: #495057;
+  color: #fff;
+}
+.order-btn-back {
+  background: #1faf38;
+  color: #fff;
+  border: none;
+}
+.order-btn-back:hover, .order-btn-back:focus {
+  background: #128038;
+  color: #fff;
+}
+@media (max-width: 991px) {
+  .order-action-btns {
+    flex-direction: column !important;
+    gap: 0.7rem;
+    align-items: stretch !important;
+    flex-wrap: wrap !important;
+    overflow-x: visible;
+  }
+  .order-action-btns .btn {
+    min-width: 0;
+    width: 100%;
+    font-size: 1rem;
+    padding: 0.8rem 0.7rem;
+    border-radius: 0.7rem;
+  }
+}
+</style>
+<a href="{{ request.META.HTTP_REFERER|default:'/' }}" class="back-btn-desktop btn p-0 border-0 shadow-none mb-3" style="background:transparent;">
+  <i class="bi bi-arrow-left" style="font-size:2rem; color:#7ed957;"></i>
+</a>
+<div class="container max-w-2xl mx-auto my-8 p-6 bg-white rounded-xl shadow order-detail-card">
+  <div class="mb-6 flex items-center justify-between">
+    <h2 class="text-2xl font-bold text-[#2e4e1b]">Order #{{ order.id }}</h2>
+    <span class="px-4 py-2 rounded-full text-white font-semibold text-sm bg-green-600">{{ order.get_status_display }}</span>
+  </div>
+  <div class="mb-4 text-gray-700">
+    <div><span class="font-semibold">Customer Name:</span> {{ order.customer.get_full_name|default:order.customer.email }}</div>
+    <div><span class="font-semibold">Customer Email:</span> {{ order.customer.email }}</div>
+    <div><span class="font-semibold">Customer Phone:</span> {{ order.customer.phone }}</div>
+    <div><span class="font-semibold">Order Date:</span> {{ order.order_date|date:'d M Y, H:i' }}</div>
+    <div><span class="font-semibold">Total:</span> ₹{{ order.total_amount }}</div>
+  </div>
+  <div class="mb-6 p-4 bg-gray-50 rounded">
+    <div class="font-semibold mb-1">Shipping Address</div>
+    <div class="text-gray-800">{{ order.delivery_address }}</div>
+    <div class="text-gray-600 text-sm mt-1">Phone: {{ order.phone }}</div>
+  </div>
+  <div class="mb-6">
+    <div class="font-semibold mb-2">Products in this order:</div>
+    <div class="divide-y">
+      {% for item in order.items.all %}
+      <div class="flex items-center gap-4 py-4">
+        <div class="w-16 h-16 flex items-center justify-center bg-gray-100 rounded">
+          {% if item.product.image %}
+            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="w-14 h-14 object-contain rounded" />
+          {% else %}
+            <span class="text-gray-400">IMG</span>
+          {% endif %}
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="font-bold text-lg text-[#2e4e1b] truncate">{{ item.product.name }}</div>
+          <div class="text-gray-600 text-sm truncate">{{ item.product.description|truncatewords:10 }}</div>
+        </div>
+        <div class="text-gray-700 text-base">Qty: {{ item.quantity }}</div>
+        <div class="font-bold text-green-700 text-lg">₹{{ item.price }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="order-action-btns">
+    {% if order.status == 'out_for_delivery' or order.status == 'declined' %}
+      <button type="button" id="markDeliveredBtn" class="rider-action-btn bg-green-600 text-white hover:bg-green-700 transition">Mark as Delivered</button>
+    {% endif %}
+    <a href="{% url 'shop_owner_orders' %}" class="btn order-btn-back">Back to Orders</a>
+  </div>
+</div>
+<!-- OTP Modal -->
+<div id="otpModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:9999; justify-content:center; align-items:center;">
+  <div style="background:#fff; border-radius:10px; padding:32px 24px; min-width:320px; box-shadow:0 2px 12px #aaa; text-align:center;">
+    <h4 style="color:#198754;">Enter Delivery OTP</h4>
+    <input type="text" id="otpInput" maxlength="6" style="font-size:1.5rem; letter-spacing:8px; text-align:center; margin:18px 0; padding:8px 0; width:80%;" placeholder="Enter OTP">
+    <div id="otpError" style="color:#e74c3c; margin-bottom:10px; display:none;"></div>
+    <button id="submitOtpBtn" class="btn btn-success">Submit OTP</button>
+    <button onclick="closeOtpModal()" class="btn btn-secondary" style="margin-left:10px;">Cancel</button>
+  </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var markBtn = document.getElementById('markDeliveredBtn');
+  if (markBtn) {
+    markBtn.onclick = function() {
+      document.getElementById('otpModal').style.display = 'flex';
+      document.getElementById('otpInput').value = '';
+      document.getElementById('otpError').style.display = 'none';
+    };
+  }
+});
+function closeOtpModal() {
+  document.getElementById('otpModal').style.display = 'none';
+}
+document.getElementById('submitOtpBtn').onclick = function() {
+  var otp = document.getElementById('otpInput').value.trim();
+  if (otp.length !== 6) {
+    document.getElementById('otpError').innerText = 'Please enter a valid 6-digit OTP.';
+    document.getElementById('otpError').style.display = 'block';
+    return;
+  }
+  fetch('{% url 'verify_delivery_otp' %}', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': '{{ csrf_token }}'
+    },
+    body: JSON.stringify({ order_id: {{ order.id }}, otp: otp })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      window.location.reload();
+    } else {
+      document.getElementById('otpError').innerText = data.error || 'Invalid OTP!';
+      document.getElementById('otpError').style.display = 'block';
+    }
+  });
+};
+</script>
+{% endblock %} 

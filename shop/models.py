@@ -51,6 +51,7 @@ class Order(models.Model):
     delivery_address = models.TextField()
     phone = models.CharField(max_length=15)
     order_date = models.DateTimeField(auto_now_add=True)
+    delivery_otp = models.CharField(max_length=6, blank=True, null=True)
 
     STATUS_CHOICES = [
         ('unshipped', 'Unshipped'),
@@ -162,6 +163,8 @@ class ShopBankInfo(models.Model):
     logo = models.ImageField(upload_to='shop_logos/', null=True, blank=True)
 
     upi_id = models.CharField(max_length=100, blank=True, null=True)
+    razorpay_account_id = models.CharField(max_length=100, blank=True, null=True)  # Razorpay linked account ID
+    cashfree_beneficiary_id = models.CharField(max_length=100, blank=True, null=True)  # Cashfree beneficiary ID
     PREFERRED_CHOICES = [
         ('bank', 'Bank Transfer'),
         ('upi', 'UPI'),

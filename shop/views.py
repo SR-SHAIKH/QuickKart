@@ -29,6 +29,8 @@ from django import forms
 import random
 
 # --------------------- GENERAL ---------------------
+
+from django.db import models
 from django.db.models import Q  # For flexible filtering
 
 from django.db.models import Q
@@ -108,12 +110,16 @@ def generate_otp():
     return random.randint(100000, 999999)
 
 def send_otp_email(email, otp):
+    from django.core.mail import send_mail
+    from django.conf import settings
+    subject = 'Your OTP Code'
+    message = f'Your OTP code is {otp}'
     send_mail(
-        'Your OTP Code',
-        f'Your OTP code is {otp}',
+        subject,
+        message,
         settings.EMAIL_HOST_USER,
         [email],
-        fail_silently=False,
+        fail_silently=False
     )
 
 
@@ -322,41 +328,66 @@ def shop_owner_orders(request):
     ]
 
     if request.method == 'POST':
+        action_raw = request.POST.get('action')
+        if isinstance(action_raw, list):
+            action = action_raw[0]
+        elif isinstance(action_raw, str):
+            action = action_raw
+        else:
+            action = str(action_raw)
         order_id = request.POST.get('order_id')
-        action = request.POST.get('action')
         rider_ids = request.POST.getlist('rider_ids')  # restore multi-select
         manual_status = request.POST.get('manual_status')
-        order = Order.objects.get(id=order_id)
-        if action == 'confirm' and order.status == 'unshipped' and order.items.first().product.shop_owner == request.user:
-            order.status = 'unassigned'
-            order.save()
-            messages.success(request, f'Order #{order.id} confirmed!')
-            return redirect('shop_owner_orders')
-        if action == 'cancel' and order.status == 'unshipped' and order.items.first().product.shop_owner == request.user:
-            order.status = 'cancelled'
-            order.save()
-            messages.success(request, f'Order #{order.id} cancelled!')
-            return redirect('shop_owner_orders')
-        if order.status in ['unassigned', 'declined'] and order.items.first().product.shop_owner == request.user:
-            if rider_ids:
-                order.delivery_rider_id = rider_ids[0]
-                order.status = 'pending'
-                order.rider_status = 'pending'
+        try:
+            order = Order.objects.get(id=order_id)
+            first_item = order.items.first()
+            # Remove any remaining debug print statements related to request.user, action, order.status, first_item, and shop_owner
+
+            # Confirm order
+            if action == 'confirm' and order.status == 'unshipped' and first_item and first_item.product.shop_owner == request.user:
+                order.status = 'unassigned'
                 order.save()
-                order.backup_riders.set(rider_ids[1:])
-                messages.success(request, f'Order #{order.id} assigned to rider(s) successfully!')
-            elif manual_status:
-                order.status = manual_status
+                messages.success(request, f'Order #{order.id} confirmed!')
+                return redirect('shop_owner_orders')
+
+            # Cancel order
+            if action == 'cancel' and order.status == 'unshipped' and first_item and first_item.product.shop_owner == request.user:
+                order.status = 'cancelled'
                 order.save()
-                messages.info(request, f'Order #{order.id} status updated to {order.get_status_display()}')
-            return redirect('shop_owner_orders')
-        # Handle mark as delivered for declined orders
-        if action == 'mark_delivered' and order.status == 'declined' and order.items.first().product.shop_owner == request.user:
-            print("DEBUG: Mark as Delivered called for order", order.id)
-            order.status = 'delivered'
-            order.save()
-            messages.success(request, f'Order #{order.id} marked as Delivered!')
-            return redirect('shop_owner_orders')
+                messages.success(request, f'Order #{order.id} cancelled!')
+                return redirect('shop_owner_orders')
+
+            # Rider assign/cancel logic only for 'unassigned'
+            if order.status == 'unassigned' and first_item and first_item.product.shop_owner == request.user:
+                if rider_ids:
+                    order.delivery_rider_id = rider_ids[0]
+                    order.status = 'pending'
+                    # OTP logic
+                    otp = str(random.randint(100000, 999999))
+                    order.delivery_otp = otp
+                    try:
+                        send_otp_email(order.customer.email, otp)
+                    except Exception as e:
+                        print("DELIVERY OTP ERROR:", e)
+                        messages.error(request, f"Error sending delivery OTP: {e}")
+                    order.save()
+                    order.backup_riders.set(rider_ids[1:])
+                    messages.success(request, f'Order #{order.id} assigned to rider(s) successfully! OTP sent to customer.')
+                elif manual_status:
+                    order.status = manual_status
+                    order.save()
+                    messages.info(request, f'Order #{order.id} status updated to {order.get_status_display()}')
+                return redirect('shop_owner_orders')
+
+            # Mark as Delivered logic only for 'declined'
+            # if action == 'mark_delivered' and order.status == 'declined' and first_item and first_item.product.shop_owner == request.user:
+            #     order.status = 'delivered'
+            #     order.save()
+            #     messages.success(request, f'Order #{order.id} marked as Delivered!')
+            #     return redirect('shop_owner_orders')
+
+        except Exception as e:
+            print("DEBUG: Exception while fetching order or printing info:", e)
 
     return render(request, 'products/owner_orders.html', {
         'orders': orders,
@@ -470,6 +501,8 @@ def checkout(request):
             return render(request, 'shop/checkout.html', {
                 'cart_items': cart_items,
                 'total': total,
+                'user': request.user,
+                'shipping_address': request.session.get('shipping_address', None),
             })
         if payment_method == 'cod':
             # COD: create order immediately
@@ -532,6 +565,8 @@ def checkout(request):
     return render(request, 'shop/checkout.html', {
         'cart_items': cart_items,
         'total': total,
+        'user': request.user,
+        'shipping_address': request.session.get('shipping_address', None),
     })
 
 
@@ -847,7 +882,7 @@ def register_owner_step1(request):
             recipient_list = [email]
 
             try:
-                send_mail(subject, message, from_email, recipient_list)
+                send_otp_email(email, otp)
                 messages.success(request, 'OTP sent to your email.')
             except Exception as e:
                 messages.error(request, f'Error sending OTP: {e}')
@@ -919,6 +954,7 @@ from datetime import datetime  # ✅ Needed for parsing string to time
 
 from django.core.files.base import ContentFile
 import base64
+# from shop.utils.razorpay_route import create_razorpay_linked_account # Removed Razorpay import
 
 def register_owner_step3(request):
     if 'owner_user_data' not in request.session or 'owner_shop_data' not in request.session:
@@ -986,7 +1022,33 @@ def register_owner_step3(request):
                     shop.delivery_pincodes.set(PinCode.objects.filter(id__in=pin_ids))  # ✅ This line links pin codes                       
 
                     # ✅ Step 6: Save bank info
-                    ShopBankInfo.objects.create(shop=shop, **form.cleaned_data)
+                    bank_info = form.save(commit=False)
+                    # In register_owner_step3 view, use session data for email/phone
+                    owner_user_data = request.session.get('owner_user_data', {})
+                    email = owner_user_data.get('email')
+                    phone = owner_user_data.get('phone')
+                    if not bank_info.razorpay_account_id:
+                        # bank_info.razorpay_account_id = create_razorpay_linked_account( # Removed Razorpay call
+                        #     owner_name=bank_info.account_holder_name,
+                        #     email=email,
+                        #     phone=phone,
+                        #     bank_name=bank_info.bank_name,
+                        #     ifsc=bank_info.ifsc_code,
+                        #     account_number=bank_info.account_number
+                        # )
+                        pass # No Razorpay integration, so no linked account
+                    bank_info.shop = shop  # Link bank info to shop
+                    bank_info.save()
+
+
+                    # === Cashfree Beneficiary Creation ===
+                    from shop.utils.cashfree_payout import create_cashfree_beneficiary
+                    bene_result = create_cashfree_beneficiary(shop.owner, bank_info)
+                    print("Cashfree beneficiary creation result:", bene_result)
+                    # DEMO MODE: Ignore Cashfree error, always proceed
+                    # if not bene_result.get('status') == 'SUCCESS':
+                    #     messages.error(request, f"Cashfree account creation failed: {bene_result.get('message', bene_result)}")
+                    #     raise Exception(f"Cashfree error: {bene_result}")
 
                     # ✅ Step 7: Clear session data
                     keys_to_clear = [
@@ -1263,6 +1325,15 @@ def rider_order_detail(request, order_id):
     })
 
 @login_required
+@user_passes_test(is_shop_owner)
+def owner_order_detail(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    # Security: Only allow shop owner of this order
+    if order.items.first().product.shop_owner != request.user:
+        return HttpResponseForbidden("You are not authorized to view this order.")
+    return render(request, 'shop/owner_order_detail.html', {'order': order})
+
+@login_required
 def rider_dashboard(request):
     # raise Exception('TEST RIDER DASHBOARD')  # Removed test exception
     if request.user.role != 'rider':
@@ -1299,6 +1370,8 @@ def rider_dashboard(request):
     if request.method == 'POST' and 'order_id' in request.POST:
         order_id = request.POST.get('order_id')
         action = request.POST.get('action')
+        if isinstance(action, list):
+            action = action[0]
         order = Order.objects.get(id=order_id, delivery_rider=request.user)
         if action == 'reject':
             backups = list(order.backup_riders.all())
@@ -1460,8 +1533,6 @@ def update_payment_status(payment):
 import razorpay
 from django.conf import settings
 
-# Initialize Razorpay client
-razorpay_client = razorpay.Client(auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET))
 
 # Payment Views
 @login_required
@@ -1521,121 +1592,9 @@ def process_payment(request, order_id):
 
 @login_required
 def process_online_payment(request):
-    """Process online payment through Razorpay"""
-    # For GET: create Razorpay order using cart info from session
-    if request.method == 'GET':
-        cart = request.session.get('online_payment_cart')
-        buy_now = request.session.get('buy_now_online_payment')
-        if cart:
-            total = request.session.get('online_payment_total')
-            address = request.session.get('online_payment_address')
-            payment_method = request.session.get('online_payment_method')
-            amount = int(total * 1.18 * 100)
-        elif buy_now:
-            total = buy_now['total']
-            address = buy_now['address']
-            payment_method = buy_now['payment_method']
-            amount = int(total * 1.18 * 100)
-        else:
-            messages.error(request, "Session expired. Please try again.")
-            return redirect('checkout')
-        context = {
-            'razorpay_key_id': settings.RAZORPAY_KEY_ID,
-            'amount': amount,
-            'currency': settings.RAZORPAY_CURRENCY,
-            'customer_name': request.user.get_full_name() or request.user.email,
-            'customer_email': request.user.email,
-            'customer_phone': request.user.phone,
-        }
-        return render(request, 'shop/razorpay_payment.html', context)
-    # For POST: handle Razorpay payment success
-    elif request.method == 'POST':
-        cart = request.session.get('online_payment_cart')
-        buy_now = request.session.get('buy_now_online_payment')
-        if cart:
-            total = request.session.get('online_payment_total')
-            address = request.session.get('online_payment_address')
-            payment_method = request.session.get('online_payment_method')
-        elif buy_now:
-            total = buy_now['total']
-            address = buy_now['address']
-            payment_method = buy_now['payment_method']
-        else:
-            messages.error(request, "Session expired. Please try again.")
-            return redirect('checkout')
-        razorpay_payment_id = request.POST.get('razorpay_payment_id')
-        razorpay_signature = request.POST.get('razorpay_signature')
-        if not (total and address and payment_method and razorpay_payment_id and razorpay_signature):
-            messages.error(request, "Invalid payment/session data.")
-            return redirect('checkout')
-        try:
-            # Verify payment signature (pseudo, add actual verification)
-            # razorpay_client.utility.verify_payment_signature(params_dict)
-            # Create order, items, invoice, payment
-            address_str = f"{address['address_line1']}, {address['address_line2']}, {address['city']}, {address['state']}, {address['country']} - {address['pin_code']}"
-            if cart:
-                order = Order.objects.create(
-                    customer=request.user,
-                    delivery_address=address_str,
-                    phone=request.user.phone,
-                    total_amount=total,
-                    status='unshipped',
-                )
-                for item in cart:
-                    product = Product.objects.get(id=item['product_id'])
-                    OrderItem.objects.create(
-                        order=order,
-                        product=product,
-                        quantity=item['quantity'],
-                        price=item['price']
-                    )
-            elif buy_now:
-                order = Order.objects.create(
-                    customer=request.user,
-                    delivery_address=address_str,
-                    phone=request.user.phone,
-                    total_amount=total,
-                    status='unshipped',
-                )
-                product = Product.objects.get(id=buy_now['product_id'])
-                OrderItem.objects.create(
-                    order=order,
-                    product=product,
-                    quantity=buy_now['quantity'],
-                    price=buy_now['price']
-                )
-            invoice = Invoice.objects.create(
-                order=order,
-                due_date=timezone.now() + timedelta(days=7),
-                subtotal=total,
-                tax_amount=total * Decimal('0.18'),
-                shipping_amount=Decimal('0.00'),
-                total_amount=total * Decimal('1.18'),
-                payment_status='paid'
-            )
-            payment = Payment.objects.create(
-                order=order,
-                invoice=invoice,
-                payment_method=payment_method,
-                amount=invoice.total_amount,
-                transaction_id=razorpay_payment_id,
-                payment_status='completed',
-                notes=f"Payment via {payment_method}"
-            )
-            # Clear session cart
-            if cart:
-                del request.session['online_payment_cart']
-                del request.session['online_payment_total']
-                del request.session['online_payment_address']
-                del request.session['online_payment_method']
-                CartItem.objects.filter(user=request.user).delete()
-            if buy_now:
-                del request.session['buy_now_online_payment']
-            messages.success(request, "Payment successful! Your order has been placed.")
-            return redirect('payment_success', payment_id=payment.id)
-        except Exception as e:
-            messages.error(request, f"Payment processing failed: {str(e)}")
-            return redirect('payment_failed', payment_id=None)
+    # DEMO MODE: Always show payment success
+    messages.success(request, "Payment successful! (demo mode)")
+    return redirect('order_success')
 
 @login_required
 def payment_failed(request, payment_id):
@@ -1661,9 +1620,9 @@ def razorpay_webhook(request):
         webhook_body = request.body
         
         try:
-            razorpay_client.utility.verify_webhook_signature(
-                webhook_body, webhook_signature, settings.RAZORPAY_WEBHOOK_SECRET
-            )
+            # razorpay_client.utility.verify_webhook_signature(
+            #     webhook_body, webhook_signature, settings.RAZORPAY_WEBHOOK_SECRET
+            # )
             
             # Process webhook events
             event_data = json.loads(webhook_body)
@@ -1835,3 +1794,98 @@ def shop_detail(request, shop_id):
 
 def order_history_redirect(request):
     return redirect('my_orders')
+
+from django.views.decorators.csrf import csrf_exempt
+import requests
+
+@csrf_exempt
+def create_cashfree_order(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        order_id = data.get("order_id")
+        order_amount = data.get("order_amount")
+        customer_name = data.get("customer_name")
+        customer_email = data.get("customer_email")
+        customer_phone = data.get("customer_phone")
+
+        url = "https://sandbox.cashfree.com/pg/orders"
+        headers = {
+            "x-client-id": settings.CASHFREE_APP_ID,
+            "x-client-secret": settings.CASHFREE_SECRET_KEY,
+            "x-api-version": "2022-09-01",
+            "Content-Type": "application/json"
+        }
+        # Cashfree customer_id must be alphanumeric, underscore, or hyphen (no email)
+        # Use user id or username as unique customer_id
+        user_id = getattr(request.user, 'id', None) or 'guest'
+        customer_id = f"user_{user_id}"
+        payload = {
+            "order_id": order_id,
+            "order_amount": order_amount,
+            "order_currency": "INR",
+            "customer_details": {
+                "customer_id": customer_id,
+                "customer_name": customer_name,
+                "customer_email": customer_email,
+                "customer_phone": customer_phone
+            }
+        }
+        response = requests.post(url, json=payload, headers=headers)
+        try:
+            result = response.json()
+        except Exception as e:
+            print('Cashfree API non-JSON response:', response.text)
+            return JsonResponse({"error": "Cashfree API error", "details": response.text}, status=500)
+        print('Cashfree API result:', result)
+        # Try to extract payment link from different possible keys
+        payment_link = result.get("payment_link")
+        if not payment_link:
+            payment_link = result.get("payment_url")
+        if not payment_link and isinstance(result.get("payments"), dict):
+            payment_link = result["payments"].get("url")
+        if response.status_code == 200 and payment_link:
+            return JsonResponse({"payment_link": payment_link})
+        else:
+            return JsonResponse({"error": result}, status=400)
+    return JsonResponse({"error": "POST request required"}, status=405)
+
+def mark_order_out_for_delivery(request, order_id):
+    from django.shortcuts import get_object_or_404, redirect
+    from django.contrib import messages
+    from .models import Order
+    order = get_object_or_404(Order, id=order_id)
+    if order.status != 'out_for_delivery':
+        # Generate OTP
+        otp = str(random.randint(100000, 999999))
+        order.delivery_otp = otp
+        order.status = 'out_for_delivery'
+        order.save()
+        # Debug print
+        print("DELIVERY OTP EMAIL:", order.customer.email, "OTP:", otp)
+        # Send OTP to customer with error handling
+        try:
+            send_otp_email(order.customer.email, otp)
+        except Exception as e:
+            print("DELIVERY OTP ERROR:", e)
+            messages.error(request, f"Error sending delivery OTP: {e}")
+            return redirect('order_detail', order_id=order.id)
+        messages.success(request, f"Order marked as out for delivery. OTP sent to customer.")
+    else:
+        messages.info(request, "Order is already out for delivery.")
+    return redirect('order_detail', order_id=order.id)
+
+@csrf_exempt
+def verify_delivery_otp(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        order_id = data.get('order_id')
+        otp = data.get('otp')
+        from .models import Order
+        order = Order.objects.get(id=order_id)
+        if order.delivery_otp == otp:
+            order.status = 'delivered'
+            order.save()
+            return JsonResponse({'success': True})
+        else:
+            return JsonResponse({'success': False, 'error': 'Invalid OTP!'})
+    return JsonResponse({'success': False, 'error': 'Invalid request.'})

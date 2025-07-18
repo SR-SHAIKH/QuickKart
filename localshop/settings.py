@@ -145,7 +145,16 @@ LOGGING = {
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# Razorpay Settings
-RAZORPAY_KEY_ID = config("RAZORPAY_KEY_ID")
-RAZORPAY_KEY_SECRET = config("RAZORPAY_KEY_SECRET")
-RAZORPAY_CURRENCY = "INR"
+# Cashfree Settings
+
+# Cashfree settings using python-decouple config (reads from .env)
+CASHFREE_APP_ID = config("CASHFREE_APP_ID", default="").strip()
+CASHFREE_SECRET_KEY = config("CASHFREE_SECRET_KEY", default="").strip()
+CASHFREE_ENV = config("CASHFREE_ENV", default="TEST").strip()
+CASHFREE_PAYOUT_CLIENT_ID = config("CASHFREE_PAYOUT_CLIENT_ID", default="").strip()
+CASHFREE_PAYOUT_CLIENT_SECRET = config("CASHFREE_PAYOUT_CLIENT_SECRET", default="").strip()
+print("CASHFREE_PAYOUT_CLIENT_ID:", repr(CASHFREE_PAYOUT_CLIENT_ID))
+print("CASHFREE_PAYOUT_CLIENT_SECRET:", repr(CASHFREE_PAYOUT_CLIENT_SECRET))
+print("CASHFREE_APP_ID:", repr(CASHFREE_APP_ID))
+print("CASHFREE_SECRET_KEY:", repr(CASHFREE_SECRET_KEY))
+print("CASHFREE_ENV:", repr(CASHFREE_ENV))

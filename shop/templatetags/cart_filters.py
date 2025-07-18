@@ -7,7 +7,7 @@ def mul(value, arg):
     """Dono values ko multiply karta hai (quantity * price)."""
     try:
         return float(value) * float(arg)
-    except (ValueError, TypeError):
+    except:
         return ''
 @register.filter
 def to_range(value, arg):

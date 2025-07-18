@@ -105,6 +105,9 @@ urlpatterns = [
     # Shop detail page for public
     path('shop/<int:shop_id>/', views.shop_detail, name='shop_detail'),
     path('ajax/add_to_cart/', views.add_to_cart_ajax, name='add_to_cart_ajax'),
+    path('owner/order/<int:order_id>/', views.owner_order_detail, name='owner_order_detail'),
+    path('create-cashfree-order/', views.create_cashfree_order, name='create_cashfree_order'),
+    path('order/verify-delivery-otp/', views.verify_delivery_otp, name='verify_delivery_otp'),
 
 ]
 

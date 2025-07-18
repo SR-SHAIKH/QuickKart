@@ -144,12 +144,7 @@
   </div>
   <div class="order-action-btns">
     {% if request.user.role == 'rider' and order.delivery_rider == request.user and order.status == 'out_for_delivery' and order.rider_status == 'accepted' %}
-      <form method="post" action="" class="inline">
-        {% csrf_token %}
-        <input type="hidden" name="order_id" value="{{ order.id }}">
-        <input type="hidden" name="action" value="mark_delivered">
-        <button type="submit" class="rider-action-btn bg-green-600 text-white hover:bg-green-700 transition">Mark as Delivered</button>
-      </form>
+      <button type="button" id="markDeliveredBtn" class="rider-action-btn bg-green-600 text-white hover:bg-green-700 transition">Mark as Delivered</button>
     {% endif %}
     
     <!-- Invoice and Payment Actions -->
@@ -190,4 +185,54 @@
     {% endif %}
   </div>
 </div>
+<!-- OTP Modal -->
+<div id="otpModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:9999; justify-content:center; align-items:center;">
+  <div style="background:#fff; border-radius:10px; padding:32px 24px; min-width:320px; box-shadow:0 2px 12px #aaa; text-align:center;">
+    <h4 style="color:#198754;">Enter Delivery OTP</h4>
+    <input type="text" id="otpInput" maxlength="6" style="font-size:1.5rem; letter-spacing:8px; text-align:center; margin:18px 0; padding:8px 0; width:80%;" placeholder="Enter OTP">
+    <div id="otpError" style="color:#e74c3c; margin-bottom:10px; display:none;"></div>
+    <button id="submitOtpBtn" class="btn btn-success">Submit OTP</button>
+    <button onclick="closeOtpModal()" class="btn btn-secondary" style="margin-left:10px;">Cancel</button>
+  </div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var markBtn = document.getElementById('markDeliveredBtn');
+  if (markBtn) {
+    markBtn.onclick = function() {
+      document.getElementById('otpModal').style.display = 'flex';
+      document.getElementById('otpInput').value = '';
+      document.getElementById('otpError').style.display = 'none';
+    };
+  }
+});
+function closeOtpModal() {
+  document.getElementById('otpModal').style.display = 'none';
+}
+document.getElementById('submitOtpBtn').onclick = function() {
+  var otp = document.getElementById('otpInput').value.trim();
+  if (otp.length !== 6) {
+    document.getElementById('otpError').innerText = 'Please enter a valid 6-digit OTP.';
+    document.getElementById('otpError').style.display = 'block';
+    return;
+  }
+  fetch('{% url 'verify_delivery_otp' %}', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': '{{ csrf_token }}'
+    },
+    body: JSON.stringify({ order_id: {{ order.id }}, otp: otp })
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      window.location.reload();
+    } else {
+      document.getElementById('otpError').innerText = data.error || 'Invalid OTP!';
+      document.getElementById('otpError').style.display = 'block';
+    }
+  });
+};
+</script>
 {% endblock %} 

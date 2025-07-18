@@ -126,7 +126,7 @@ def verify_customer_otp(request):
                 request.session.pop('temp_user_data')
                 
                 # Auto login after successful registration
-                login(request, user)
+                login(request, user, backend='django.contrib.auth.backends.ModelBackend')
                 messages.success(request, 'Registration successful! Welcome to QuickKart.')
                 return redirect('home')
         else:
@@ -145,7 +145,7 @@ def rider_register(request):
             rider.delivery_pincodes.set(pincode_ids)
             
             # Auto login after successful registration
-            login(request, rider)
+            login(request, rider, backend='django.contrib.auth.backends.ModelBackend')
             messages.success(request, 'Registration successful! Welcome to QuickKart.')
             return redirect('rider_dashboard')
     else:
@@ -261,7 +261,7 @@ def login_view(request):
         password = request.POST.get('password')
         user = authenticate(request, email=email, password=password)
         if user is not None:
-            login(request, user)
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
             if user.role == 'rider':
                 return redirect('rider_dashboard')
             elif user.role == 'shop_owner':

@@ -90,3 +90,4 @@ class CustomerProfile(models.Model):
 
     def __str__(self):
         return self.user.email
+    
