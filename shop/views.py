@@ -29,6 +29,7 @@ from django import forms
 import random
 
 # --------------------- GENERAL ---------------------
+# Import models, forms, and utilities for shop functionality
 
 from django.db import models
 from django.db.models import Q  # For flexible filtering
@@ -46,8 +47,13 @@ from decimal import Decimal
 from django.core.paginator import Paginator
 
 def home(request):
-    print("🔥 Home view called")
-
+    """
+    Home page view for customers.
+    - Shows product search, categories, shops in user's area, and products in area.
+    - Handles pincode selection and product search query.
+    - Paginates products (24 per page).
+    """
+    
     # 🔄 Redirect shop owners to their dashboard
     if request.user.is_authenticated and request.user.role == 'shop_owner':
         return redirect('shop_owner_dashboard')
@@ -94,7 +100,7 @@ def home(request):
 
     bestselling_products = products.order_by('-stock')[:10] if products.exists() else []
 
-    # PAGINATION for products (20 per page)
+    # PAGINATION for products (24 per page)
     paginator = Paginator(products, 24)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -740,14 +746,19 @@ from django.http import HttpResponseForbidden
 
 @login_required
 def product_detail(request, pk):
+    """
+    Display the details of a single product.
+    Shows product info, wishlist status, and up to 12 suggested products from the same category or shop.
+    """
     product = get_object_or_404(Product, id=pk)
 
-    # Suggested products: same category or same shop, exclude current product
+    # Get up to 12 suggested products from the same category or shop, excluding the current product
     suggested_products = Product.objects.filter(
         (Q(category=product.category) | Q(shop=product.shop)),
         is_active=True
     ).exclude(id=product.id)[:12]
-    # Wishlist logic
+
+    # Check if the product is already in the user's wishlist
     is_wishlisted = False
     if request.user.is_authenticated:
         is_wishlisted = Wishlist.objects.filter(user=request.user, product=product).exists()
