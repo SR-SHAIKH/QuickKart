@@ -64,41 +64,49 @@
           <form method="post" novalidate>
             {% csrf_token %}
             {% for field in form %}
-              {% if field.name == 'email' %}
-                {# Insert username field just before email if not already rendered #}
-                {% if not form.username %}
-                  <div class="mb-3">
-                    <label for="id_username" class="form-label">Username <span class="text-danger">*</span></label>
-                    <input type="text" name="username" maxlength="150" class="form-control" required id="id_username">
-                  </div>
-                {% endif %}
-              {% endif %}
-              <div class="mb-3">
-                <label for="{{ field.id_for_label }}" class="form-label">
-                  {{ field.label }}
-                  {% if field.field.required %}
-                    <span class="text-danger">*</span>
-                  {% endif %}
-                </label>
-                {% if field.name == "date_of_birth" %}
-                  <input type="date" name="date_of_birth" class="form-control" id="{{ field.id_for_label }}" required>
-                {% else %}
+              {% if field.name != 'password' and field.name != 'confirm_password' and field.name != 'date_of_birth' %}
+                <div class="mb-3">
+                  <label for="{{ field.id_for_label }}" class="form-label">
+                    {{ field.label }}
+                    {% if field.field.required %}
+                      <span class="text-danger">*</span>
+                    {% endif %}
+                  </label>
                   {{ field|add_class:"form-control" }}
-                {% endif %}
-                {% if field.errors %}
-                  <div class="text-danger small mt-1">
-                    {{ field.errors|striptags }}
-                  </div>
-                {% endif %}
-              </div>
+                  {% if field.errors %}
+                    <div class="text-danger small mt-1">
+                      {{ field.errors|striptags }}
+                    </div>
+                  {% endif %}
+                </div>
+              {% endif %}
             {% endfor %}
-
+            <div class="mb-3">
+              <label for="id_date_of_birth" class="form-label">Date of birth{% if form.date_of_birth.field.required %}<span class="text-danger">*</span>{% endif %}</label>
+              <input type="date" name="date_of_birth" class="form-control" id="id_date_of_birth" required>
+              {% if form.date_of_birth.errors %}
+                <div class="text-danger small mt-1">{{ form.date_of_birth.errors|striptags }}</div>
+              {% endif %}
+            </div>
+            <div class="mb-3">
+              <label for="id_password" class="form-label">Password <span class="text-danger">*</span></label>
+              {{ form.password|add_class:"form-control" }}
+              {% if form.password.errors %}
+                <div class="text-danger small mt-1">{{ form.password.errors|striptags }}</div>
+              {% endif %}
+            </div>
+            <div class="mb-3">
+              <label for="id_confirm_password" class="form-label">Confirm Password <span class="text-danger">*</span></label>
+              {{ form.confirm_password|add_class:"form-control" }}
+              {% if form.confirm_password.errors %}
+                <div class="text-danger small mt-1">{{ form.confirm_password.errors|striptags }}</div>
+              {% endif %}
+            </div>
             {% if form.non_field_errors %}
               <div class="alert alert-danger">
                 {{ form.non_field_errors }}
               </div>
             {% endif %}
-
             <div class="d-grid gap-2">
               <button type="submit" class="btn btn-success btn-lg">
                 Continue to Shop Details →

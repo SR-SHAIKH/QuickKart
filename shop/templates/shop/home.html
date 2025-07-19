@@ -281,10 +281,6 @@
     .product-scroll-row .product-card { min-width: 180px; max-width: 210px; }
   }
   @media (max-width: 600px) {
-    .shop-scroll-row .shop-card { min-width: 120px; max-width: 140px; }
-    .product-scroll-row .product-card { min-width: 150px; max-width: 180px; }
-  }
-  @media (max-width: 600px) {
     .row.product-scroll-row {
       display: flex;
       flex-direction: column;
@@ -329,6 +325,20 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     }
   }
+  @media (max-width: 600px) {
+    .row.product-scroll-row {
+      display: flex !important;
+      flex-wrap: wrap !important;
+    }
+    .row.product-scroll-row > [class^='col-'] {
+      max-width: 50% !important;
+      flex: 0 0 50% !important;
+      width: 50% !important;
+      min-width: 0 !important;
+      float: none !important;
+      box-sizing: border-box !important;
+    }
+  }
 </style>
 
 {% if user.is_authenticated %}
@@ -341,11 +351,12 @@
       Search groceries, fashion & more — all near your location.
     </p>
     <form method="GET" action="{% url 'home' %}" class="d-flex flex-column flex-sm-row align-items-center justify-content-center gap-3 search-bar">
-      <div class="position-relative w-100 w-sm-60">
+      <div class="position-relative w-100 w-sm-60 d-flex">
         <input type="text" name="q" value="{{ query }}" placeholder="Search products..."
           class="form-control ps-5 py-2" style="border-radius:0.75rem;" />
         <span class="search-icon position-absolute" style="left:16px; top:50%; transform:translateY(-50%); color:#aaa; pointer-events:none; font-size:1.2rem;"><i class="bi bi-search"></i></span>
       </div>
+      <button type="submit" class="btn btn-success w-100 mt-2 d-inline-block d-sm-none" style="border-radius:0.75rem;">Search</button>
       <button type="button" onclick="openLocationModal()"
         class="btn btn-success px-4 py-2">
         📍 Select Location
@@ -371,8 +382,9 @@
 <section class="container my-5 border rounded p-4">
   <h2 class="mb-4 text-center">Shops in Your Area</h2>
   <div class="row shop-scroll-row">
-    {% for shop in shops_in_area|slice:":5" %}
-      <div class="col-6 col-md-3 col-lg-2 mb-4">
+    {% for shop in shops_in_area|slice:":6" %}
+
+      <div class="col-6 col-md-3  col-lg-2 mb-4">
         <a href="{% url 'shop_detail' shop.id %}" class="text-decoration-none text-dark">
           <div class="shop-card card h-100 text-center shadow-sm border-success">
             {% if shop.shop_logo %}
@@ -391,11 +403,12 @@
 {% endif %}
 
 <!-- 🛒 Products in Area (for all users) -->
-{% if products.exists %}
+{% if user.is_authenticated %}
+{% if page_obj.object_list %}
 <section class="my-5">
   <h2 class="mb-4 text-center">Products in Your Area</h2>
   <div class="row product-scroll-row">
-    {% for product in products %}
+    {% for product in page_obj %}
       <div class="col-6 col-md-4 col-lg-3 col-xl-2 mb-4">
         <div class="product-card card h-100 shadow-sm position-relative">
           {% if user.is_authenticated and user.role == 'customer' %}
@@ -426,12 +439,47 @@
       </div>
     {% endfor %}
   </div>
+  <!-- Pagination Controls -->
+  <nav aria-label="Product pagination" class="mt-4">
+    <ul class="pagination justify-content-center">
+      {% if page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+            <span aria-hidden="true">&laquo;</span>
+          </a>
+        </li>
+      {% else %}
+        <li class="page-item disabled">
+          <span class="page-link">&laquo;</span>
+        </li>
+      {% endif %}
+      {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+          <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+          <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+        {% endif %}
+      {% endfor %}
+      {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+            <span aria-hidden="true">&raquo;</span>
+          </a>
+        </li>
+      {% else %}
+        <li class="page-item disabled">
+          <span class="page-link">&raquo;</span>
+        </li>
+      {% endif %}
+    </ul>
+  </nav>
 </section>
-{% elif products is not None %}
+{% else %}
 <section class="container my-5">
   <h2 class="mb-4 text-center">Products in Your Area</h2>
   <div class="alert alert-warning text-center">No products found for this area.</div>
 </section>
+{% endif %}
 {% endif %}
 {% if not user.is_authenticated %}
 <section class="text-center py-10 bg-green-50 rounded-xl shadow mt-5 mx-4">
@@ -447,19 +495,19 @@
 <section class="container my-5">
   <h2 class="text-center mb-4">Why Choose QuickKart?</h2>
   <div class="row text-center quickkart-features">
-    <div class="col-6 mb-4">
+    <div class="col-3 mb-4">
       <i class="bi bi-truck fs-1 text-success"></i>
       <h5 class="mt-2">Quick Delivery</h5>
     </div>
-    <div class="col-6 mb-4">
+    <div class="col-3 mb-4">
       <i class="bi bi-shop fs-1 text-success"></i>
       <h5 class="mt-2">Support Local Shops</h5>
     </div>
-    <div class="col-6 mb-4">
+    <div class="col-3 mb-4">
       <i class="bi bi-star fs-1 text-success"></i>
       <h5 class="mt-2">Top Quality Products</h5>
     </div>
-    <div class="col-6 mb-4">
+    <div class="col-3 mb-4">
       <i class="bi bi-lock fs-1 text-success"></i>
       <h5 class="mt-2">Secure Payments</h5>
     </div>
@@ -468,19 +516,19 @@
 <section class="container my-5">
   <h2 class="text-center mb-4">How It Works</h2>
   <div class="row text-center quickkart-howworks">
-    <div class="col-6 mb-4">
+    <div class="col-3 mb-6">
       <span class="fs-1 text-success">1️</span>
       <p class="mt-2">Select your location</p>
     </div>
-    <div class="col-6 mb-4">
+    <div class="col-3 mb-6">
       <span class="fs-1 text-success">2️</span>
       <p class="mt-2">Browse products near you</p>
     </div>
-    <div class="col-6 mb-4">
+    <div class="col-3 mb-6">
       <span class="fs-1 text-success">3️</span>
       <p class="mt-2">Add to cart</p>
     </div>
-    <div class="col-6 mb-4">
+    <div class="col-3 mb-6">
       <span class="fs-1 text-success">4️</span>
       <p class="mt-2">Enjoy fast delivery!</p>
     </div>

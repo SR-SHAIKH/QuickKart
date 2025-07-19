@@ -1,9 +1,9 @@
 {% extends 'shop/base_customer.html' %}
-{% load static %} 
+{% load static %}
 {% load cart_filters %}
 {% block content %}
 <style>
-  @media (max-width: 767px) {
+@media (max-width: 767px) {
     .back-btn-desktop {
       display: none !important;
     }
@@ -40,7 +40,7 @@
     font-size: 1rem !important;
     padding: 0.5em 1.2em !important;
     border-radius: 0.6em !important;
-  }
+}
 </style>
 <!-- <a
   href="{{ request.META.HTTP_REFERER|default:'/' }}"

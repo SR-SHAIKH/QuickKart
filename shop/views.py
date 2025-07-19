@@ -43,6 +43,7 @@ from shop.models import Product, Category, Shop, PinCode, Wishlist
 from django.utils import timezone
 from datetime import timedelta, datetime
 from decimal import Decimal
+from django.core.paginator import Paginator
 
 def home(request):
     print("🔥 Home view called")
@@ -93,8 +94,13 @@ def home(request):
 
     bestselling_products = products.order_by('-stock')[:10] if products.exists() else []
 
+    # PAGINATION for products (20 per page)
+    paginator = Paginator(products, 24)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
     context = {
         'products': products,
+        'page_obj': page_obj,
         'bestselling_products': bestselling_products,
         'categories': categories,
         'shops_in_area': shops_in_area,
@@ -736,19 +742,11 @@ from django.http import HttpResponseForbidden
 def product_detail(request, pk):
     product = get_object_or_404(Product, id=pk)
 
-    # Pincode filtering for suggested products
-    selected_pincode = request.session.get('selected_pincode')
-    suggested_products = Product.objects.none()
-    if selected_pincode:
-        try:
-            pin_obj = PinCode.objects.get(code=selected_pincode)
-            shops_in_area = Shop.objects.filter(delivery_pincodes=pin_obj).distinct()
-            suggested_products = Product.objects.filter(shop__in=shops_in_area, is_active=True).exclude(id=product.id)[:8]
-        except PinCode.DoesNotExist:
-            suggested_products = Product.objects.exclude(id=product.id)[:8]
-    else:
-        suggested_products = Product.objects.exclude(id=product.id)[:8]
-
+    # Suggested products: same category or same shop, exclude current product
+    suggested_products = Product.objects.filter(
+        (Q(category=product.category) | Q(shop=product.shop)),
+        is_active=True
+    ).exclude(id=product.id)[:12]
     # Wishlist logic
     is_wishlisted = False
     if request.user.is_authenticated:
@@ -967,6 +965,14 @@ def register_owner_step3(request):
                 with transaction.atomic():
                     # ✅ Step 1: Create the user
                     user_data = request.session['owner_user_data']
+                    print('DEBUG: owner_user_data session:', user_data)
+                    username = user_data.get('username')
+                    email = user_data.get('email')
+                    if not username and email:
+                        username = email.split('@')[0]
+                        print('DEBUG: Username was blank, set to:', username)
+                    else:
+                        print('DEBUG: Username being saved:', username)
                     if 'date_of_birth' in user_data:
                         try:
                             user_data['date_of_birth'] = datetime.strptime(user_data['date_of_birth'], "%Y-%m-%d").date()
@@ -976,7 +982,7 @@ def register_owner_step3(request):
                     user = CustomUser.objects.create(
                         first_name=user_data['first_name'],
                         last_name=user_data['last_name'],
-                        username=user_data['username'],
+                        username=username,
                         email=user_data['email'],
                         gender=user_data.get('gender', ''),
                         date_of_birth=user_data.get('date_of_birth'),
@@ -1758,11 +1764,6 @@ def owner_invoices(request):
 
 from users.models import CustomUser
 from django import forms
-
-class OwnerPersonalForm(forms.ModelForm):
-    class Meta:
-        model = CustomUser
-        fields = ['first_name', 'last_name', 'email', 'phone', 'gender', 'date_of_birth']
 
 @login_required
 def edit_owner_profile(request):
