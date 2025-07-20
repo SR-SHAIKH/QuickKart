@@ -194,7 +194,7 @@
               </ul>
             </div>
           {% else %}
-            <a href="{% url 'login' %}" class="text-white me-3">Login</a>
+            <a href="{% url 'user_login' %}" class="text-white me-3">Login</a>
             <a href="#" class="text-white" data-bs-toggle="modal" data-bs-target="#registerModal">Register</a>
           {% endif %}
         </div>
@@ -220,7 +220,7 @@
             <li class="list-group-item"><a href="{% url 'wishlist_page' %}" class="text-dark text-decoration-none">Wishlist</a></li>
             <li class="list-group-item"><a href="#" class="text-danger text-decoration-none" data-bs-toggle="modal" data-bs-target="#logoutConfirmModal">Logout</a></li>
           {% else %}
-            <li class="list-group-item bg-light"><a href="{% url 'login' %}" class="text-success fw-semibold text-decoration-none">Login</a></li>
+            <li class="list-group-item bg-light"><a href="{% url 'user_login' %}" class="text-success fw-semibold text-decoration-none">Login</a></li>
             <li class="list-group-item bg-light"><a href="#" class="text-primary fw-semibold text-decoration-none" data-bs-toggle="modal" data-bs-target="#registerModal">Register</a></li>
           {% endif %}
         </ul>
@@ -241,23 +241,6 @@
     <main class="container my-5">
       {% block content %}{% endblock %}
     </main>
-
-    <!-- ✅ Register Modal -->
-    <div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content p-4 rounded-4">
-          <h5 class="modal-title text-center mb-3" id="registerModalLabel">Register As</h5>
-          <div class="d-flex flex-column gap-3">
-            <a href="{% url 'register' %}?role=customer" class="btn btn-outline-primary">🧑 Register as Customer</a>
-            <a href="{% url 'register' %}?role=shop_owner" class="btn btn-outline-success">🏪 Register as Shop Owner</a>
-            <div id="otherRolesToggle" class="text-center mt-2">
-              <a href="#" class="small text-muted" onclick="document.getElementById('riderOption').classList.toggle('d-none'); return false;">Other roles</a>
-            </div>
-            <a href="{% url 'rider_register' %}" id="riderOption" class="btn btn-outline-secondary d-none">🚴 Register as Delivery Rider</a>
-          </div>
-        </div>
-      </div>
-    </div>
 
     <!-- ✅ Logout Confirmation Modal -->
     <div class="modal fade" id="logoutConfirmModal" tabindex="-1" aria-labelledby="logoutConfirmModalLabel" aria-hidden="true">
@@ -378,5 +361,45 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 </script>
+    <!-- Register Choice Modal -->
+    <div class="modal fade" id="registerModal" tabindex="-1" aria-labelledby="registerModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content p-4 rounded-4">
+          <h3 class="modal-title text-center mb-4 text-success fw-bold" id="registerModalLabel">
+            <i class="bi bi-person-plus me-2"></i>Register As
+          </h3>
+          <div class="d-flex flex-column gap-3">
+            <a href="{% url 'register' %}?role=customer" class="btn btn-outline-primary btn-lg rounded-pill d-flex align-items-center justify-content-center gap-2">
+              <i class="bi bi-person"></i> Register as Customer
+            </a>
+            <a href="{% url 'register' %}?role=shop_owner" class="btn btn-outline-success btn-lg rounded-pill d-flex align-items-center justify-content-center gap-2">
+              <i class="bi bi-shop"></i> Register as Shop Owner
+            </a>
+            <a href="#" id="otherRolesToggle" class="text-center mt-2 text-muted small">
+              <span class="fw-semibold">Other Roles</span> <span id="arrow">&#9660;</span>
+            </a>
+            <div id="otherRolesSection" style="display:none;">
+              <a href="{% url 'rider_register' %}" class="btn btn-outline-secondary btn-lg rounded-pill d-flex align-items-center justify-content-center gap-2 mt-2">
+                <i class="bi bi-bicycle"></i> Register as Delivery Rider
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      document.getElementById('otherRolesToggle').onclick = function(e) {
+        e.preventDefault();
+        var section = document.getElementById('otherRolesSection');
+        var arrow = document.getElementById('arrow');
+        if (section.style.display === 'none') {
+          section.style.display = 'block';
+          arrow.innerHTML = '&#9650;';
+        } else {
+          section.style.display = 'none';
+          arrow.innerHTML = '&#9660;';
+        }
+      };
+    </script>
   </body>
 </html>

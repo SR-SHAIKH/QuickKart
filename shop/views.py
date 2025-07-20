@@ -10,7 +10,7 @@ from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
 from shop.form_parts.owner_step1_form import OwnerPersonalForm
 from shop.form_parts.owner_step2_form import ShopForm
 from shop.form_parts.owner_step3_form import ShopBankForm
-from shop.form_parts.registration_form import RegistrationForm
+from users.forms import RegistrationForm
 from shop.form_parts.product_form import ProductForm
 from shop.form_parts.customer_profile_form import CustomerProfileForm
 from .forms import EditShopProfileForm
@@ -53,7 +53,7 @@ def home(request):
     - Handles pincode selection and product search query.
     - Paginates products (24 per page).
     """
-    
+
     # 🔄 Redirect shop owners to their dashboard
     if request.user.is_authenticated and request.user.role == 'shop_owner':
         return redirect('shop_owner_dashboard')
@@ -152,6 +152,9 @@ def register(request):
             # Email already registered
             if CustomUser.objects.filter(email=email).exists():
                 messages.error(request, "This email is already registered.")
+                if role_from_get == 'customer':
+                    return render(request, 'users/customer_register.html', {'form': form})
+            else:
                 return render(request, 'shop/register.html', {'form': form})
 
             # 🔁 Shop Owner ➤ Go to Step 1
@@ -167,20 +170,32 @@ def register(request):
 
             # ✅ Customer ➤ OTP verification
             otp = generate_otp()
-            request.session['registration_data'] = form.cleaned_data
+            # Ensure all required fields for RegistrationForm
+            cleaned = form.cleaned_data.copy()
+            if not cleaned.get('username'):
+                cleaned['username'] = cleaned['email'].split('@')[0]
+            cleaned['confirm_password'] = cleaned['password']
+            request.session['registration_data'] = cleaned
             request.session['otp'] = str(otp)
 
             try:
                 send_otp_email(email, otp)
             except Exception as e:
                 messages.error(request, "Failed to send OTP. Try again later.")
-                return render(request, 'shop/register.html', {'form': form})
+                if role_from_get == 'customer':
+                    return render(request, 'users/customer_register.html', {'form': form})
+                else:
+                    return render(request, 'shop/register.html', {'form': form})
 
             return redirect('verify_otp')
 
     else:
         # Pre-fill role in form from query param
         form = RegistrationForm(initial={'role': role_from_get})
+        if role_from_get == 'customer':
+            return render(request, 'users/customer_register.html', {'form': form})
+        elif role_from_get == 'shop_owner':
+            return redirect('register_owner_step1')
 
     return render(request, 'shop/register.html', {'form': form})
 
@@ -196,7 +211,9 @@ def verify_otp(request):
         session_otp = request.session.get('otp')
 
         if entered_otp == session_otp:
-            form = RegistrationForm(registration_data)
+            form = RegistrationForm(data=registration_data)
+            print('DEBUG registration_data:', registration_data)
+            print('DEBUG form.errors:', form.errors)
             if form.is_valid():
                 user = form.save()
                 user.username = user.email.split('@')[0]
@@ -207,6 +224,9 @@ def verify_otp(request):
                 request.session.pop('registration_data', None)
                 request.session.pop('otp', None)
                 return redirect('shop_owner_dashboard' if user.role == 'shop_owner' else 'customer_dashboard')
+            else:
+                error = f"<b>Form Errors:</b> {form.errors.as_ul()}<br><b>Registration Data:</b> {registration_data}"
+                return render(request, 'shop/verify_otp.html', {'error': error})
         else:
             try:
                 CustomUser.objects.get(email=registration_data['email']).delete()

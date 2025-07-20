@@ -487,10 +487,7 @@
   <p class="text-gray-600 mt-3">
     Find shops and products in your area. Fast delivery. Trusted vendors.
   </p>
-  <a href="{% url 'login' %}"
-    class="mt-4 inline-block bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition">
-    Login / Register to Explore
-  </a>
+  <a href="#" class="btn btn-lg btn-primary" data-bs-toggle="modal" data-bs-target="#registerModal">Login / Register</a>
 </section>
 <section class="container my-5">
   <h2 class="text-center mb-4">Why Choose QuickKart?</h2>
@@ -545,7 +542,7 @@
         <div class="card-body">
           <h5 class="card-title">Product {{ i }}</h5>
           <p class="card-text text-muted">Login to view this product</p>
-          <a href="{% url 'login' %}" class="btn btn-success w-100">Login to View</a>
+          <a href="{% url 'user_login' %}" class="btn btn-success w-100">Login to View</a>
         </div>
       </div>
     </div>
@@ -554,7 +551,7 @@
 </section>
 <div class="text-center my-5">
   <h3 class="mb-3 text-green-700">Ready to get started?</h3>
-  <a href="{% url 'login' %}" class="btn btn-lg btn-primary">Login / Register</a>
+  <a href="#" class="btn btn-lg btn-primary" data-bs-toggle="modal" data-bs-target="#registerModal">Login / Register</a>
 </div>
 <section class="container my-5">
   <h2 class="text-center mb-4">Frequently Asked Questions</h2>
