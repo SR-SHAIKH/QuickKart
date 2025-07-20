@@ -154,8 +154,8 @@ def register(request):
                 messages.error(request, "This email is already registered.")
                 if role_from_get == 'customer':
                     return render(request, 'users/customer_register.html', {'form': form})
-            else:
-                return render(request, 'shop/register.html', {'form': form})
+                else:
+                    return render(request, 'shop/register.html', {'form': form})
 
             # 🔁 Shop Owner ➤ Go to Step 1
             if role == 'shop_owner':
