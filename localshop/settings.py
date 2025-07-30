@@ -66,6 +66,22 @@ TEMPLATES = [
 WSGI_APPLICATION = "localshop.wsgi.application"
 
 # PostgreSQL database with decouple
+#for only render hosting
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.postgresql",
+#         "NAME": config("DB_NAME"),
+#         "USER": config("DB_USER"),
+#         "PASSWORD": config("DB_PASSWORD"),
+#         "HOST": config("DB_HOST"),
+#         "PORT": config("DB_PORT", default="5432"),
+#         "OPTIONS": {
+#             "sslmode": "require",
+#         },
+#     }
+# }
+
+#for local hosting server
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -74,11 +90,12 @@ DATABASES = {
         "PASSWORD": config("DB_PASSWORD"),
         "HOST": config("DB_HOST"),
         "PORT": config("DB_PORT", default="5432"),
-        "OPTIONS": {
-            "sslmode": "require",
-        },
     }
 }
+
+# Only add SSL for production (Render)
+if os.environ.get("RENDER", None) == "true":
+    DATABASES["default"]["OPTIONS"] = {"sslmode": "require"}
 
 # Password validators
 AUTH_PASSWORD_VALIDATORS = [
