@@ -1567,7 +1567,7 @@ def update_payment_status(payment):
             payment.invoice.save()
 
 # Razorpay Integration
-import razorpay
+# import razorpay
 from django.conf import settings
 
 
