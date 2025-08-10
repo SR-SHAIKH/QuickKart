@@ -31,7 +31,7 @@ QuickKart is a hyperlocal quick commerce web application built with Django and P
 ⚙️ Setup Instructions
 
 1. **Clone the repository:**
-   git clone https://github.com/yourusername/quickkart.git
+   git clone https://github.com/SR-SHAIKH/QuickKart
    cd quickkart
    
 
