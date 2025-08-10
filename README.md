@@ -2,7 +2,6 @@ QuickKart
 
 QuickKart is a hyperlocal quick commerce web application built with Django and PostgreSQL. It enables customers to discover and order products from local shops, while shop owners and delivery riders manage their business and deliveries efficiently. The platform is designed for speed, reliability, and a seamless user experience across devices.
 
----
 
 🚀 Features
 **Multi-role System:** Customer, Shop Owner, and Rider registration and dashboards
@@ -61,30 +60,11 @@ QuickKart is a hyperlocal quick commerce web application built with Django and P
 
 
 8. **Access the app:**
-   -Open [http://127.0.0.1:8000/](http://127.0.0.1:8000/) in your browser.
+   -Open (http://127.0.0.1:8000/) in your browser.
+   -Render (https://fyproject-ta67.onrender.com) 
 
 
 
-📁 Folder Structure
-
-
-FYproject/
-├── localshop/           # Django project settings
-├── shop/                # Main Django app (models, views, templates, forms)
-│   ├── templates/
-│   ├── static/
-│   ├── forms.py
-│   ├── models.py
-│   └── views.py
-├── users/               # Custom user app
-├── media/               # Uploaded files
-├── static/              # Static assets (CSS, JS, images)
-├── requirements.txt     # Python dependencies
-├── manage.py            # Django management script
-└── README.md            # Project documentation
-
-
----
 
 👤 User Roles
 **Customer:** Browse, search, and order products. Manage cart, wishlist, and orders.
@@ -110,8 +90,8 @@ This project is licensed under the [MIT License](LICENSE).
 
 📬 Contact
 For any queries, suggestions, or support, contact:
-**Email:** your.email@example.com
-**GitHub:** [yourusername](https://github.com/yourusername)
+**Email:** shaikhsohel.edu@gmail.com
+**GitHub:** (https://github.com/SR-SHAIKH/QuickKart)
 
 
 **Happy Shopping with QuickKart!** 🚚🛒 
