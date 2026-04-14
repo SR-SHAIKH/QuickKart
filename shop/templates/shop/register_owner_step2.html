@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Shop Details{% endblock %}
+
+{% block content %}
+<style>
+  @media (max-width: 600px) {
+    .container {
+      max-width: 98vw;
+      padding: 0 4px;
+    }
+    .card, .card-body, .form-label, .form-control {
+      border-radius: 8px !important;
+      font-size: 1rem;
+    }
+    h2 {
+      font-size: 1.2rem;
+    }
+    .btn, .btn-primary {
+      font-size: 1.1rem;
+      padding: 0.7rem 1.2rem;
+      width: 100%;
+    }
+    .mb-3 {
+      margin-bottom: 0.9rem !important;
+    }
+    .card, .card-body, form {
+      animation: fadeIn 0.7s;
+    }
+    #selected-pincodes .badge {
+      font-size: 0.98rem;
+      padding: 0.6em 1em;
+      margin-bottom: 0.3em;
+    }
+    #suggestions {
+      font-size: 0.98rem;
+    }
+    .pointer { cursor: pointer; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: none; }
+    }
+  }
+</style>
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <h2 class="mb-4 text-center">🏪 Shop Information</h2>
+
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        {% for field in form.visible_fields %}
+          {% if field.name != 'delivery_pincodes' %}
+            <div class="mb-3">
+              <label class="form-label">{{ field.label }}</label>
+              {{ field|add_class:"form-control" }}
+              {% for error in field.errors %}
+                <div class="text-danger small">{{ error }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endfor %}
+
+        <!-- 🔽 Custom PinCode Multi-Select Section -->
+        <div class="mb-3">
+          <label class="form-label">Delivery Pin Codes</label>
+          <input type="text" id="pincode-search" class="form-control" placeholder="Search and add pincode">
+          <div id="suggestions" class="border rounded p-2 mt-1 bg-white shadow-sm" style="display:none;"></div>
+          <div id="selected-pincodes" class="mt-2 d-flex flex-wrap gap-2"></div>
+        </div>
+
+        <!-- Hidden Inputs for form submission -->
+        <div id="pincode-hidden-inputs"></div>
+
+        <button type="submit" class="btn btn-primary w-100 mt-3">Continue to Bank Details</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  const allPincodes = JSON.parse(`{{ all_pincodes_json|safe }}`);
+  const input = document.getElementById('pincode-search');
+  const suggestions = document.getElementById('suggestions');
+  const selectedDiv = document.getElementById('selected-pincodes');
+  const hiddenInputs = document.getElementById('pincode-hidden-inputs');
+
+  const selectedPincodes = new Map();
+
+  input.addEventListener('input', function () {
+    const value = this.value.trim().toLowerCase();
+    suggestions.innerHTML = '';
+    if (!value) {
+      suggestions.style.display = 'none';
+      return;
+    }
+
+    const matches = allPincodes.filter(p => p.code.includes(value) && !selectedPincodes.has(p.id));
+    matches.forEach(p => {
+      const div = document.createElement('div');
+      div.textContent = `${p.code} - ${p.area}`;
+      div.className = 'p-2 border-bottom pointer';
+      div.style.cursor = 'pointer';
+      div.onclick = () => selectPincode(p);
+      suggestions.appendChild(div);
+    });
+
+    suggestions.style.display = matches.length ? 'block' : 'none';
+  });
+
+  function selectPincode(p) {
+    if (selectedPincodes.has(p.id)) return;
+
+    selectedPincodes.set(p.id, p);
+
+    // Create tag
+    const tag = document.createElement('span');
+    tag.className = 'badge rounded-pill bg-primary text-white d-flex align-items-center px-3 py-2 gap-2';
+    tag.innerHTML = `${p.code} <span style="cursor:pointer;" onclick="removePincode(${p.id}, this)">&times;</span>`;
+    selectedDiv.appendChild(tag);
+
+    // Create hidden input
+    const hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.name = 'delivery_pincodes';
+    hidden.value = p.id;
+    hidden.id = `hidden-pin-${p.id}`;
+    hiddenInputs.appendChild(hidden);
+
+    suggestions.style.display = 'none';
+    input.value = '';
+  }
+
+  function removePincode(id, element) {
+    selectedPincodes.delete(id);
+    element.parentElement.remove(); // Remove tag
+    document.getElementById(`hidden-pin-${id}`).remove(); // Remove hidden input
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Edit Bank Details{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <h3 class="mb-4 text-dark"><i class="bi bi-bank"></i> Edit Bank Details</h3>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <!-- Account Holder Name -->
+    <div class="mb-3">
+      <label for="id_account_holder_name" class="form-label">Account Holder Name</label>
+      {{ form.account_holder_name|add_class:"form-control" }}
+    </div>
+
+    <!-- Bank Name -->
+    <div class="mb-3">
+      <label for="id_bank_name" class="form-label">Bank Name</label>
+      {{ form.bank_name|add_class:"form-control" }}
+    </div>
+
+    <!-- Account Number -->
+    <div class="mb-3">
+      <label for="id_account_number" class="form-label">Account Number</label>
+      {{ form.account_number|add_class:"form-control" }}
+    </div>
+
+    <!-- IFSC Code -->
+    <div class="mb-3">
+      <label for="id_ifsc_code" class="form-label">IFSC Code</label>
+      {{ form.ifsc_code|add_class:"form-control" }}
+    </div>
+
+    <!-- UPI ID -->
+    <div class="mb-3">
+      <label for="id_upi_id" class="form-label">UPI ID</label>
+      {{ form.upi_id|add_class:"form-control" }}
+    </div>
+
+    <button type="submit" class="btn btn-success w-100">Save Changes</button>
+  </form>
+</div>
+{% endblock %}

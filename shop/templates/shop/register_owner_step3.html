@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Register as Shop Owner - Step 3{% endblock %}
+
+{% block content %}
+<style>
+  @media (max-width: 600px) {
+    .container {
+      max-width: 98vw;
+      padding: 0 4px;
+    }
+    .card, .card-body, .form-label, .form-control, .form-select {
+      border-radius: 8px !important;
+      font-size: 1rem;
+    }
+    h3 {
+      font-size: 1.2rem;
+    }
+    .btn, .btn-primary {
+      font-size: 1.1rem;
+      padding: 0.7rem 1.2rem;
+      width: 100%;
+    }
+    .mb-3 {
+      margin-bottom: 0.9rem !important;
+    }
+    .card, .card-body, form {
+      animation: fadeIn 0.7s;
+    }
+    .d-grid {
+      gap: 0.7rem !important;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: none; }
+    }
+  }
+</style>
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h3 class="text-center mb-4">💳 Bank & Payment Information</h3>
+
+          <form method="post">
+            {% csrf_token %}
+
+            <!-- Payment Method as radio -->
+            <div class="mb-3">
+              <label class="form-label fw-semibold">Select Payment Method:</label>
+              {{ form.payment_method|add_class:"form-select" }}
+              {% if form.payment_method.errors %}
+                <div class="text-danger small">{{ form.payment_method.errors.0 }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Bank Details -->
+            <div class="mb-3">
+              <label class="form-label">Account Holder Name</label>
+              {{ form.account_holder_name|add_class:"form-control" }}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Account Number</label>
+              {{ form.account_number|add_class:"form-control" }}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">IFSC Code</label>
+              {{ form.ifsc_code|add_class:"form-control" }}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Bank Name</label>
+              {{ form.bank_name|add_class:"form-control" }}
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">UPI ID</label>
+              {{ form.upi_id|add_class:"form-control" }}
+            </div>
+
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary">Finish Registration</button>
+            </div>
+          </form>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

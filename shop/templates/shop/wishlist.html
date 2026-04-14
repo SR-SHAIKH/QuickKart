@@ -1,0 +1,222 @@
+{% extends 'shop/base_customer.html' %}
+{% load static %}
+{% block content %}
+<style>
+  .wishlist-card {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    border-radius: 1.1rem;
+    box-shadow: 0 2px 12px rgba(76,175,80,0.07);
+    background: #fff;
+    padding: 1rem 1.2rem;
+    margin-bottom: 1.1rem;
+    gap: 1.1rem;
+    border: 1px solid #e0f0e7;
+    transition: box-shadow 0.2s, background 0.2s;
+  }
+  .wishlist-card:hover {
+    box-shadow: 0 4px 18px rgba(76,175,80,0.13);
+    background: #f8fcfa;
+  }
+  .wishlist-img {
+    width: 64px;
+    height: 64px;
+    border-radius: 0.7rem;
+    background: #f6f6f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .wishlist-img img {
+    width: 54px;
+    height: 54px;
+    object-fit: contain;
+    border-radius: 0.5rem;
+  }
+  .wishlist-info {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+  .wishlist-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #222;
+    margin-bottom: 0.1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .wishlist-meta {
+    font-size: 0.93rem;
+    color: #888;
+  }
+  .wishlist-price {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #2e4e1b;
+    margin-bottom: 0.2rem;
+  }
+  .wishlist-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.2rem;
+    min-width: 120px;
+    width: 120px;
+  }
+  .wishlist-btn-add, .wishlist-btn-remove {
+    width: 140px;
+    min-width: 120px;
+    box-sizing: border-box;
+  }
+  .wishlist-btn-remove {
+    background: #fff0f0;
+    color: #e74c3c;
+    border: 1.5px solid #e74c3c;
+    border-radius: 1.2rem;
+    font-weight: 600;
+    font-size: 0.98rem;
+    padding: 0.4rem 1.1rem;
+    transition: background 0.2s, color 0.2s;
+  }
+  .wishlist-btn-remove:hover {
+    background: #e74c3c;
+    color: #fff;
+  }
+  .wishlist-btn-add {
+    background: #e8f5e9;
+    color: #388e3c;
+    border: 1.5px solid #388e3c;
+    border-radius: 1.2rem;
+    font-weight: 600;
+    font-size: 0.98rem;
+    padding: 0.4rem 1.1rem;
+    transition: background 0.2s, color 0.2s;
+  }
+  .wishlist-btn-add:hover {
+    background: #388e3c;
+    color: #fff;
+  }
+  @media (max-width: 767px) {
+    .wishlist-card {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 0.7rem 0.5rem;
+      gap: 0.7rem;
+    }
+    .wishlist-img {
+      width: 44px;
+      height: 44px;
+    }
+    .wishlist-img img {
+      width: 36px;
+      height: 36px;
+    }
+    .wishlist-title {
+      font-size: 0.97rem;
+      white-space: normal !important;
+      overflow: visible !important;
+      text-overflow: unset !important;
+      word-break: break-word !important;
+    }
+    .wishlist-meta {
+      font-size: 0.9rem;
+    }
+    .wishlist-price {
+      font-size: 0.98rem;
+    }
+    .wishlist-actions {
+      min-width: 100px;
+      flex-direction: row;
+      gap: 0.5rem;
+      width: 100%;
+      justify-content: flex-end;
+    }
+    .wishlist-btn-add, .wishlist-btn-remove {
+      font-size: 0.93rem;
+      padding: 0.3rem 0.7rem;
+      white-space: normal !important;
+      word-break: break-word !important;
+      text-align: center;
+    }
+  }
+  .row.g-3 {
+    --bs-gutter-y: 0.3rem !important;
+  }
+</style>
+<div class="container py-4">
+  {% if wishlist_items %}
+    <h2 class="fw-bold mb-4 text-center">My Wishlist</h2>
+    <div class="row g-3">
+      {% for item in wishlist_items %}
+        <div class="col-12">
+          <div class="wishlist-card">
+            <div class="wishlist-img">
+              {% if item.product.image %}
+                <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+              {% else %}
+                <img src="https://via.placeholder.com/100x100?text=No+Image" alt="No Image">
+              {% endif %}
+            </div>
+            <div class="wishlist-info">
+              <div class="wishlist-title">{{ item.product.name|truncatechars:40 }}</div>
+              <div class="wishlist-meta">{{ item.product.description|truncatewords:10 }}</div>
+              <div class="wishlist-price">₹{{ item.product.price }}</div>
+            </div>
+            <div class="wishlist-actions">
+              <form method="post" action="{% url 'add_to_cart' item.product.id %}" class="add-to-cart-form-global" data-product-id="{{ item.product.id }}">
+                {% csrf_token %}
+                <button type="button" class="wishlist-btn-add add-to-cart-btn-global">Add to Cart</button>
+              </form>
+              <button class="wishlist-btn-remove" data-product-id="{{ item.product.id }}" aria-label="Remove from wishlist">
+                <i class="bi bi-trash"></i> Remove
+              </button>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="wishlist-empty mt-5">
+      <i class="bi bi-heart"></i>
+      <div class="fw-bold" style="font-size:2rem; color:#2e4e1b;">Your wishlist is empty!</div>
+      <div class="text-muted mb-2">You haven’t added any products to your wishlist yet.</div>
+      <a href="{% url 'home' %}" class="btn btn-lg btn-success px-4 py-2 fw-bold shadow-sm">Explore Products</a>
+    </div>
+  {% endif %}
+</div>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Remove from wishlist (already present)
+    document.querySelectorAll('.wishlist-btn-remove').forEach(button => {
+      button.addEventListener('click', function (e) {
+        e.preventDefault();
+        const productId = this.dataset.productId;
+        fetch("/ajax/toggle_wishlist/", {
+          method: 'POST',
+          headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({ product_id: productId })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === "removed") {
+            // Fade out card on remove
+            const card = this.closest('.col-12');
+            card.style.transition = 'opacity 0.4s';
+            card.style.opacity = 0;
+            setTimeout(() => card.remove(), 400);
+          }
+        });
+      });
+    });
+  });
+</script>
+{% endblock %}

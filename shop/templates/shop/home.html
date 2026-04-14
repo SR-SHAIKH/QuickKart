@@ -1,0 +1,957 @@
+{% extends 'shop/base_customer.html' %} {% load static %} {% block content %}
+<style>
+  :root {
+    --primary: #a8d5ba;
+    --secondary: #6ca775;
+    --background: #f0f8f4;
+    --accent: #4a8c52;
+    --text: #2e4e1b;
+  }
+
+  body {
+    background-color: var(--background);
+  }
+
+  header.hero {
+    background-color: var(--primary);
+    color: var(--text);
+    padding: 3rem 1rem;
+    text-align: center;
+  }
+
+  .search-bar {
+    max-width: 600px;
+    margin: 1rem auto;
+  }
+
+  .card {
+    position: relative;
+    border: 1px solid #cce5d3;
+    border-radius: 0.5rem;
+    height: 100%;
+  }
+
+  .wishlist-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 20px;
+    z-index: 2;
+    background: transparent;
+    border: none;
+    padding: 0;
+    outline: none;
+    box-shadow: none;
+  }
+
+  .card-img-top {
+    height: 200px;
+    object-fit: contain;
+    padding: 10px;
+  }
+
+  .card-title {
+    color: var(--text);
+    font-weight: bold;
+  }
+
+  .card-text {
+    color: #4a5c3f;
+  }
+
+  .btn-success,
+  .btn-primary {
+    width: 48%;
+    font-size: 0.9rem;
+  }
+
+  footer {
+    background-color: var(--secondary);
+    color: white;
+    padding: 2rem 0;
+  }
+
+  .category-circle {
+    width: 85px;
+    height: 85px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 2px solid #ccc;
+  }
+
+  .shop-card img {
+    height: 80px;
+    object-fit: cover;
+    border-radius: 0.75rem;
+  }
+
+  /* --- CATEGORY SLIDER RESTORE --- */
+  .category-slider-wrapper {
+    overflow-x: auto;
+    position: relative;
+    cursor: grab;
+    scrollbar-width: thin;
+    scrollbar-color: #bbb transparent;
+    width: 100%;
+  }
+
+  .category-slider-wrapper::-webkit-scrollbar {
+    height: 2px;
+  }
+
+  .category-slider-wrapper::-webkit-scrollbar-thumb {
+    background-color: #bbb;
+    border-radius: 10px;
+  }
+
+  .category-slider-wrapper::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .category-slider {
+    display: flex;
+    gap: 1.5rem;
+    padding: 1rem;
+    width: max-content;
+  }
+
+  .category-slider>a {
+    flex-shrink: 0;
+    text-align: center;
+    width: 100px;
+  }
+
+  .category-slider .text-wrap {
+    word-wrap: break-word;
+    white-space: normal;
+  }
+
+  /* --- PRODUCT & SHOP ROWS ONLY --- */
+  .product-row .col-6 {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+
+  .product-row .col-md-4 {
+    flex: 0 0 33.3333%;
+    max-width: 33.3333%;
+  }
+
+  .product-row .col-lg-3 {
+    flex: 0 0 25%;
+    max-width: 25%;
+  }
+
+  .product-row .col-xl-2 {
+    flex: 0 0 20%;
+    max-width: 20%;
+  }
+
+  .shop-row .col-6 {
+    flex: 0 0 50%;
+    max-width: 50%;
+  }
+
+  .shop-row .col-md-4 {
+    flex: 0 0 33.3333%;
+    max-width: 33.3333%;
+  }
+
+  .shop-row .col-lg-2,
+  .shop-row .col-xl-2 {
+    flex: 0 0 20%;
+    max-width: 20%;
+  }
+
+  @media (max-width: 991px) {
+    header.hero {
+      padding: 1rem 0.5rem 0.7rem 0.5rem;
+      font-size: 1.05rem;
+    }
+
+    .hero-inner {
+      padding: 1rem 0.5rem !important;
+    }
+
+    .search-bar {
+      max-width: 100%;
+      margin: 0.5rem 0;
+    }
+
+    .search-bar input[type="text"],
+    .search-bar .form-control {
+      padding-left: 2.2rem !important;
+      font-size: 1rem;
+    }
+
+    .search-bar .search-icon {
+      left: 12px !important;
+      top: 50% !important;
+      transform: translateY(-50%) !important;
+      font-size: 1.1rem !important;
+    }
+
+    .category-slider {
+      gap: 0.7rem;
+      padding: 0.5rem;
+    }
+
+    .category-circle {
+      width: 60px;
+      height: 60px;
+    }
+
+    .card-img-top {
+      height: 120px;
+      padding: 5px;
+    }
+
+    .card-title {
+      font-size: 1rem;
+    }
+
+    .card-text {
+      font-size: 0.95rem;
+    }
+
+    .btn-success,
+    .btn-primary {
+      width: 100%;
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .row {
+      --bs-gutter-x: 0.5rem;
+      --bs-gutter-y: 0.5rem;
+    }
+
+    .container,
+    .container-fluid {
+      padding-left: 0.5rem !important;
+      padding-right: 0.5rem !important;
+    }
+
+    .accordion-button {
+      font-size: 1rem;
+      padding: 0.75rem 1rem;
+    }
+
+    .accordion-body {
+      font-size: 0.98rem;
+    }
+
+    .mb-4,
+    .my-5,
+    .mt-5,
+    .mb-3,
+    .py-10,
+    .py-5,
+    .py-4,
+    .py-6,
+    .py-8 {
+      margin-bottom: 1rem !important;
+      margin-top: 1rem !important;
+      padding-top: 1rem !important;
+      padding-bottom: 1rem !important;
+    }
+
+    .rounded,
+    .rounded-2xl,
+    .rounded-xl,
+    .rounded-lg,
+    .rounded-4 {
+      border-radius: 0.7rem !important;
+    }
+
+    .shadow,
+    .shadow-sm,
+    .shadow-lg {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    }
+
+    .text-3xl,
+    .text-2xl,
+    .fw-bold,
+    .fw-semibold {
+      font-size: 1.2rem !important;
+    }
+
+    .text-center {
+      text-align: center !important;
+    }
+
+    .mx-4,
+    .mx-auto {
+      margin-left: 0.5rem !important;
+      margin-right: 0.5rem !important;
+    }
+
+    .px-6,
+    .px-10,
+    .px-4,
+    .px-5 {
+      padding-left: 0.7rem !important;
+      padding-right: 0.7rem !important;
+    }
+
+    .py-2,
+    .py-3 {
+      padding-top: 0.7rem !important;
+      padding-bottom: 0.7rem !important;
+    }
+
+    .btn-lg {
+      font-size: 1.1rem;
+      padding: 0.7rem 1.2rem;
+    }
+
+    .mb-3 {
+      margin-bottom: 0.7rem !important;
+    }
+
+    .mt-6,
+    .mt-5 {
+      margin-top: 1rem !important;
+    }
+
+    .mb-0 {
+      margin-bottom: 0 !important;
+    }
+
+    .py-10 {
+      padding-top: 1.2rem !important;
+      padding-bottom: 1.2rem !important;
+    }
+
+    .rounded-xl,
+    .rounded-2xl {
+      border-radius: 0.7rem !important;
+    }
+
+    .shadow-lg {
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.10) !important;
+    }
+
+    .faq-section .accordion-item {
+      margin-bottom: 0.7rem;
+    }
+
+    .product-row .col-6,
+    .shop-row .col-6 {
+      flex: 0 0 50%;
+      max-width: 50%;
+    }
+
+    .product-row .col-md-4,
+    .shop-row .col-md-4 {
+      flex: 0 0 33.3333%;
+      max-width: 33.3333%;
+    }
+
+    .product-row .col-lg-3,
+    .shop-row .col-lg-2,
+    .shop-row .col-xl-2 {
+      flex: 0 0 50%;
+      max-width: 50%;
+    }
+  }
+
+  /* --- SHOPS & PRODUCTS HORIZONTAL SCROLL --- */
+  /* Remove horizontal scroll for shops and products */
+  .shop-scroll-row,
+  .product-scroll-row {
+    display: flex;
+    flex-wrap: wrap;
+    overflow-x: unset;
+    gap: unset;
+    padding-bottom: unset;
+    scrollbar-width: unset;
+    scrollbar-color: unset;
+  }
+
+  .shop-card,
+  .product-card {
+    min-width: unset;
+    max-width: unset;
+    flex: unset;
+  }
+
+  .shop-scroll-row::-webkit-scrollbar,
+  .product-scroll-row::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .shop-scroll-row::-webkit-scrollbar-thumb,
+  .product-scroll-row::-webkit-scrollbar-thumb {
+    background: #bbb;
+    border-radius: 10px;
+  }
+
+  .shop-scroll-row .shop-card {
+    min-width: 160px;
+    max-width: 180px;
+    flex: 0 0 18%;
+  }
+
+  .product-scroll-row .product-card {
+    min-width: 210px;
+    max-width: 240px;
+    flex: 0 0 24%;
+  }
+
+  @media (max-width: 991px) {
+    .shop-scroll-row .shop-card {
+      min-width: 140px;
+      max-width: 160px;
+    }
+
+    .product-scroll-row .product-card {
+      min-width: 180px;
+      max-width: 210px;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .row.product-scroll-row {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .row.product-scroll-row>[class^='col-'] {
+      max-width: 100%;
+      flex: 0 0 100%;
+      margin-bottom: 0 !important;
+    }
+
+    .product-card.card {
+      margin-bottom: 0.5rem;
+      border-radius: 1rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .card-body .d-flex.gap-2.w-100 {
+      flex-direction: column !important;
+      gap: 0.5rem !important;
+    }
+
+    .card-body .btn {
+      width: 100% !important;
+      min-width: 0 !important;
+      font-size: 1.1rem;
+      padding: 0.8rem 0;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .row.product-scroll-row>div[class*='col-'] {
+      width: 100vw !important;
+      max-width: 400px !important;
+      display: block !important;
+      margin: 0 auto 1rem auto !important;
+      padding: 0 !important;
+      float: none !important;
+      box-sizing: border-box !important;
+    }
+
+    .product-card.card {
+      width: 100% !important;
+      max-width: 400px !important;
+      margin: 0 auto 0.7rem auto !important;
+      border-radius: 1rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+  }
+
+  @media (max-width: 600px) {
+    .row.product-scroll-row {
+      display: flex !important;
+      flex-wrap: wrap !important;
+    }
+
+    .row.product-scroll-row>[class^='col-'] {
+      max-width: 50% !important;
+      flex: 0 0 50% !important;
+      width: 50% !important;
+      min-width: 0 !important;
+      float: none !important;
+      box-sizing: border-box !important;
+    }
+  }
+
+  /* Fix for Tailwind/Bootstrap conflict causing blank accordion content */
+  .accordion-collapse.collapse {
+    visibility: visible !important;
+  }
+</style>
+
+{% if user.is_authenticated %}
+<header class="hero">
+  <div class="hero-inner mx-auto bg-white rounded-2xl shadow-lg mt-4 text-center p-4 p-md-5">
+    <h1 class="text-3xl font-bold text-gray-800 mb-2">
+      Find Products in Your Area
+    </h1>
+    <p class="text-gray-600 mb-6 text-sm">
+      Search groceries, fashion & more — all near your location.
+    </p>
+    <form method="GET" action="{% url 'home' %}"
+      class="d-flex flex-column flex-sm-row align-items-center justify-content-center gap-3 search-bar">
+      <div class="position-relative w-100 w-sm-60 d-flex">
+        <input type="text" name="q" value="{{ query }}" placeholder="Search products..." class="form-control ps-5 py-2"
+          style="border-radius:0.75rem;" />
+        <span class="search-icon position-absolute"
+          style="left:16px; top:50%; transform:translateY(-50%); color:#aaa; pointer-events:none; font-size:1.2rem;"><i
+            class="bi bi-search"></i></span>
+      </div>
+      <button type="submit" class="btn btn-success w-100 mt-2 d-inline-block d-sm-none"
+        style="border-radius:0.75rem;">Search</button>
+      <button type="button" onclick="openLocationModal()" class="btn btn-success px-4 py-2">
+        📍 Select Location
+      </button>
+    </form>
+  </div>
+</header>
+<section class="container mt-5">
+  <h2 class="mb-4 text-center">Explore Categories</h2>
+  <div class="category-slider-wrapper">
+    <div class="category-slider">
+      {% for category in categories %}
+      <a href="{% url 'products_by_category' category.id %}" class="text-decoration-none text-dark">
+        <div>
+          <img src="{{ category.image.url }}" class="category-circle mb-2 shadow-sm" alt="{{ category.name }}" />
+          <div class="fw-bold small text-wrap">{{ category.name }}</div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+<section class="container my-5 border rounded p-4">
+  <h2 class="mb-4 text-center">Shops in Your Area</h2>
+  <div class="row shop-scroll-row">
+    {% for shop in shops_in_area|slice:":6" %}
+
+    <div class="col-6 col-md-3  col-lg-2 mb-4">
+      <a href="{% url 'shop_detail' shop.id %}" class="text-decoration-none text-dark">
+        <div class="shop-card card h-100 text-center shadow-sm border-success">
+          {% if shop.shop_logo %}
+          <img src="{{ shop.shop_logo.url }}" alt="{{ shop.shop_name }}" class="card-img-top p-3"
+            style="height: 100px; object-fit: contain;">
+          {% else %}
+          <img src="{% static 'images/default-shop-logo.png' %}" alt="No Logo" class="card-img-top p-3"
+            style="height: 100px; object-fit: contain;">
+          {% endif %}
+          <h6 class="card-title">{{ shop.shop_name }}</h6>
+          <p class="card-text small text-muted mb-0">{{ shop.address|truncatechars:40 }}</p>
+        </div>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<!-- 🛒 Products in Area (for all users) -->
+{% if user.is_authenticated %}
+{% if page_obj.object_list %}
+<section class="my-5">
+  <h2 class="mb-4 text-center">Products in Your Area</h2>
+  <div class="row product-scroll-row">
+    {% for product in page_obj %}
+    <div class="col-6 col-md-4 col-lg-3 col-xl-2 mb-4">
+      <div class="product-card card h-100 shadow-sm position-relative">
+        {% if user.is_authenticated and user.role == 'customer' %}
+        <button class="wishlist-btn wishlist-icon position-absolute" data-product="{{ product.id }}"
+          style="top:10px; right:10px; z-index:2; background:transparent; border:none;" aria-label="Add to wishlist">
+          <i
+            class="bi {% if product.id in wishlist_products %}bi-heart-fill text-danger{% else %}bi-heart{% endif %}"></i>
+        </button>
+        {% endif %}
+        <a href="{% url 'product_detail' product.id %}" class="text-decoration-none text-dark">
+          {% if product.image %}
+          <img src="{{ product.image.url }}" alt="{{ product.name }}" class="card-img-top p-3"
+            style="height: 120px; object-fit: contain;">
+          {% else %}
+          <img src="https://via.placeholder.com/300x200?text=No+Image" alt="No Image" class="card-img-top p-3"
+            style="height: 120px; object-fit: contain;">
+          {% endif %}
+          <div class="card-body">
+            <h5 class="card-title">{{ product.name|truncatechars:30 }}</h5>
+            <p class="card-text text-success fw-bold mb-1">₹{{ product.price }}</p>
+            <div class="d-flex gap-2 w-100">
+              <form method="post" action="{% url 'buy_now' product.id %}" class="flex-fill">{% csrf_token %}
+                <button type="submit" class="btn btn-primary btn-sm w-100 py-2"
+                  style="font-size:1rem; min-height:38px;">Buy</button>
+              </form>
+              <form method="post" action="{% url 'add_to_cart' product.id %}" class="flex-fill add-to-cart-form-global"
+                data-product-id="{{ product.id }}">{% csrf_token %}
+                <button type="button" class="btn btn-success btn-sm w-100 py-2 add-to-cart-btn-global"
+                  style="font-size:1rem; min-height:38px;">Add to Cart</button>
+              </form>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <!-- Pagination Controls -->
+  <nav aria-label="Product pagination" class="mt-4">
+    <ul class="pagination justify-content-center">
+      {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+          <span aria-hidden="true">&laquo;</span>
+        </a>
+      </li>
+      {% else %}
+      <li class="page-item disabled">
+        <span class="page-link">&laquo;</span>
+      </li>
+      {% endif %}
+      {% for num in page_obj.paginator.page_range %}
+      {% if page_obj.number == num %}
+      <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+      {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %} <li class="page-item"><a
+          class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+        {% endif %}
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+            <span aria-hidden="true">&raquo;</span>
+          </a>
+        </li>
+        {% else %}
+        <li class="page-item disabled">
+          <span class="page-link">&raquo;</span>
+        </li>
+        {% endif %}
+    </ul>
+  </nav>
+</section>
+{% else %}
+<section class="container my-5">
+  <h2 class="mb-4 text-center">Products in Your Area</h2>
+  <div class="alert alert-warning text-center">No products found for this area.</div>
+</section>
+{% endif %}
+{% endif %}
+{% if not user.is_authenticated %}
+<section class="text-center py-10 bg-green-50 rounded-xl shadow mt-5 mx-4">
+  <h2 class="text-3xl font-bold text-green-700">Welcome to QuickKart</h2>
+  <p class="text-gray-600 mt-3">
+    Find shops and products in your area. Fast delivery. Trusted vendors.
+  </p>
+  <a href="#" class="btn btn-lg btn-primary" data-bs-toggle="modal" data-bs-target="#registerModal">Login / Register</a>
+</section>
+<section class="container my-5">
+  <h2 class="text-center mb-4">Why Choose QuickKart?</h2>
+  <div class="row text-center quickkart-features">
+    <div class="col-3 mb-4">
+      <i class="bi bi-truck fs-1 text-success"></i>
+      <h5 class="mt-2">Quick Delivery</h5>
+    </div>
+    <div class="col-3 mb-4">
+      <i class="bi bi-shop fs-1 text-success"></i>
+      <h5 class="mt-2">Support Local Shops</h5>
+    </div>
+    <div class="col-3 mb-4">
+      <i class="bi bi-star fs-1 text-success"></i>
+      <h5 class="mt-2">Top Quality Products</h5>
+    </div>
+    <div class="col-3 mb-4">
+      <i class="bi bi-lock fs-1 text-success"></i>
+      <h5 class="mt-2">Secure Payments</h5>
+    </div>
+  </div>
+</section>
+<section class="container my-5">
+  <h2 class="text-center mb-4">How It Works</h2>
+  <div class="row text-center quickkart-howworks">
+    <div class="col-3 mb-6">
+      <span class="fs-1 text-success">1️</span>
+      <p class="mt-2">Select your location</p>
+    </div>
+    <div class="col-3 mb-6">
+      <span class="fs-1 text-success">2️</span>
+      <p class="mt-2">Browse products near you</p>
+    </div>
+    <div class="col-3 mb-6">
+      <span class="fs-1 text-success">3️</span>
+      <p class="mt-2">Add to cart</p>
+    </div>
+    <div class="col-3 mb-6">
+      <span class="fs-1 text-success">4️</span>
+      <p class="mt-2">Enjoy fast delivery!</p>
+    </div>
+  </div>
+</section>
+<section class="container my-5">
+  <h2 class="text-center mb-4">Popular Products</h2>
+  <div class="row justify-content-center">
+    <!-- Product 1 -->
+    <div class="col-6 col-md-4 col-lg-2 mb-4">
+      <div class="card h-100 shadow-sm">
+        <img src="{% static 'images/products/banana.jpg' %}" class="card-img-top"
+          alt="Fresh Bananas (1kg)" />
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title">Fresh Bananas (1kg)</h5>
+          <p class="card-text text-muted" style="font-size: 0.85rem;">Naturally ripened fresh bananas rich in nutrients
+            and perfect for daily consumption.</p>
+          <a href="{% url 'user_login' %}" class="btn btn-success w-100 mt-auto">Login to View</a>
+        </div>
+      </div>
+    </div>
+    <!-- Product 2 -->
+    <div class="col-6 col-md-4 col-lg-2 mb-4">
+      <div class="card h-100 shadow-sm">
+        <img src="{% static 'images/products/milk.jpg' %}" class="card-img-top" alt="Amul Fresh Milk (500ml)" />
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title">Amul Fresh Milk (500ml)</h5>
+          <p class="card-text text-muted" style="font-size: 0.85rem;">Pure and fresh milk sourced from trusted dairy
+            farms for everyday use.</p>
+          <a href="{% url 'user_login' %}" class="btn btn-success w-100 mt-auto">Login to View</a>
+        </div>
+      </div>
+    </div>
+    <!-- Product 3 -->
+    <div class="col-6 col-md-4 col-lg-2 mb-4">
+      <div class="card h-100 shadow-sm">
+        <img src="{% static 'images/products/chips.jpg' %}" class="card-img-top" alt="Lay’s Classic Potato Chips" />
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title">Lay’s Classic Potato Chips</h5>
+          <p class="card-text text-muted" style="font-size: 0.85rem;">Crispy and delicious salted potato chips, perfect
+            for snacking anytime.</p>
+          <a href="{% url 'user_login' %}" class="btn btn-success w-100 mt-auto">Login to View</a>
+        </div>
+      </div>
+    </div>
+    <!-- Product 4 -->
+    <div class="col-6 col-md-4 col-lg-2 mb-4">
+      <div class="card h-100 shadow-sm">
+        <img src="{% static 'images/products/coke.jpg' %}" class="card-img-top"
+          alt="Coca-Cola Soft Drink (750ml)" />
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title">Coca-Cola Soft Drink (750ml)</h5>
+          <p class="card-text text-muted" style="font-size: 0.85rem;">Refreshing cold drink with a classic taste, best
+            served chilled.</p>
+          <a href="{% url 'user_login' %}" class="btn btn-success w-100 mt-auto">Login to View</a>
+        </div>
+      </div>
+    </div>
+    <!-- Product 5 -->
+    <div class="col-6 col-md-4 col-lg-2 mb-4">
+      <div class="card h-100 shadow-sm">
+        <img src="{% static 'images/products/bread.jpg' %}" class="card-img-top" alt="Whole Wheat Brown Bread" />
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title">Whole Wheat Brown Bread</h5>
+          <p class="card-text text-muted" style="font-size: 0.85rem;">Soft and healthy brown bread made from whole
+            wheat, ideal for breakfast.</p>
+          <a href="{% url 'user_login' %}" class="btn btn-success w-100 mt-auto">Login to View</a>
+        </div>
+      </div>
+    </div>
+    <!-- Product 6 -->
+    <div class="col-6 col-md-4 col-lg-2 mb-4">
+      <div class="card h-100 shadow-sm">
+        <img src="{% static 'images/products/eggs.jpg' %}" class="card-img-top" alt="Farm Fresh Eggs (Pack of 12)" />
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title">Farm Fresh Eggs (Pack of 12)</h5>
+          <p class="card-text text-muted" style="font-size: 0.85rem;">High-quality farm eggs rich in protein and
+            essential nutrients.</p>
+          <a href="{% url 'user_login' %}" class="btn btn-success w-100 mt-auto">Login to View</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<div class="text-center my-5">
+  <h3 class="mb-3 text-green-700">Ready to get started?</h3>
+  <a href="#" class="btn btn-lg btn-primary" data-bs-toggle="modal" data-bs-target="#registerModal">Login / Register</a>
+</div>
+<section class="container my-5 faq-section">
+  <h2 class="text-center mb-4">Frequently Asked Questions</h2>
+  <div class="accordion" id="faqAccordion">
+
+    <div class="accordion-item mb-2">
+      <h2 class="accordion-header" id="heading1">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1"
+          aria-expanded="false" aria-controls="faq1">
+          How does QuickKart work?
+        </button>
+      </h2>
+      <div id="faq1" class="accordion-collapse collapse" aria-labelledby="heading1" data-bs-parent="#faqAccordion">
+        <div class="accordion-body">
+          QuickKart lets you browse products from nearby shops, add items to your cart, and get them delivered quickly
+          to your doorstep.
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item mb-2">
+      <h2 class="accordion-header" id="heading2">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2"
+          aria-expanded="false" aria-controls="faq2">
+          Can I browse products without logging in?
+        </button>
+      </h2>
+      <div id="faq2" class="accordion-collapse collapse" aria-labelledby="heading2" data-bs-parent="#faqAccordion">
+        <div class="accordion-body">
+          Yes, you can explore products without logging in. However, you need an account to place orders and manage your
+          cart.
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item mb-2">
+      <h2 class="accordion-header" id="heading3">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3"
+          aria-expanded="false" aria-controls="faq3">
+          How fast is delivery?
+        </button>
+      </h2>
+      <div id="faq3" class="accordion-collapse collapse" aria-labelledby="heading3" data-bs-parent="#faqAccordion">
+        <div class="accordion-body">
+          Delivery is usually completed within a short time, depending on your location and product availability.
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item mb-2">
+      <h2 class="accordion-header" id="heading4">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4"
+          aria-expanded="false" aria-controls="faq4">
+          Are products fresh and reliable?
+        </button>
+      </h2>
+      <div id="faq4" class="accordion-collapse collapse" aria-labelledby="heading4" data-bs-parent="#faqAccordion">
+        <div class="accordion-body">
+          Yes, all products are sourced from trusted sellers to ensure quality and freshness.
+        </div>
+      </div>
+    </div>
+
+    <div class="accordion-item mb-2">
+      <h2 class="accordion-header" id="heading5">
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5"
+          aria-expanded="false" aria-controls="faq5">
+          Is it safe to order from QuickKart?
+        </button>
+      </h2>
+      <div id="faq5" class="accordion-collapse collapse" aria-labelledby="heading5" data-bs-parent="#faqAccordion">
+        <div class="accordion-body">
+          Yes, QuickKart ensures a secure and reliable experience for all users.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endif %}
+<footer class="text-center mt-5">
+  <div class="container">
+    <p class="mb-0">&copy; 2025 QuickKart. All rights reserved.</p>
+  </div>
+</footer>
+<!-- Modal HTML -->
+<div id="locationModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-xl shadow-lg p-6 w-11/12 max-w-md text-center">
+    <h2 class="text-xl font-bold mb-4">Choose Location Option</h2>
+    <button onclick="detectLocation()" class="w-full py-2 bg-green-600 text-white rounded-lg mb-3 hover:bg-green-700">
+      📍 Use My Location
+    </button>
+    <div class="text-gray-500 my-2">or</div>
+    <input id="manualPincode" type="text" placeholder="Enter Pincode"
+      class="w-full px-4 py-2 border border-gray-300 rounded-lg mb-3" />
+    <button onclick="submitPincode()" class="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+      Apply Pincode
+    </button>
+    <p id="locationStatus" class="text-sm text-gray-600 mt-4 hidden"></p>
+  </div>
+</div>
+<script>
+  function openLocationModal() {
+    document.getElementById("locationModal").classList.remove("hidden");
+  }
+  function closeLocationModal() {
+    document.getElementById("locationModal").classList.add("hidden");
+  }
+  function detectLocation() {
+    const status = document.getElementById("locationStatus");
+    status.innerText = "Detecting location...";
+    status.classList.remove("hidden");
+    navigator.geolocation.getCurrentPosition(
+      function (position) {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        console.log('Lat:', lat, 'Lon:', lon);
+        // OpenCage API call
+        fetch(`https://api.opencagedata.com/geocode/v1/json?q=${lat}+${lon}&key=YOUR_OPENCAGE_API_KEY`)
+          .then(res => res.json())
+          .then(data => {
+            console.log('OpenCage API response:', data);
+            let pin = '';
+            if (data.results && data.results.length) {
+              // Try to get postcode from components
+              if (data.results[0].components && data.results[0].components.postcode) {
+                pin = data.results[0].components.postcode;
+              }
+            }
+            alert('Live location se mila pincode: ' + pin);
+            status.innerText = `✅ Found ${pin}. Searching for shops...`;
+            if (pin) {
+              window.location.href = `/?pincode=${pin}`;
+            } else {
+              status.innerText = "❌ Could not detect pincode from your location. Please enter manually.";
+            }
+          });
+      },
+      function (err) {
+        console.log('Geolocation error:', err);
+        status.innerText = "❌ Could not detect your location.";
+      }
+    );
+  }
+  function submitPincode() {
+    const pin = document.getElementById("manualPincode").value.trim();
+    const status = document.getElementById("locationStatus");
+    if (!pin || pin.length < 5) {
+      status.innerText = "❌ Enter a valid pincode.";
+      status.classList.remove("hidden");
+      return;
+    }
+    status.innerText = `Checking shops near ${pin}...`;
+    status.classList.remove("hidden");
+    window.location.href = `/?pincode=${pin}`;
+  }
+</script>
+<script>
+  document.querySelectorAll('.wishlist-btn').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      var productId = this.getAttribute('data-product');
+      var icon = this.querySelector('i');
+      fetch('/ajax/toggle_wishlist/', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': '{{ csrf_token }}',
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({ product_id: productId })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === 'added') {
+            icon.classList.remove('bi-heart');
+            icon.classList.add('bi-heart-fill', 'text-danger');
+          } else if (data.status === 'removed') {
+            icon.classList.remove('bi-heart-fill', 'text-danger');
+            icon.classList.add('bi-heart');
+          }
+        });
+    });
+  });
+</script>
+{% endblock %}

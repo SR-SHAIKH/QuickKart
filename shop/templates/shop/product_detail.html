@@ -1,0 +1,151 @@
+{% extends "shop/base_customer.html" %} {% block content %}
+<div class="container mx-auto px-6 py-8">
+  {% if request.META.HTTP_REFERER %}
+    <a href="{{ request.META.HTTP_REFERER }}" class="btn btn-outline-secondary mb-3">
+      <i class="bi bi-arrow-left"></i> Back
+    </a>
+  {% else %}
+    <a href="{% url 'home' %}" class="btn btn-outline-secondary mb-3">
+      <i class="bi bi-arrow-left"></i> Back to Products
+    </a>
+  {% endif %}
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+    
+    <!-- Product Image -->
+    <div class="flex justify-center items-start">
+      <div class="easyzoom easyzoom--overlay">
+        <a href="{{ product.image.url }}">
+          <img src="{{ product.image.url }}" alt="{{ product.name }}"
+               class="w-full max-w-sm object-contain rounded-lg shadow-md" />
+        </a>
+      </div>
+    </div>
+
+    <!-- Product Details -->
+    <div>
+      <div class="flex items-start justify-between">
+        <h1 class="text-2xl font-bold text-gray-900">{{ product.name }}</h1>
+
+        {% if user.is_authenticated %}
+          <button class="wishlist-btn text-2xl ml-4 mt-1 {% if not is_wishlisted %}wishlist-unfilled{% endif %}" data-product-id="{{ product.id }}">
+            <i class="bi {% if is_wishlisted %}bi-heart-fill text-red-600{% else %}bi-heart{% endif %}"></i>
+          </button>
+        {% endif %}
+      </div>
+
+      <!-- Description -->
+      <p class="text-gray-600 text-sm leading-relaxed mt-2 mb-4">
+        {{ product.description }}
+      </p>
+
+      <!-- Price -->
+      <p class="text-green-600 text-lg font-semibold mb-4">₹{{ product.price }}</p>
+
+      <!-- Buttons -->
+      <div class="flex space-x-4">
+        <form method="post" class="add-to-cart-form-global" data-product-id="{{ product.id }}">
+          {% csrf_token %}
+          <button type="button" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded add-to-cart-btn-global">Add to Cart</button>
+        </form>
+        <a href="{% url 'buy_now' product.id %}" 
+           class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+          Buy Now
+        </a>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- 🧠 Suggested Products -->
+  <div class="mt-5">
+    <h2 class="mb-4">Suggested Products</h2>
+    <div class="row">
+      {% for item in suggested_products|slice:':12' %}
+      <div class="col-6 col-md-4 col-lg-2 mb-4">
+        <div class="card h-100 shadow-sm">
+          <a
+            href="{% url 'product_detail' item.id %}"
+            class="text-decoration-none text-reset"
+          >
+            {% if item.image %}
+            <img
+              src="{{ item.image.url }}"
+              class="card-img-top p-2"
+              alt="{{ item.name }}"
+              style="height: 140px; object-fit: contain"
+            />
+            {% else %}
+            <img
+              src="https://via.placeholder.com/150x100?text=No+Image"
+              class="card-img-top"
+              alt="No Image"
+            />
+            {% endif %}
+            <div class="card-body text-center">
+              <h6 class="card-title mb-1">{{ item.name|truncatechars:20 }}</h6>
+              <p class="text-success fw-bold mb-0">₹{{ item.price }}</p>
+            </div>
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- AJAX Wishlist Script -->
+<script>
+  document.querySelectorAll(".wishlist-btn").forEach((button) => {
+    button.addEventListener("click", function (e) {
+      e.preventDefault();
+
+      const productId = this.dataset.productId;
+      const icon = this.querySelector("i");
+
+      fetch("{% url 'toggle_wishlist' %}", {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": "{{ csrf_token }}",
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({ product_id: productId }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.status === "added") {
+            icon.classList.remove("bi-heart");
+            icon.classList.add("bi-heart-fill", "text-danger");
+            this.classList.remove("wishlist-unfilled");
+          } else if (data.status === "removed") {
+            icon.classList.remove("bi-heart-fill", "text-danger");
+            icon.classList.add("bi-heart");
+            this.classList.add("wishlist-unfilled");
+          }
+        });
+    });
+  });
+
+  // Initialize EasyZoom
+  if (window.EasyZoom) {
+    document.querySelectorAll('.easyzoom').forEach(function(el) {
+      new EasyZoom(el);
+    });
+  }
+</script>
+{% endblock %}
+
+<style>
+@media (max-width: 767px) {
+  .back-btn-desktop { display: none !important; }
+}
+  .wishlist-btn.wishlist-unfilled {
+    border: 2px solid #222;
+    border-radius: 50%;
+    background: #fff;
+    transition: border 0.2s;
+  }
+  .wishlist-btn:not(.wishlist-unfilled) {
+    border: none;
+  }
+</style>
