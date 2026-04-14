@@ -84,21 +84,21 @@ WSGI_APPLICATION = "localshop.wsgi.application"
 
 # Database Configuration
 # Use DATABASE_URL for production (Render), fallback to SQLite for local development
-if IS_RENDER:
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if DATABASE_URL:
+    # Production (Render)
     DATABASES = {
-        "default": dj_database_url.parse(os.environ.get("DATABASE_URL"))
+        "default": dj_database_url.parse(DATABASE_URL)
     }
 else:
-   DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_NAME"),
-        "USER": os.getenv("DB_USER"),
-        "PASSWORD": os.getenv("DB_PASSWORD"),
-        "HOST": os.getenv("DB_HOST"),
-        "PORT": os.getenv("DB_PORT", "5432"),
+    # Local fallback
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
     }
-}
 
 # Password validators
 AUTH_PASSWORD_VALIDATORS = [
