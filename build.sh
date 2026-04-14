@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# Upgrade build tools
+python -m pip install --upgrade pip setuptools
+
 # Install dependencies
 pip install -r requirements.txt
 
