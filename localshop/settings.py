@@ -18,7 +18,7 @@ if not IS_RENDER:
 # Load secret values from .env
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 if IS_RENDER:
-    DEBUG = False
+    DEBUG = True
     ALLOWED_HOSTS = [os.environ.get("RENDER_EXTERNAL_HOSTNAME")]
 else:
     DEBUG = os.getenv("DEBUG", "True") == "True"

@@ -75,7 +75,7 @@
       <script>
         document.addEventListener('DOMContentLoaded', function() {
           {% for message in messages %}
-            showToast("{{ message|escapejs }}", "{{ message.tags }}");
+            showToast("{{ message|escapejs }}", "{{ message.tags|escapejs }}");
           {% endfor %}
         });
       </script>
@@ -84,7 +84,8 @@
       function showToast(msg, type) {
         const container = document.getElementById('toast-container');
         const toast = document.createElement('div');
-        toast.className = type === 'success' ? 'toast-success' : 'toast-success';
+        // Fix: Use correct class based on message type
+        toast.className = (type === 'error' || type === 'danger') ? 'toast-error' : 'toast-success';
         toast.innerHTML = `<span>${msg}</span>`;
         container.appendChild(toast);
         setTimeout(() => {
@@ -126,6 +127,20 @@
         text-align: center;
         animation: fade-in 0.3s;
         border: 1.5px solid #b2dfdb;
+        pointer-events: auto;
+      }
+      .toast-error {
+        background: #fdecea;
+        color: #d32f2f;
+        border-radius: 0.7rem;
+        padding: 1rem 2.2rem;
+        font-weight: 600;
+        box-shadow: 0 4px 24px rgba(211,47,47,0.10);
+        font-size: 1.1rem;
+        min-width: 180px;
+        text-align: center;
+        animation: fade-in 0.3s;
+        border: 1.5px solid #ffcdd2;
         pointer-events: auto;
       }
       @media (max-width: 600px) {
