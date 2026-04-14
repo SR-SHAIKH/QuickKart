@@ -134,8 +134,7 @@ EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 
 # Custom authentication backend
 AUTHENTICATION_BACKENDS = [
-    'shop.auth_backends.EmailOrPhoneBackend',     # custom phone/email backend
-    'django.contrib.auth.backends.ModelBackend',  # fallback username/password
+    'django.contrib.auth.backends.ModelBackend',
 ]
 
 # Redirect if login required
