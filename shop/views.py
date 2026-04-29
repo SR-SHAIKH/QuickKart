@@ -864,7 +864,7 @@ def search_view(request):
     return render(request, 'shop/search_results.html', {'results': results, 'query': query})
 
 # @login_required
-# def order_history(request):
+# def order_history(request)):
 #     # This view is now deprecated in favor of my_orders
 #     pass
 def products_by_category(request, category_id):
