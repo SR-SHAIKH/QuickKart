@@ -1,7 +1,7 @@
 *.pyc
 __pycache__/
 db.sqlite3
-# staticfiles/ (removed to ensure it's not ignored incorrectly)
+staticfiles/
 .env
 *.env
 *.log
