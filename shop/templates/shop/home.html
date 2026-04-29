@@ -519,7 +519,7 @@
       {% for category in categories %}
       <a href="{% url 'products_by_category' category.id %}" class="text-decoration-none text-dark">
         <div>
-          <img src="{{ category.image.url }}" class="category-circle mb-2 shadow-sm" alt="{{ category.name }}" />
+          <img src="{{ category.image.url }}" onerror="this.onerror=null; this.src='/static/images/default-shop-logo.png'" class="category-circle mb-2 shadow-sm" alt="{{ category.name }}" />
           <div class="fw-bold small text-wrap">{{ category.name }}</div>
         </div>
       </a>
@@ -536,7 +536,7 @@
       <a href="{% url 'shop_detail' shop.id %}" class="text-decoration-none text-dark">
         <div class="shop-card card h-100 text-center shadow-sm border-success">
           {% if shop.shop_logo %}
-          <img src="{{ shop.shop_logo.url }}" alt="{{ shop.shop_name }}" class="card-img-top p-3"
+          <img src="{{ shop.shop_logo.url }}" onerror="this.onerror=null; this.src='/static/images/default-shop-logo.png'" alt="{{ shop.shop_name }}" class="card-img-top p-3"
             style="height: 100px; object-fit: contain;">
           {% else %}
           <img src="{% static 'images/default-shop-logo.png' %}" alt="No Logo" class="card-img-top p-3"
@@ -570,7 +570,7 @@
         {% endif %}
         <a href="{% url 'product_detail' product.id %}" class="text-decoration-none text-dark">
           {% if product.image %}
-          <img src="{{ product.image.url }}" alt="{{ product.name }}" class="card-img-top p-3"
+          <img src="{{ product.image.url }}" onerror="this.onerror=null; this.src='https://via.placeholder.com/300x200?text=No+Image'" alt="{{ product.name }}" class="card-img-top p-3"
             style="height: 120px; object-fit: contain;">
           {% else %}
           <img src="https://via.placeholder.com/300x200?text=No+Image" alt="No Image" class="card-img-top p-3"
