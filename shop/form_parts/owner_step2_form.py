@@ -1,7 +1,14 @@
 from django import forms
-from shop.models import Shop
+from shop.models import Shop, PinCode
+from shop.fields import DeliveryPinCodeField
 
-class ShopForm(forms.ModelForm):
+class RegisterShopForm(forms.ModelForm):
+    delivery_pincodes = DeliveryPinCodeField(
+        queryset=PinCode.objects.all(),
+        required=False,
+        label="Delivery Pin Codes"
+    )
+
     class Meta:
         model = Shop
         fields = [
@@ -17,7 +24,6 @@ class ShopForm(forms.ModelForm):
             'delivery_pincodes',
         ]
         widgets = {
-            'delivery_pincodes': forms.CheckboxSelectMultiple,
             'opening_time': forms.TimeInput(attrs={'type': 'time'}),
             'closing_time': forms.TimeInput(attrs={'type': 'time'}),
         }

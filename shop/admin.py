@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django import forms
 from users.models import CustomUser
-from .models import Product, Category, PinCode, Invoice, Payment, Order, OrderItem
+from .models import Product, Category, PinCode, Invoice, Payment, Order, OrderItem, Shop
 admin.site.register(Category)
 
 # Custom form to filter only shop_owner users
@@ -16,7 +16,12 @@ class ProductForm(forms.ModelForm):
 
 @admin.register(PinCode)
 class PinCodeAdmin(admin.ModelAdmin):
-    list_display = ('code', 'area_name')
+    list_display = ('code', 'area_name', 'city')
+
+@admin.register(Shop)
+class ShopAdmin(admin.ModelAdmin):
+    list_display = ['shop_name', 'owner']
+    filter_horizontal = ['delivery_pincodes']
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):

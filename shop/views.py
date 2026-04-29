@@ -8,8 +8,9 @@ from django.template.loader import get_template
 from django.utils.timezone import now
 from django.http import JsonResponse, HttpResponse, HttpResponseForbidden
 from shop.form_parts.owner_step1_form import OwnerPersonalForm
-from shop.form_parts.owner_step2_form import ShopForm
+from shop.form_parts.owner_step2_form import RegisterShopForm
 from shop.form_parts.owner_step3_form import ShopBankForm
+from shop.form_parts.owner_profile_forms import OwnerPersonalEditForm, OwnerShopForm, DeliveryPinCodeForm
 from users.forms import RegistrationForm
 from shop.form_parts.product_form import ProductForm
 from shop.form_parts.customer_profile_form import CustomerProfileForm
@@ -75,28 +76,35 @@ def home(request):
     if selected_pincode:
         print("🧠 Selected PinCode:", selected_pincode)
 
-        try:
-            pin_obj = PinCode.objects.get(code=selected_pincode)
-            print("✅ PinCode object:", pin_obj)
+        # 🌍 Global Pincodes Logic
+        if selected_pincode in ['000000', '111111']:
+            shops_in_area = Shop.objects.all()
+            products = Product.objects.filter(is_active=True)
+            print("🌎 Global Mode: Showing all shops and products")
+        else:
+            try:
+                pin_obj = PinCode.objects.get(code=selected_pincode)
+                print("✅ PinCode object:", pin_obj)
 
-            shops_in_area = Shop.objects.filter(delivery_pincodes=pin_obj).distinct()
-            print("🏪 Shops in Area:", shops_in_area)
+                shops_in_area = Shop.objects.filter(delivery_pincodes=pin_obj).distinct()
+                print("🏪 Shops in Area:", shops_in_area)
 
-            products = Product.objects.filter(shop__in=shops_in_area, is_active=True).distinct()
-            print("📦 Filtered Products:", products)
+                products = Product.objects.filter(shop__in=shops_in_area, is_active=True).distinct()
+                print("📦 Filtered Products:", products)
+            except PinCode.DoesNotExist:
+                print("❌ PinCode not found!")
+                products = Product.objects.none()
+                shops_in_area = Shop.objects.none()
 
-            if query:
-                products = products.filter(
-                    Q(name__icontains=query) | Q(description__icontains=query)
-                )
+        if query:
+            products = products.filter(
+                Q(name__icontains=query) | Q(description__icontains=query)
+            )
 
-            if request.user.is_authenticated and getattr(request.user, 'role', None) == 'customer':
-                wishlist_products = Wishlist.objects.filter(
-                    user=request.user
-                ).values_list('product_id', flat=True)
-
-        except PinCode.DoesNotExist:
-            print("❌ PinCode not found!")
+        if request.user.is_authenticated and getattr(request.user, 'role', None) == 'customer':
+            wishlist_products = Wishlist.objects.filter(
+                user=request.user
+            ).values_list('product_id', flat=True)
 
     bestselling_products = products.order_by('-stock')[:10] if products.exists() else []
 
@@ -935,8 +943,13 @@ def register_owner_step2(request):
     if 'owner_user_data' not in request.session:
         return redirect('register_owner_step1')
 
+    all_pincodes = PinCode.objects.all()
+    all_pincodes_json = json.dumps([
+        {"id": p.id, "code": p.code, "area": p.area_name} for p in all_pincodes
+    ])
+
     if request.method == 'POST':
-        form = ShopForm(request.POST, request.FILES)
+        form = RegisterShopForm(request.POST, request.FILES)
         if form.is_valid():
             shop_data = form.cleaned_data.copy()
 
@@ -963,16 +976,12 @@ def register_owner_step2(request):
 
             return redirect('register_owner_step3')
     else:
-        form = ShopForm()
-
-        all_pincodes = PinCode.objects.all()
-        all_pincodes_json = json.dumps([
-        {"id": p.id, "code": p.code, "area": p.area_name} for p in all_pincodes
-    ])
+        form = RegisterShopForm()
 
     return render(request, 'shop/register_owner_step2.html', {
         'form': form,
-        'all_pincodes_json': all_pincodes_json
+        'all_pincodes_json': all_pincodes_json,
+        'selected_pincodes_list': request.session.get('delivery_pincodes', []),
     })
 
 
@@ -1127,30 +1136,8 @@ def verify_owner_otp(request):
 
 @login_required
 def edit_shop_profile(request):
-    shop = Shop.objects.get(owner=request.user)
-
-    if request.method == 'POST':
-        form = EditShopProfileForm(request.POST, instance=shop)
-        if form.is_valid():
-            form.save()
-            # Correct field name for custom UI
-            pincode_ids = request.POST.getlist('delivery_pincodes')
-            shop.delivery_pincodes.set(pincode_ids)
-            return redirect('shop_owner_dashboard')
-    else:
-        form = EditShopProfileForm(instance=shop)
-
-    all_pincodes = PinCode.objects.all()
-    all_pincodes_json = json.dumps([
-        {"id": p.id, "code": p.code, "area": p.area_name} for p in all_pincodes
-    ])
-    selected_pincodes = list(shop.delivery_pincodes.values_list('id', flat=True))
-
-    return render(request, 'shop/edit_shop_profile.html', {
-        'form': form,
-        'all_pincodes_json': all_pincodes_json,
-        'selected_pincodes': json.dumps(selected_pincodes),
-    })
+    # Deprecated: Redirecting to consolidated owner profile view
+    return redirect('edit_owner_profile')
 
 @login_required
 def owner_profiles(request):
@@ -1227,7 +1214,7 @@ def select_role_view(request):
 
 def create_shop(request):
     if request.method == 'POST':
-        form = ShopForm(request.POST, request.FILES)
+        form = EditShopProfileForm(request.POST, request.FILES)
         if form.is_valid():
             shop = form.save(commit=False)
             shop.owner = request.user  # ya jo bhi logic ho
@@ -1238,18 +1225,8 @@ def create_shop(request):
 
 @login_required
 def edit_shop(request):
-    shop = get_object_or_404(Shop, owner=request.user)
-
-    if request.method == 'POST':
-        form = ShopForm(request.POST, request.FILES, instance=shop)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "Shop updated successfully.")
-            return redirect('shop_owner_dashboard')
-    else:
-        form = ShopForm(instance=shop)
-
-    return render(request, 'shop/edit_shop.html', {'form': form})
+    # Deprecated: Redirect to unified owner profile management
+    return redirect('edit_owner_profile')
 
 def update_cart(request):
     if request.method == "POST":
@@ -1800,16 +1777,65 @@ from django import forms
 def edit_owner_profile(request):
     if not hasattr(request.user, 'role') or request.user.role != 'shop_owner':
         return redirect('home')
+    
     user = request.user
+    # Ensure shop exists for the owner
+    shop, created = Shop.objects.get_or_create(
+        owner=user,
+        defaults={'shop_name': f"{user.first_name}'s Shop" if user.first_name else "My Shop"}
+    )
+    
+    # Initialize forms with instances
+    personal_form = OwnerPersonalEditForm(instance=user)
+    shop_form = OwnerShopForm(instance=shop)
+    pincode_form = DeliveryPinCodeForm(instance=shop)
+    
     if request.method == 'POST':
-        form = OwnerPersonalForm(request.POST, instance=user)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Personal info updated successfully!')
-            return redirect('owner_profiles')
-    else:
-        form = OwnerPersonalForm(instance=user)
-    return render(request, 'dashboard/owner_edit_profile.html', {'form': form})
+        action = request.POST.get('action')
+        
+        if action == 'update_personal':
+            personal_form = OwnerPersonalEditForm(request.POST, instance=user)
+            if personal_form.is_valid():
+                personal_form.save()
+                messages.success(request, 'Personal details updated successfully!')
+                return redirect('edit_owner_profile')
+        
+        elif action == 'update_shop':
+            shop_form = OwnerShopForm(request.POST, request.FILES, instance=shop)
+            if shop_form.is_valid():
+                shop = shop_form.save(commit=False)
+                shop.save()
+                # Explicitly set pincodes from the unified field
+                shop.delivery_pincodes.set(shop_form.cleaned_data.get('delivery_pincodes', []))
+                messages.success(request, 'Shop details updated successfully!')
+                return redirect('edit_owner_profile')
+                
+        elif action == 'update_pincodes':
+            pincode_form = DeliveryPinCodeForm(request.POST, instance=shop)
+            if pincode_form.is_valid():
+                shop = pincode_form.save(commit=False)
+                shop.save()
+                # Use the new tagging field's cleaned data
+                shop.delivery_pincodes.set(pincode_form.cleaned_data.get('delivery_pincodes', []))
+                messages.success(request, 'Delivery pincodes updated successfully!')
+                return redirect('edit_owner_profile')
+
+    all_pincodes = PinCode.objects.all()
+    all_pincodes_json = json.dumps([
+        {"id": p.id, "code": p.code, "area": p.area_name} for p in all_pincodes
+    ])
+    selected_pincodes = list(shop.delivery_pincodes.values_list('id', flat=True))
+
+    context = {
+        'shop': shop,  # ✅ Added explicitly
+        'all_pincodes': all_pincodes,  # ✅ Added for template loop
+        'personal_form': personal_form,
+        'shop_form': shop_form,
+        'pincode_form': pincode_form,
+        'all_pincodes_json': all_pincodes_json,
+        'selected_pincodes': selected_pincodes,
+    }
+    return render(request, 'dashboard/owner_edit_profile.html', context)
 
 def shop_detail(request, shop_id):
     shop = get_object_or_404(Shop, id=shop_id)

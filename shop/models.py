@@ -5,10 +5,12 @@ from users.models import CustomUser
 
 class PinCode(models.Model):
     code = models.CharField(max_length=10, unique=True)
-    area_name = models.CharField(max_length=100)
+    area_name = models.CharField(max_length=100, blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
+    is_auto_created = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.code
+        return f"{self.code} - {self.area_name or 'N/A'}"
 # ✅ Product Model
 from django.conf import settings
 from django.db import models

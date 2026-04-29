@@ -1,7 +1,7 @@
 from django import forms
 from users.models import CustomUser
 from .models import Product
-from shop.form_parts import ShopForm
+from shop.form_parts.owner_step2_form import RegisterShopForm
 from django.shortcuts import render, redirect
 from .models import Shop
 
@@ -97,7 +97,7 @@ def register_owner_step2(request):
         return redirect('register_owner_step1')
 
     if request.method == 'POST':
-        form = ShopForm(request.POST, request.FILES)
+        form = RegisterShopForm(request.POST, request.FILES)
         if form.is_valid():
             # Save all form fields except the M2M separately
             shop_data = {
@@ -114,7 +114,7 @@ def register_owner_step2(request):
 
             return redirect('register_owner_step3')
     else:
-        form = ShopForm()
+        form = RegisterShopForm()
 
     return render(request, 'shop/register_owner_step2.html', {'form': form})
 
